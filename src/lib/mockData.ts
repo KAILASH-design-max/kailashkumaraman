@@ -149,6 +149,97 @@ export const mockProducts: Product[] = [
     rating: 4.7,
     reviewsCount: 180,
     stock: 90
+  },
+  { 
+    id: 'prod45', 
+    slug: 'coca-cola', 
+    name: 'Coca-Cola', 
+    description: 'Classic Coca-Cola soft drink.', 
+    price: 1.20, 
+    category: 'cat4', 
+    imageUrl: 'https://banner2.cleanpng.com/20180704/ufz/aawf7csvs.webp', 
+    dataAiHint: 'cola soda', 
+    rating: 4.8, 
+    reviewsCount: 500, 
+    stock: 150 
+  },
+  { 
+    id: 'prod46', 
+    slug: 'pepsi', 
+    name: 'Pepsi', 
+    description: 'Refreshing Pepsi cola soft drink.', 
+    price: 1.15, 
+    category: 'cat4', 
+    imageUrl: 'https://banner2.cleanpng.com/20180216/gew/av15dany1.webp', 
+    dataAiHint: 'pepsi soda', 
+    rating: 4.7, 
+    reviewsCount: 450, 
+    stock: 140 
+  },
+  { 
+    id: 'prod47', 
+    slug: 'sprite', 
+    name: 'Sprite', 
+    description: 'Crisp lemon-lime flavored Sprite.', 
+    price: 1.10, 
+    category: 'cat4', 
+    imageUrl: 'https://banner2.cleanpng.com/20180201/uoq/av2mm4bo6.webp', 
+    dataAiHint: 'sprite soda', 
+    rating: 4.6, 
+    reviewsCount: 400, 
+    stock: 130 
+  },
+  { 
+    id: 'prod48', 
+    slug: 'fanta', 
+    name: 'Fanta', 
+    description: 'Bubbly orange flavored Fanta.', 
+    price: 1.10, 
+    category: 'cat4', 
+    imageUrl: 'https://banner2.cleanpng.com/20180804/elp/07d24a6e791a80655db57efc19c7e994.webp', 
+    dataAiHint: 'fanta orange', 
+    rating: 4.5, 
+    reviewsCount: 380, 
+    stock: 120 
+  },
+  { 
+    id: 'prod49', 
+    slug: 'thums-up', 
+    name: 'Thums Up', 
+    description: 'Strong and fizzy Thums Up cola.', 
+    price: 1.25, 
+    category: 'cat4', 
+    imageUrl: 'https://banner2.cleanpng.com/20180401/pae/avim5x87i.webp', 
+    dataAiHint: 'thumsup cola', 
+    rating: 4.7, 
+    reviewsCount: 420, 
+    stock: 100 
+  },
+  { 
+    id: 'prod50', 
+    slug: 'real-fruit-juice', 
+    name: 'Real Fruit Juice', 
+    description: 'Refreshing mixed fruit juice.', 
+    price: 2.20, 
+    category: 'cat4', 
+    imageUrl: 'https://banner2.cleanpng.com/20180615/uxs/aa7qsxdnn.webp', 
+    dataAiHint: 'fruit juice', 
+    rating: 4.6, 
+    reviewsCount: 300, 
+    stock: 80 
+  },
+  { 
+    id: 'prod51', 
+    slug: 'tropicana-juice', 
+    name: 'Tropicana', 
+    description: 'Delicious Tropicana orange juice.', 
+    price: 2.50, 
+    category: 'cat4', 
+    imageUrl: 'https://banner2.cleanpng.com/20180620/fpz/aa6wzy256.webp', 
+    dataAiHint: 'orange juice', 
+    rating: 4.7, 
+    reviewsCount: 350, 
+    stock: 70 
   }
 ];
 
