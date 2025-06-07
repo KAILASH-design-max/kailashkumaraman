@@ -85,7 +85,7 @@ export default function CartPage() {
                 <Link href={`/products/${item.slug}`} passHref>
                   <h2 className="text-lg font-semibold hover:text-primary transition-colors">{item.name}</h2>
                 </Link>
-                <p className="text-sm text-muted-foreground">${item.price.toFixed(2)} each</p>
+                <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)} each</p>
               </div>
               <div className="flex items-center gap-2 sm:gap-3">
                 <Button
@@ -126,7 +126,7 @@ export default function CartPage() {
                 </Button>
               </div>
               <p className="font-semibold text-lg sm:w-24 text-center sm:text-right">
-                ${(item.price * item.quantity).toFixed(2)}
+                ₹{(item.price * item.quantity).toFixed(2)}
               </p>
               <Button
                 variant="ghost"
@@ -226,26 +226,26 @@ export default function CartPage() {
             <CardContent className="space-y-3">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>₹{subtotal.toFixed(2)}</span>
               </div>
               {deliveryCharge > 0 && (
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Delivery Charge</span>
-                  <span>${deliveryCharge.toFixed(2)}</span>
+                  <span>₹{deliveryCharge.toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>GST (18%)</span>
-                <span>${gstAmount.toFixed(2)}</span>
+                <span>₹{gstAmount.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm text-muted-foreground">
                 <span>Handling Charge</span>
-                <span>${HANDLING_CHARGE.toFixed(2)}</span>
+                <span>₹{HANDLING_CHARGE.toFixed(2)}</span>
               </div>
               <Separator className="my-3" />
               <div className="flex justify-between text-xl font-bold">
                 <span>Total</span>
-                <span>${totalAmount.toFixed(2)}</span>
+                <span>₹{totalAmount.toFixed(2)}</span>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2">

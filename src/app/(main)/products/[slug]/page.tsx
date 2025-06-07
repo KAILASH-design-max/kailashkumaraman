@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -109,7 +110,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
             )}
           </div>
 
-          <p className="text-3xl font-bold text-primary">${product.price.toFixed(2)}</p>
+          <p className="text-3xl font-bold text-primary">₹{product.price.toFixed(2)}</p>
           
           <p className="text-muted-foreground text-base leading-relaxed">{product.description}</p>
 

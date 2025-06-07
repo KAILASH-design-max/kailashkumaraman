@@ -47,7 +47,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </Link>
         <p className="text-xs text-muted-foreground line-clamp-2 h-[2.4em]">{product.description}</p> {/* Adjusted font size and height */}
         <div className="flex items-center justify-between pt-0.5"> {/* Adjusted padding top */}
-          <p className="text-lg font-bold text-primary">${product.price.toFixed(2)}</p> {/* Adjusted font size */}
+          <p className="text-lg font-bold text-primary">₹{product.price.toFixed(2)}</p> {/* Adjusted font size */}
           {product.rating && (
             <div className="flex items-center gap-0.5"> {/* Adjusted gap */}
               <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> {/* Adjusted icon size */}

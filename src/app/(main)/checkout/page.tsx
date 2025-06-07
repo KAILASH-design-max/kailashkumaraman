@@ -128,14 +128,14 @@ export default function CheckoutPage() {
                   <Image src={item.imageUrl} alt={item.name} width={60} height={60} className="rounded-md object-cover" data-ai-hint={item.dataAiHint || 'checkout item'} />
                   <div className="flex-grow">
                     <h3 className="font-medium">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">Qty: {item.quantity} x ${item.price.toFixed(2)}</p>
+                    <p className="text-sm text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
                   </div>
-                  <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
                 </Card>
               ))}
               <Separator />
               <div className="text-right font-semibold text-lg">
-                Subtotal: ${subtotal.toFixed(2)}
+                Subtotal: ₹{subtotal.toFixed(2)}
               </div>
               <Button onClick={() => setCurrentStep('shippingSelection')} className="w-full sm:w-auto float-right">Next: Shipping</Button>
             </AccordionContent>
@@ -189,7 +189,7 @@ export default function CheckoutPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="standard">Standard (Est. 3-5 days)</SelectItem>
-                  <SelectItem value="express">Express (Est. 1-2 days) - $10.00</SelectItem>
+                  <SelectItem value="express">Express (Est. 1-2 days) - ₹10.00</SelectItem>
                   <SelectItem value="pickup">In-Store Pickup (Today)</SelectItem>
                 </SelectContent>
               </Select>
@@ -258,12 +258,12 @@ export default function CheckoutPage() {
                   <CardDescription>Please review all details before placing your order.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex justify-between"><span>Subtotal:</span><span>${subtotal.toFixed(2)}</span></div>
-                  {deliveryCharge > 0 && <div className="flex justify-between text-sm text-muted-foreground"><span>Delivery:</span><span>${deliveryCharge.toFixed(2)}</span></div>}
-                  <div className="flex justify-between text-sm text-muted-foreground"><span>GST (18%):</span><span>${gstAmount.toFixed(2)}</span></div>
-                  <div className="flex justify-between text-sm text-muted-foreground"><span>Handling:</span><span>${HANDLING_CHARGE.toFixed(2)}</span></div>
+                  <div className="flex justify-between"><span>Subtotal:</span><span>₹{subtotal.toFixed(2)}</span></div>
+                  {deliveryCharge > 0 && <div className="flex justify-between text-sm text-muted-foreground"><span>Delivery:</span><span>₹{deliveryCharge.toFixed(2)}</span></div>}
+                  <div className="flex justify-between text-sm text-muted-foreground"><span>GST (18%):</span><span>₹{gstAmount.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-sm text-muted-foreground"><span>Handling:</span><span>₹{HANDLING_CHARGE.toFixed(2)}</span></div>
                   <Separator/>
-                  <div className="flex justify-between font-bold text-lg"><span>Total:</span><span>${totalAmount.toFixed(2)}</span></div>
+                  <div className="flex justify-between font-bold text-lg"><span>Total:</span><span>₹{totalAmount.toFixed(2)}</span></div>
                   
                   <Separator className="my-4"/>
                   
@@ -288,7 +288,7 @@ export default function CheckoutPage() {
                 </CardContent>
                 <CardFooter>
                   <Button size="lg" className="w-full" onClick={handlePlaceOrder} disabled={cartItems.length === 0}>
-                    Buy Now (${totalAmount.toFixed(2)})
+                    Buy Now (₹{totalAmount.toFixed(2)})
                   </Button>
                 </CardFooter>
               </Card>
