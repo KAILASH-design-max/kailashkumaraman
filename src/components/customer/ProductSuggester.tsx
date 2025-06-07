@@ -40,8 +40,7 @@ export function ProductSuggester() {
   return (
     <section className="mb-12">
       <Card className="bg-gray-50 shadow-md rounded-lg border border-gray-200">
-        <CardHeader className="text-center pt-4 pb-2"> {/* Adjusted padding */}
-          {/* Removed the standalone Sparkles icon from here */}
+        <CardHeader className="text-center pt-4 pb-2">
           <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center justify-center">
             <Sparkles className="h-6 w-6 text-primary mr-2" />
             Get Product Recommendations
@@ -50,7 +49,7 @@ export function ProductSuggester() {
             Tell us what you&apos;re looking for (e.g., &quot;healthy breakfast items&quot;, &quot;dinner for two&quot;, &quot;party snacks&quot;) and we&apos;ll suggest some items!
           </CardDescription>
         </CardHeader>
-        <CardContent className="max-w-xl mx-auto pb-4 px-4"> {/* Adjusted padding */}
+        <CardContent className="max-w-xl mx-auto pb-4 px-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-2">
               <Input
@@ -66,7 +65,10 @@ export function ProductSuggester() {
               />
               <Button 
                 type="submit" 
-                className="h-11 text-sm font-medium bg-[#708238] hover:bg-[#5f702f] text-white px-4 rounded-md" 
+                className="h-11 text-sm font-medium text-white px-4 rounded-md" 
+                style={{ backgroundColor: '#4F63AC' }}
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#40529B'} // Darken color on hover
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4F63AC'} // Reset color on mouse out
                 disabled={isLoading}
               >
                 {isLoading ? (
