@@ -1,3 +1,4 @@
+
 export interface Product {
   id: string;
   slug: string;
@@ -5,7 +6,7 @@ export interface Product {
   description: string;
   price: number;
   category: string;
-  imageUrl: string;
+  imageUrls: string[]; // Changed from imageUrl to imageUrls array
   dataAiHint?: string;
   rating?: number;
   reviewsCount?: number;
@@ -38,13 +39,13 @@ export interface OrderItem {
   price: number; // Price at the time of order
 }
 
-export type OrderStatus = 
-  | 'Pending' 
-  | 'Confirmed' 
-  | 'Processing' 
-  | 'Out for Delivery' 
-  | 'Delivered' 
-  | 'Cancelled' 
+export type OrderStatus =
+  | 'Pending'
+  | 'Confirmed'
+  | 'Processing'
+  | 'Out for Delivery'
+  | 'Delivered'
+  | 'Cancelled'
   | 'Failed';
 
 export interface Order {

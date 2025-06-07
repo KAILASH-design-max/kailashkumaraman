@@ -5,12 +5,12 @@ import Image from 'next/image';
 import { mockProducts, mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle } from 'lucide-react'; // Added XCircle
+import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ProductCard } from '@/components/customer/ProductCard';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'; // Added Card imports
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import {
   Accordion,
   AccordionContent,
@@ -18,24 +18,20 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCart } from '@/hooks/useCart';
-import { useEffect, useState, use } from 'react'; // Imported 'use'
+import { useEffect, useState, use } from 'react';
+import { cn } from '@/lib/utils';
 
-// Helper to simulate fetching a product by slug (can be adapted for actual API calls)
 async function getProductBySlug(slug: string): Promise<Product | undefined> {
-  // In a real app, this would fetch from an API.
-  // For now, it uses mock data.
   return mockProducts.find(p => p.slug === slug);
 }
 
 export default function ProductDetailPage({ params: paramsFromProps }: { params: { slug: string } }) {
-  // Per Next.js warning, params object should be unwrapped using React.use
-  // We cast paramsFromProps to `any` because its declared type is a plain object,
-  // but the warning suggests it should be treated as a promise for `use`.
   const resolvedParams = use(paramsFromProps as any);
   const slug = resolvedParams.slug;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -48,10 +44,28 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
       setLoading(true);
       const fetchedProduct = await getProductBySlug(slug);
       setProduct(fetchedProduct || null);
+      if (fetchedProduct && fetchedProduct.imageUrls && fetchedProduct.imageUrls.length > 0) {
+        setSelectedImageUrl(fetchedProduct.imageUrls[0]);
+      } else {
+        setSelectedImageUrl('https://placehold.co/600x450.png'); // Default fallback
+      }
       setLoading(false);
     }
     loadProduct();
-  }, [slug]); // Depend on the resolved slug
+  }, [slug]);
+
+  useEffect(() => {
+    // Update selectedImageUrl if product changes and has images
+    if (product && product.imageUrls && product.imageUrls.length > 0) {
+        // If selectedImageUrl is not among the product's images or is null, reset to first
+        if (!selectedImageUrl || !product.imageUrls.includes(selectedImageUrl)) {
+             setSelectedImageUrl(product.imageUrls[0]);
+        }
+    } else if (product) { // Product exists but no images
+        setSelectedImageUrl('https://placehold.co/600x450.png');
+    }
+  }, [product, selectedImageUrl]);
+
 
   if (loading) {
     return (
@@ -81,6 +95,12 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
   const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
   const categoryName = mockCategories.find(c => c.id === product.category)?.name;
 
+  const handleThumbnailClick = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+  };
+
+  const mainImageToDisplay = selectedImageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'https://placehold.co/600x450.png');
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6">
@@ -92,20 +112,49 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
         <div>
-          <Image
-            src={product.imageUrl}
-            alt={product.name}
-            width={600}
-            height={450}
-            className="w-full h-auto object-cover rounded-lg shadow-lg aspect-[4/3]"
-            data-ai-hint={product.dataAiHint || 'product details'}
-          />
+          {/* Main Image Display */}
+          <div className="mb-4">
+            <Image
+              src={mainImageToDisplay}
+              alt={product.name}
+              width={600}
+              height={450}
+              className="w-full h-auto object-cover rounded-lg shadow-lg aspect-[4/3]"
+              data-ai-hint={product.dataAiHint || 'product details main'}
+              priority // Prioritize loading for LCP
+            />
+          </div>
+
+          {/* Thumbnails Display */}
+          {product.imageUrls && product.imageUrls.length > 1 && (
+            <div className="flex space-x-2 overflow-x-auto pb-2">
+              {product.imageUrls.map((url, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleThumbnailClick(url)}
+                  className={cn(
+                    "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md overflow-hidden border-2",
+                    selectedImageUrl === url ? "border-primary" : "border-transparent hover:border-muted"
+                  )}
+                >
+                  <Image
+                    src={url}
+                    alt={`${product.name} thumbnail ${index + 1}`}
+                    width={100}
+                    height={75}
+                    className="object-cover aspect-[4/3] w-24 h-[calc(0.75*6rem)] sm:w-28 sm:h-[calc(0.75*7rem)]" // Fixed width, auto height
+                    data-ai-hint={product.dataAiHint || `product thumbnail ${index + 1}`}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
           <h1 className="text-4xl font-bold">{product.name}</h1>
           {categoryName && <Badge variant="outline">{categoryName}</Badge>}
-          
+
           <div className="flex items-center space-x-4">
             {product.rating && (
               <div className="flex items-center gap-1">
@@ -123,7 +172,7 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
           </div>
 
           <p className="text-3xl font-bold text-primary">₹{product.price.toFixed(2)}</p>
-          
+
           <p className="text-muted-foreground text-base leading-relaxed">{product.description}</p>
 
           {product.stock && product.stock > 0 ? (
@@ -133,11 +182,11 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
             </div>
           ) : (
             <div className="flex items-center space-x-2 text-destructive">
-              <XCircle className="h-5 w-5" /> {/* Changed icon here */}
+              <XCircle className="h-5 w-5" />
               <span>Out of Stock</span>
             </div>
           )}
-          
+
           <div className="flex items-center space-x-4">
             {product.stock && product.stock > 0 ? (
               <Button size="lg" className="w-full md:w-auto flex-grow" onClick={handleAddToCart}>
@@ -149,7 +198,7 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
                </Button>
             )}
           </div>
-          
+
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="item-1">
               <AccordionTrigger>Product Details</AccordionTrigger>

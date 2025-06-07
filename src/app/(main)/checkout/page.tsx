@@ -75,7 +75,7 @@ export default function CheckoutPage() {
     setCurrentStep('confirmation');
     clearCart(); // Clear cart after order
   };
-  
+
   if (orderPlaced) {
     return (
       <div className="container mx-auto py-12 px-4 text-center">
@@ -83,7 +83,7 @@ export default function CheckoutPage() {
         <h1 className="text-3xl font-semibold mb-4">Order Confirmed!</h1>
         <p className="text-muted-foreground mb-2">Thank you for your purchase at SpeedyShop Proto.</p>
         <p className="text-muted-foreground mb-6">Your order ID is <span className="font-medium text-primary">SSP-{Date.now().toString().slice(-6)}</span>. You will receive an email confirmation shortly.</p>
-        
+
         <Card className="text-left max-w-md mx-auto mb-8">
           <CardHeader>
             <CardTitle>Next Steps</CardTitle>
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
             <p><MapPin className="inline mr-2 h-4 w-4 text-primary"/>Prepare for delivery: keep an eye on shipping notifications.</p>
           </CardContent>
         </Card>
-        
+
         <Button asChild size="lg">
           <Link href="/products">Continue Shopping</Link>
         </Button>
@@ -123,16 +123,21 @@ export default function CheckoutPage() {
             </AccordionTrigger>
             <AccordionContent className="p-4 space-y-4">
               <p className="text-muted-foreground">Please review your cart contents, quantities, and prices before proceeding.</p>
-              {cartItems.map((item: CartItem) => (
-                <Card key={item.id} className="flex items-center p-3 gap-3">
-                  <Image src={item.imageUrl} alt={item.name} width={60} height={60} className="rounded-md object-cover" data-ai-hint={item.dataAiHint || 'checkout item'} />
-                  <div className="flex-grow">
-                    <h3 className="font-medium">{item.name}</h3>
-                    <p className="text-sm text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
-                  </div>
-                  <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
-                </Card>
-              ))}
+              {cartItems.map((item: CartItem) => {
+                const primaryImageUrl = item.imageUrls && item.imageUrls.length > 0
+                  ? item.imageUrls[0]
+                  : 'https://placehold.co/60x60.png'; // Fallback for checkout item
+                return (
+                  <Card key={item.id} className="flex items-center p-3 gap-3">
+                    <Image src={primaryImageUrl} alt={item.name} width={60} height={60} className="rounded-md object-cover" data-ai-hint={item.dataAiHint || 'checkout item'} />
+                    <div className="flex-grow">
+                      <h3 className="font-medium">{item.name}</h3>
+                      <p className="text-sm text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
+                    </div>
+                    <p className="font-semibold">₹{(item.price * item.quantity).toFixed(2)}</p>
+                  </Card>
+                );
+              })}
               <Separator />
               <div className="text-right font-semibold text-lg">
                 Subtotal: ₹{subtotal.toFixed(2)}
@@ -236,7 +241,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               )}
-              
+
               <h3 className="text-lg font-medium pt-4">Gift Card / Store Credit</h3>
               <div className="flex gap-2">
                 <Input placeholder="Enter code" value={giftCard} onChange={e => setGiftCard(e.target.value)} />
@@ -264,9 +269,9 @@ export default function CheckoutPage() {
                   <div className="flex justify-between text-sm text-muted-foreground"><span>Handling:</span><span>₹{HANDLING_CHARGE.toFixed(2)}</span></div>
                   <Separator/>
                   <div className="flex justify-between font-bold text-lg"><span>Total:</span><span>₹{totalAmount.toFixed(2)}</span></div>
-                  
+
                   <Separator className="my-4"/>
-                  
+
                   <div>
                     <h4 className="font-medium mb-1">Shipping to:</h4>
                     {shippingOption === 'saved' && savedAddresses.find(a => a.id === selectedAddressId) ? (

@@ -47,11 +47,20 @@ const nextConfig: NextConfig = {
         port: '',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com', // Added new domain
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'icon2.cleanpng.com', // Added new domain
+        port: '',
+        pathname: '/**',
+      }
     ],
   },
 };
 
 export default nextConfig;
-
-
-    

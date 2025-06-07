@@ -20,12 +20,16 @@ export function ProductCard({ product }: ProductCardProps) {
     addToCart(product, 1);
   };
 
+  const primaryImageUrl = product.imageUrls && product.imageUrls.length > 0
+    ? product.imageUrls[0]
+    : 'https://placehold.co/400x300.png'; // Fallback image
+
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl flex flex-col h-full group">
       <Link href={`/products/${product.slug}`} aria-label={product.name} className="block">
         <CardHeader className="p-0 relative">
           <Image
-            src={product.imageUrl}
+            src={primaryImageUrl}
             alt={product.name}
             width={400}
             height={300}
@@ -39,30 +43,30 @@ export function ProductCard({ product }: ProductCardProps) {
           )}
         </CardHeader>
       </Link>
-      <CardContent className="p-3 space-y-1.5 flex-grow"> {/* Adjusted padding and spacing */}
+      <CardContent className="p-3 space-y-1.5 flex-grow">
         <Link href={`/products/${product.slug}`} className="block">
-          <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-2 h-[2.8em]"> {/* Adjusted font size and height */}
+          <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-2 h-[2.8em]">
             {product.name}
           </CardTitle>
         </Link>
-        <p className="text-xs text-muted-foreground line-clamp-2 h-[2.4em]">{product.description}</p> {/* Adjusted font size and height */}
-        <div className="flex items-center justify-between pt-0.5"> {/* Adjusted padding top */}
-          <p className="text-lg font-bold text-primary">₹{product.price.toFixed(2)}</p> {/* Adjusted font size */}
+        <p className="text-xs text-muted-foreground line-clamp-2 h-[2.4em]">{product.description}</p>
+        <div className="flex items-center justify-between pt-0.5">
+          <p className="text-lg font-bold text-primary">₹{product.price.toFixed(2)}</p>
           {product.rating && (
-            <div className="flex items-center gap-0.5"> {/* Adjusted gap */}
-              <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /> {/* Adjusted icon size */}
-              <span className="text-xs text-muted-foreground">{product.rating.toFixed(1)} ({product.reviewsCount || 0})</span> {/* Adjusted font size */}
+            <div className="flex items-center gap-0.5">
+              <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />
+              <span className="text-xs text-muted-foreground">{product.rating.toFixed(1)} ({product.reviewsCount || 0})</span>
             </div>
           )}
         </div>
       </CardContent>
-      <CardFooter className="p-3 pt-0"> {/* Adjusted padding */}
+      <CardFooter className="p-3 pt-0">
         {product.stock && product.stock > 0 ? (
-           <Button className="w-full" size="sm" onClick={handleAddToCart}> {/* Added size="sm" */}
+           <Button className="w-full" size="sm" onClick={handleAddToCart}>
              <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
            </Button>
         ) : (
-          <Button className="w-full" size="sm" disabled variant="outline">Out of Stock</Button> /* Added size="sm" */
+          <Button className="w-full" size="sm" disabled variant="outline">Out of Stock</Button>
         )}
       </CardFooter>
     </Card>
