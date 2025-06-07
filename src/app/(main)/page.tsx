@@ -4,20 +4,20 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card'; // Removed CardFooter, CardHeader, CardTitle as they are not used for category display anymore
+import { Card, CardContent } from '@/components/ui/card';
 import { mockCategories, mockProducts } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { ProductCard } from '@/components/customer/ProductCard'; 
 import { ProductSuggester } from '@/components/customer/ProductSuggester';
-import { useState } from 'react'; // For homepage search
-import { Input } from '@/components/ui/input'; // For homepage search
-import { Search as SearchIcon, XCircle } from 'lucide-react'; // For homepage search and no results icon
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Search as SearchIcon, XCircle } from 'lucide-react';
 
 export default function HomePage() {
   const recommendedProducts = mockProducts.slice(0, 6); 
   const allCategories = mockCategories.slice(0, 9); // Displaying 9 categories
 
-  // State for homepage search
+  // State for homepage search (currently removed from UI, logic remains)
   const [searchTerm, setSearchTerm] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [hasSearched, setHasSearched] = useState(false);
@@ -51,7 +51,7 @@ export default function HomePage() {
       {/* Category Display Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 text-center">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-4"> {/* Adjusted grid for 9 items */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 md:gap-4"> {/* Adjusted grid for 9 items in 1 line on LG screens */}
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
               <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col aspect-square">
@@ -65,7 +65,6 @@ export default function HomePage() {
                     data-ai-hint={category.dataAiHint || 'category image'}
                   />
                 </CardContent>
-                {/* Category name removed from here as per previous request */}
               </Card>
             </Link>
           ))}
