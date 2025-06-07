@@ -5,9 +5,9 @@ import Link from 'next/link';
 export default function SignupPage() {
   return (
     <>
-      <h2 className="text-2xl font-semibold text-center mb-1">Create your Account</h2>
+      <h2 className="text-2xl font-semibold text-center mb-1">Create Your SpeedyShop Account</h2>
       <p className="text-sm text-muted-foreground text-center mb-6">
-        Join SpeedyShop Proto for lightning-fast deliveries.
+        Enter your email, create a password, and provide basic details to get started.
       </p>
       <AuthForm mode="signup" />
       <p className="mt-6 text-center text-sm">

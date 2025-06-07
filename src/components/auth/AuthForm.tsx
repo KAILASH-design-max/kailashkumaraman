@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation'; // Corrected import
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 
@@ -62,13 +62,13 @@ export function AuthForm({ mode }: AuthFormProps) {
     if (mode === 'login') {
       console.log('Login attempt:', values);
       // Mock success: In a real app, you'd set some auth state (e.g., in context or a global store)
-      toast({ title: 'Login Successful', description: 'Welcome back!' });
-      router.push('/'); // Redirect to homepage after login
+      toast({ title: 'Login Successful', description: 'Welcome to your dashboard!' });
+      router.push('/profile'); // Redirect to Account Dashboard
     } else {
       console.log('Signup attempt:', values);
       // Mock success
-      toast({ title: 'Signup Successful', description: 'Your account has been created. Please verify your email (simulated).' });
-      router.push('/auth/login'); // Redirect to login after signup
+      toast({ title: 'Signup Successful', description: 'Your account has been created. Welcome to your dashboard!' });
+      router.push('/profile'); // Redirect to Account Dashboard
     }
   }
 

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ShoppingCartIcon, UserCircle, Menu, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation'; // Added useRouter
 import {
   Sheet,
   SheetContent,
@@ -13,18 +13,18 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { useState } from 'react';
-import { useCart } from '@/hooks/useCart'; // Import useCart
+import { useCart } from '@/hooks/useCart';
 
 const navLinks = [
   // { href: '/', label: 'Home' }, // Removed
   // { href: '/products', label: 'Products' }, // Removed
-  // "My Orders" and "Smart List" are conditional or might be better suited inside a user profile dropdown later
 ];
 
 export function CustomerNavbar() {
   const pathname = usePathname();
+  const router = useRouter(); // Initialize useRouter
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Mock login state
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Mock login state, set to true to see "My Profile"
   const { getTotalItems } = useCart();
 
   const cartItemCount = getTotalItems();
@@ -33,9 +33,12 @@ export function CustomerNavbar() {
 
   const handleLogout = () => {
     // In a real app, you'd call an authentication service here
+    // For now, we'll simulate logout and redirect
+    console.log('User logging out from Navbar...');
     setIsLoggedIn(false);
-    // Optionally, redirect to home or login page
-    // router.push('/');
+    // Here you would clear any auth tokens, user state, etc.
+    // For mock purposes, we just change the state and redirect
+    router.push('/'); // Redirect to homepage after logout
     closeSheet();
   };
   
@@ -166,7 +169,6 @@ export function CustomerNavbar() {
         </nav>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
-          {/* Search bar removed */}
           <Button variant="ghost" size="icon" asChild>
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCartIcon className="h-5 w-5" />
