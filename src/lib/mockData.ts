@@ -1,3 +1,4 @@
+
 import type { Product, Category, Order, UserProfile, DeliveryPartner } from './types';
 
 export const mockCategories: Category[] = [
@@ -71,6 +72,84 @@ export const mockProducts: Product[] = [
   { id: 'prod36', slug: 'shampoo-herbal', name: 'Shampoo (Herbal)', description: 'Nourishing herbal shampoo.', price: 5.20, category: 'cat18', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'shampoo bottle', rating: 4.7, reviewsCount: 120, stock: 60 },
   { id: 'prod37', slug: 'dog-food-dry', name: 'Dog Food (Dry, 1kg)', description: 'Nutritious dry dog food.', price: 9.00, category: 'cat19', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'dog food', rating: 4.8, reviewsCount: 75, stock: 45 },
   { id: 'prod38', slug: 'sweet-paan', name: 'Sweet Paan (Single)', description: 'Traditional sweet betel leaf preparation.', price: 1.00, category: 'cat20', imageUrl: 'https://placehold.co/400x300.png', dataAiHint: 'sweet paan', rating: 4.9, reviewsCount: 200, stock: 150 },
+  {
+    id: 'prod39',
+    slug: 'kelloggs-corn-flakes-500g',
+    name: 'Kellogg’s Original Corn Flakes Cereal - 500g Box',
+    description: 'Classic crispy corn flakes, a popular breakfast choice.',
+    price: 4.50,
+    category: 'cat3', 
+    imageUrl: 'https://banner2.cleanpng.com/20180706/sak/kisspng-corn-flakes-breakfast-cereal-frosted-flakes-crunch-5b3ee9533ec330.6440127315308496192571.jpg',
+    dataAiHint: 'corn flakes',
+    rating: 4.6,
+    reviewsCount: 150,
+    stock: 70
+  },
+  {
+    id: 'prod40',
+    slug: 'maggi-masala-noodles-70g',
+    name: 'Nestlé Maggi 2-Minute Instant Masala Noodles - 70g Pack',
+    description: 'Quick and tasty Maggi masala noodles, ready in 2 minutes.',
+    price: 0.50,
+    category: 'cat3', 
+    imageUrl: 'https://banner2.cleanpng.com/20180802/iwj/7fe24f455f6efc4d7846117d09657c45.webp',
+    dataAiHint: 'instant noodles',
+    rating: 4.8,
+    reviewsCount: 300,
+    stock: 100
+  },
+  {
+    id: 'prod41',
+    slug: 'quaker-instant-oats-500g',
+    name: 'Quaker Instant Oats – Nutritious Breakfast Porridge – 500g',
+    description: 'Healthy and quick-cooking Quaker instant oats for a nutritious start.',
+    price: 3.80,
+    category: 'cat3', 
+    imageUrl: 'https://banner2.cleanpng.com/20180625/sgq/kisspng-breakfast-cereal-quaker-instant-oatmeal-quaker-oat-avena-5b31657d390cb6.5793488015299639012337.jpg',
+    dataAiHint: 'instant oats',
+    rating: 4.7,
+    reviewsCount: 120,
+    stock: 60
+  },
+  {
+    id: 'prod42',
+    slug: 'mtr-upma-instant-mix-200g',
+    name: 'MTR Upma Instant Mix – South Indian Style – 200g Pouch',
+    description: 'Authentic South Indian style Upma, ready in minutes with MTR instant mix.',
+    price: 1.50,
+    category: 'cat3', 
+    imageUrl: 'https://shop.mtrfoods.com/cdn/shop/products/Upma-170g-front_1024x1024@2x.png?v=1611241717',
+    dataAiHint: 'upma mix',
+    rating: 4.5,
+    reviewsCount: 90,
+    stock: 50
+  },
+  {
+    id: 'prod43',
+    slug: 'safal-frozen-green-peas-500g',
+    name: 'Safal Frozen Green Peas – Vacuum Packed – 500g',
+    description: 'Freshly frozen green peas, vacuum packed to retain freshness.',
+    price: 1.20,
+    category: 'cat2',
+    imageUrl: 'https://banner2.cleanpng.com/20180528/fai/kisspng-green-peas-vegetable-freezing-frozen-food-5b0c99d42ac8b1.7766075115275295566396.jpg',
+    dataAiHint: 'frozen peas',
+    rating: 4.6,
+    reviewsCount: 110,
+    stock: 80
+  },
+  {
+    id: 'prod44',
+    slug: 'mccain-frozen-french-fries-500g',
+    name: 'McCain Frozen French Fries – Crispy Potato Snack – 500g Pack',
+    description: 'Classic McCain french fries, ready to fry for a crispy snack.',
+    price: 2.50,
+    category: 'cat5', 
+    imageUrl: 'https://banner2.cleanpng.com/20180319/gwe/kisspng-french-fries-potato-frying-deep-frying-frozen-fren-potato-fries-5ab031d21d4000.2829797615214953788307.jpg',
+    dataAiHint: 'french fries',
+    rating: 4.7,
+    reviewsCount: 180,
+    stock: 90
+  }
 ];
 
 
@@ -132,3 +211,6 @@ export const mockOrders: Order[] = [
     estimatedDeliveryTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // Approx 15 mins
   }
 ];
+
+
+    
