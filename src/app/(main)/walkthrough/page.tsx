@@ -1,5 +1,5 @@
 
-import { UserPlus, LogIn, MailCheck, Settings, ListOrdered, MapPin, CreditCard, Heart, Bell, Shield, Zap, ShoppingBasket } from 'lucide-react';
+import { UserPlus, LogIn, MailCheck, Settings, ListOrdered, MapPin, CreditCard, Heart, Bell, Shield, Zap, ShoppingBasket, Repeat, MessageSquare, UserCog, HelpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
@@ -43,7 +43,7 @@ export default function WalkthroughPage() {
                 <strong>Enter Details:</strong>
                 <ul className="list-disc space-y-1 pl-6 mt-1">
                   <li><em>Required:</em> Email, Password, Full Name.</li>
-                  <li><em>Optional:</em> Phone Number (for order updates).</li>
+                  <li><em>Optional:</em> Phone Number (for order updates and optional verification).</li>
                 </ul>
               </li>
               <li>
@@ -70,68 +70,60 @@ export default function WalkthroughPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6 text-lg">
-            <p>Once logged in, access these key functions from your dashboard or by clicking your profile icon:</p>
+            <p>Once logged in, explore these essential account functions, typically found in your dashboard or by clicking your profile icon:</p>
             <div className="space-y-4">
               <div>
                 <h3 className="flex items-center text-xl font-semibold">
                   <ListOrdered className="mr-2 h-6 w-6 text-accent" />
-                  1. Order History &amp; Tracking
+                  1. Order Management
                 </h3>
                 <ul className="list-disc space-y-1 pl-8 mt-1">
-                  <li>View past and current orders.</li>
-                  <li>Check order status (e.g., Processing, Shipped, Delivered).</li>
-                  <li>Request returns/refunds (if applicable, through order details).</li>
+                  <li><strong>Track Orders:</strong> View your order history and current order status (e.g., Confirmed, Processing, Shipped, Delivered).</li>
+                  <li><strong>Reorder Purchases:</strong> Easily reorder items from your past purchases.</li>
+                  <li><strong>Manage Returns:</strong> Initiate and track returns or exchanges (if applicable, often through order details).</li>
                 </ul>
               </div>
               <div>
                 <h3 className="flex items-center text-xl font-semibold">
-                  <MapPin className="mr-2 h-6 w-6 text-accent" />
-                  2. Saved Addresses
+                  <UserCog className="mr-2 h-6 w-6 text-accent" />
+                  2. Profile & Preferences
                 </h3>
                 <ul className="list-disc space-y-1 pl-8 mt-1">
-                  <li>Add your home, work, or other frequently used addresses for faster checkout.</li>
-                  <li>Edit or remove old addresses as needed.</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="flex items-center text-xl font-semibold">
-                  <CreditCard className="mr-2 h-6 w-6 text-accent" />
-                  3. Payment Methods
-                </h3>
-                <ul className="list-disc space-y-1 pl-8 mt-1">
-                  <li>Securely save credit/debit card details.</li>
-                  <li>Link other payment services like PayPal (future feature).</li>
-                  <li>Set a default payment option for convenience.</li>
+                  <li><strong>Update Profile:</strong> Keep your personal details like name and contact information up-to-date.</li>
+                  <li><strong>Saved Addresses:</strong> Add and manage multiple delivery addresses (home, work) for faster checkout.</li>
+                  <li><strong>Payment Options:</strong> Securely store and manage credit/debit card details or link services like PayPal (future). Set a default payment method.</li>
+                  <li><strong>Preferences:</strong> Set your shopping preferences (e.g., favorite categories, dietary needs if applicable).</li>
                 </ul>
               </div>
               <div>
                 <h3 className="flex items-center text-xl font-semibold">
                   <Heart className="mr-2 h-6 w-6 text-accent" />
-                  4. Wishlist/Favorites
+                  3. Wishlists & Notifications
                 </h3>
                 <ul className="list-disc space-y-1 pl-8 mt-1">
-                  <li>Save products for later by clicking the heart icon (♡) on product listings.</li>
-                  <li>(Future Feature) Get alerts when wishlisted items go on sale or come back in stock.</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="flex items-center text-xl font-semibold">
-                  <Bell className="mr-2 h-6 w-6 text-accent" />
-                  5. Subscription &amp; Notifications
-                </h3>
-                <ul className="list-disc space-y-1 pl-8 mt-1">
-                  <li>Manage email/SMS alerts for order updates, special deals, and product restocks.</li>
-                  <li>Easily unsubscribe from promotional communications if preferred.</li>
+                  <li><strong>Create Wishlists:</strong> Save products you're interested in for later by clicking the heart icon (♡).</li>
+                  <li><strong>Set Notifications:</strong> Manage email/SMS alerts for order updates, promotional deals, and when wishlisted items are back in stock or on sale.</li>
+                  <li><strong>Manage Subscriptions:</strong> (If applicable) Manage any product subscriptions or recurring orders.</li>
                 </ul>
               </div>
               <div>
                 <h3 className="flex items-center text-xl font-semibold">
                   <Shield className="mr-2 h-6 w-6 text-accent" />
-                  6. Account Security
+                  4. Account Security
                 </h3>
                 <ul className="list-disc space-y-1 pl-8 mt-1">
-                  <li>(Future Feature) Enable two-factor authentication (2FA) for enhanced security.</li>
-                  <li>Change your password or update your registered email address.</li>
+                  <li><strong>Password Management:</strong> Change your password securely. Utilize password reset options if you forget your password.</li>
+                  <li><strong>Two-Factor Authentication (2FA):</strong> (Future Feature) Enable 2FA for an extra layer of security on your account.</li>
+                  <li><strong>Email/Phone Verification:</strong> Ensure your primary email and phone number are verified for account recovery and important communications.</li>
+                </ul>
+              </div>
+               <div>
+                <h3 className="flex items-center text-xl font-semibold">
+                  <HelpCircle className="mr-2 h-6 w-6 text-accent" />
+                  5. Support
+                </h3>
+                <ul className="list-disc space-y-1 pl-8 mt-1">
+                  <li><strong>Contact Support:</strong> Easily find ways to contact customer support for any login assistance, payment issues, or other queries.</li>
                 </ul>
               </div>
             </div>
@@ -180,5 +172,3 @@ export default function WalkthroughPage() {
     </div>
   );
 }
-
-    
