@@ -34,6 +34,14 @@ export default function HomePage() {
         </div>
       </section>
 
+      <section className="mb-12 bg-primary text-primary-foreground p-8 rounded-lg text-center">
+        <h2 className="text-3xl font-semibold mb-4">Tired of making lists?</h2>
+        <p className="text-lg mb-6">Let our AI craft your Smart Shopping List based on your needs!</p>
+        <Link href="/profile/smart-list" passHref>
+          <Button variant="secondary" size="lg">Try Smart List</Button>
+        </Link>
+      </section>
+
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6">Shop by Category</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -73,14 +81,6 @@ export default function HomePage() {
         </div>
       </section>
       
-      <section className="mb-12 bg-primary text-primary-foreground p-8 rounded-lg text-center">
-        <h2 className="text-3xl font-semibold mb-4">Tired of making lists?</h2>
-        <p className="text-lg mb-6">Let our AI craft your Smart Shopping List based on your needs!</p>
-        <Link href="/profile/smart-list" passHref>
-          <Button variant="secondary" size="lg">Try Smart List</Button>
-        </Link>
-      </section>
-
     </div>
   );
 }
