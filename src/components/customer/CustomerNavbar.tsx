@@ -2,19 +2,19 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon } from 'lucide-react'; // Added Search as SearchIcon
+import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
-import { usePathname, useRouter } from 'next/navigation'; 
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Sheet,
   SheetContent,
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
-import { Input } from '@/components/ui/input'; // Added Input import
+import { Input } from '@/components/ui/input';
 
 const navLinks: { href: string; label: string; icon?: React.ElementType }[] = [
   // { href: '/', label: 'Home' }, // Maintained as removed
@@ -45,21 +45,35 @@ const useAuth = () => {
 
 export function CustomerNavbar() {
   const pathname = usePathname();
-  const router = useRouter(); 
+  const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems } = useCart();
+  const [searchTerm, setSearchTerm] = useState('');
 
   const cartItemCount = getTotalItems();
 
   const closeSheet = () => setIsSheetOpen(false);
 
   const handleLogout = () => {
-    performLogout(); 
-    router.push('/'); 
+    performLogout();
+    router.push('/');
     closeSheet();
   };
-  
+
+  const handleSearchSubmit = () => {
+    if (searchTerm.trim()) {
+      router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
+      setSearchTerm(''); // Optionally clear search term after navigation
+    }
+  };
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  };
+
   const mainNavItems = [
     ...(isLoggedIn ? [
       { href: '/profile/orders', label: 'My Orders', icon: ListOrdered },
@@ -129,7 +143,7 @@ export function CustomerNavbar() {
               </div>
             </SheetContent>
           </Sheet>
-          
+
           {/* Desktop Logo and Nav */}
           <div className="hidden md:flex items-center">
             <Logo textSize="text-xl" iconSize={28} className="mr-6" />
@@ -148,10 +162,10 @@ export function CustomerNavbar() {
               ))}
             </nav>
           </div>
-          
+
           {/* Mobile-only Logo (when sheet is closed, appears next to hamburger) */}
           <div className="md:hidden"> {/* This logo is for mobile view when sheet is closed */}
-             <Logo textSize="text-lg" iconSize={24} href="/" /> 
+             <Logo textSize="text-lg" iconSize={24} href="/" />
           </div>
         </div>
 
@@ -162,6 +176,9 @@ export function CustomerNavbar() {
               type="search"
               placeholder="Search products..."
               className="w-full h-10 pl-10 pr-4 rounded-full border-border shadow-sm focus:ring-primary"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
             />
             <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
           </div>
@@ -184,7 +201,7 @@ export function CustomerNavbar() {
             <div className="hidden md:flex items-center space-x-2">
               <Button variant="ghost" size="sm" asChild>
                 <Link href="/profile">
-                  <User className="mr-2 h-4 w-4" /> 
+                  <User className="mr-2 h-4 w-4" />
                   My Profile
                 </Link>
               </Button>
@@ -206,4 +223,3 @@ export function CustomerNavbar() {
     </header>
   );
 }
-
