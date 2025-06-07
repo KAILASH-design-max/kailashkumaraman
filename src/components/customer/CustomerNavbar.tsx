@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown } from 'lucide-react';
+import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -75,6 +75,7 @@ export function CustomerNavbar() {
   };
 
   useEffect(() => {
+    // Calculate delivery time only on the client-side after mount
     setDeliveryTime(calculateDeliveryTime());
   }, []);
 
@@ -171,8 +172,8 @@ export function CustomerNavbar() {
 
         {/* --- Desktop View --- */}
         {/* Left Section: Logo and Delivery Info */}
-        <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
-          <Logo textSize="text-3xl" /> {/* Slightly larger text size for blinkit logo */}
+        <div className="hidden md:flex items-center space-x-6 flex-shrink-0"> {/* Increased space-x-4 to space-x-6 */}
+          <Logo textSize="text-3xl" /> 
           
           <LocationDialog 
               open={isLocationDialogOpen} 
@@ -221,14 +222,14 @@ export function CustomerNavbar() {
         <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
            {isLoggedIn ? (
              <Link href="/profile" passHref>
-               <Button variant="ghost" className="text-sm font-medium px-3 py-2 hover:bg-gray-100">
-                  My Account
+               <Button variant="ghost" size="icon" aria-label="My Profile">
+                  <UserCircle className="h-7 w-7" />
                </Button>
              </Link>
            ) : (
             <Link href="/auth/login" passHref>
-              <Button variant="ghost" className="text-sm font-medium px-3 py-2 hover:bg-gray-100">
-                Login
+              <Button variant="ghost" size="icon" aria-label="Login or Sign up">
+                 <UserCircle className="h-7 w-7" />
               </Button>
             </Link>
            )}
