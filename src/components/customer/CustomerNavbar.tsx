@@ -123,7 +123,7 @@ export function CustomerNavbar() {
           </SheetTrigger>
           <SheetContent side="left" className="w-[300px] sm:w-[400px] flex flex-col">
             <SheetClose asChild>
-                <Logo textSize="text-xl" className="mb-4 p-2 border-b"/>
+                <Logo icon={ShoppingCartIcon} textSize="text-xl" className="mb-4 p-2 border-b"/>
             </SheetClose>
             <nav className="flex flex-col gap-2 mt-4 flex-grow">
               {mainSheetNavItems.map((link) => ( // Using mainSheetNavItems for mobile
@@ -172,8 +172,8 @@ export function CustomerNavbar() {
 
         {/* --- Desktop View --- */}
         {/* Left Section: Logo and Delivery Info */}
-        <div className="hidden md:flex items-center space-x-6 flex-shrink-0"> {/* Increased space-x-4 to space-x-6 */}
-          <Logo textSize="text-3xl" /> 
+        <div className="hidden md:flex items-center space-x-6 flex-shrink-0"> 
+          <Logo icon={ShoppingCartIcon} textSize="text-3xl" iconSize={30} /> 
           
           <LocationDialog 
               open={isLocationDialogOpen} 
@@ -197,19 +197,19 @@ export function CustomerNavbar() {
         </div>
         
         {/* Mobile Logo (appears next to hamburger if needed, if desktop logo is hidden first) */}
-         <div className="md:hidden flex-1"> {/* Use flex-1 to push cart to the right on mobile if search is not there */}
-            <Logo textSize="text-xl" href="/" className="ml-2" />
+         <div className="md:hidden flex-1"> 
+            <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
         </div>
 
 
         {/* Middle Section: Search Bar (Desktop) */}
-        <div className="hidden md:flex flex-1 justify-center px-4">
-          <div className="relative w-full max-w-lg"> {/* Max width for search bar */}
+        <div className="hidden md:flex flex-1 justify-center px-4 mr-2"> {/* Added mr-2 for spacing */}
+          <div className="relative w-full max-w-lg"> 
             <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder='Search "butter"'
-              className="h-11 w-full pl-10 pr-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary" // Adjusted padding and style
+              className="h-11 w-full pl-10 pr-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary" 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchKeyDown}
@@ -222,14 +222,14 @@ export function CustomerNavbar() {
         <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
            {isLoggedIn ? (
              <Link href="/profile" passHref>
-               <Button variant="ghost" size="icon" aria-label="My Profile">
-                  <UserCircle className="h-7 w-7" />
+               <Button variant="ghost" className="px-3 py-2 h-11 text-sm">
+                  Profile
                </Button>
              </Link>
            ) : (
             <Link href="/auth/login" passHref>
-              <Button variant="ghost" size="icon" aria-label="Login or Sign up">
-                 <UserCircle className="h-7 w-7" />
+              <Button variant="ghost" className="px-3 py-2 h-11 text-sm">
+                 Login
               </Button>
             </Link>
            )}
@@ -240,7 +240,7 @@ export function CustomerNavbar() {
             className="text-white hover:bg-green-700 px-4 py-2 h-11 rounded-md text-sm"
           >
             <ShoppingCartIcon className="mr-2 h-5 w-5" />
-            <div className="flex flex-col items-start -my-1"> {/* Adjusted for two lines */}
+            <div className="flex flex-col items-start -my-1"> 
               <span className="text-xs leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</span>
               <span className="font-semibold leading-tight">₹{cartTotalAmount.toFixed(2)}</span>
             </div>
