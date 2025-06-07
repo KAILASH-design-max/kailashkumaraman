@@ -102,21 +102,17 @@ export default function HomePage() {
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
               <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
-                <CardContent className="p-0">
+                <CardContent className="p-0 flex-grow"> {/* Added flex-grow to CardContent */}
                   <Image
                     src={category.imageUrl}
                     alt={category.name}
                     width={200}
                     height={150}
-                    className="aspect-[4/3] w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="aspect-[4/3] w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" // Added h-full
                     data-ai-hint={category.dataAiHint || 'category image'}
                   />
                 </CardContent>
-                <CardFooter className="p-2 bg-card/80 backdrop-blur-sm mt-auto"> {/* Adjusted padding */}
-                  <h3 className="text-xs sm:text-sm font-medium w-full group-hover:text-primary transition-colors line-clamp-2 leading-tight"> {/* Adjusted text size and line-clamp */}
-                    {category.name}
-                  </h3>
-                </CardFooter>
+                {/* CardFooter with category name has been removed */}
               </Card>
             </Link>
           ))}
