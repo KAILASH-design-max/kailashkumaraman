@@ -40,16 +40,16 @@ export function ProductSuggester() {
   return (
     <section className="mb-12">
       <Card className="bg-gray-50 shadow-md rounded-lg border border-gray-200">
-        <CardHeader className="pt-4 pb-2">
+        <CardHeader className="pt-4 pb-2 px-4 text-left"> {/* Ensure header text is left-aligned */}
           <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center">
             <Sparkles className="h-6 w-6 text-primary mr-2" />
             Get Product Recommendations
           </CardTitle>
-          <CardDescription className="text-md text-muted-foreground max-w-2xl mt-1 px-2">
+          <CardDescription className="text-md text-muted-foreground mt-1"> {/* Removed max-w-2xl and mx-auto */}
             Tell us what you&apos;re looking for (e.g., &quot;healthy breakfast items&quot;, &quot;dinner for two&quot;, &quot;party snacks&quot;) and we&apos;ll suggest some items!
           </CardDescription>
         </CardHeader>
-        <CardContent className="max-w-xl mx-auto pb-4 px-4">
+        <CardContent className="pb-4 px-4"> {/* Removed max-w-xl and mx-auto */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-2">
               <Input
@@ -57,15 +57,15 @@ export function ProductSuggester() {
                 value={query}
                 onChange={(e) => {
                   setQuery(e.target.value);
-                  if (error && e.target.value.trim()) setError(null); 
+                  if (error && e.target.value.trim()) setError(null);
                 }}
                 placeholder="e.g., 'quick lunch ideas'"
                 className="h-11 text-base border-gray-300 focus:border-primary focus:ring-primary flex-grow rounded-md"
                 aria-label="Product suggestion query"
               />
-              <Button 
-                type="submit" 
-                className="h-11 text-sm font-medium text-white px-4 rounded-md" 
+              <Button
+                type="submit"
+                className="h-11 text-sm font-medium text-white px-4 rounded-md"
                 style={{ backgroundColor: '#4F63AC' }}
                 onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#40529B'}
                 onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4F63AC'}
@@ -95,7 +95,7 @@ export function ProductSuggester() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-          
+
           {!isLoading && !suggestionsOutput && !error && !query.trim() && (
              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm text-left">
                 Please enter a query for recommendations.
