@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon } from 'lucide-react';
+import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered } from 'lucide-react'; // Removed SearchIcon
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -12,9 +12,9 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { useState, useEffect, type KeyboardEvent } from 'react';
+import { useState, useEffect } from 'react'; // Removed type KeyboardEvent
 import { useCart } from '@/hooks/useCart';
-import { Input } from '@/components/ui/input';
+// import { Input } from '@/components/ui/input'; // Removed Input import
 
 const navLinks: { href: string; label: string; icon?: React.ElementType }[] = [
   // { href: '/', label: 'Home' }, // Maintained as removed
@@ -49,7 +49,7 @@ export function CustomerNavbar() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems } = useCart();
-  const [searchTerm, setSearchTerm] = useState('');
+  // const [searchTerm, setSearchTerm] = useState(''); // Removed searchTerm state
 
   const cartItemCount = getTotalItems();
 
@@ -61,18 +61,7 @@ export function CustomerNavbar() {
     closeSheet();
   };
 
-  const handleSearchSubmit = () => {
-    if (searchTerm.trim()) {
-      router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(''); // Optionally clear search term after navigation
-    }
-  };
-
-  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      handleSearchSubmit();
-    }
-  };
+  // Removed handleSearchSubmit and handleSearchKeyDown functions
 
   const mainNavItems = [
     ...(isLoggedIn ? [
@@ -87,7 +76,7 @@ export function CustomerNavbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         {/* Left part: Mobile Menu toggle and Desktop Logo + Nav */}
-        <div className="flex items-center">
+        <div className="flex items-center flex-shrink-0"> {/* Added flex-shrink-0 to prevent squishing */}
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild className="md:hidden mr-2">
               <Button variant="ghost" size="icon">
@@ -169,23 +158,11 @@ export function CustomerNavbar() {
           </div>
         </div>
 
-        {/* Middle part: Search Bar (Desktop only for now) */}
-        <div className="flex-1 flex justify-center px-4">
-          <div className="hidden md:flex relative w-full max-w-md">
-            <Input
-              type="search"
-              placeholder="Search products..."
-              className="w-full h-10 pl-10 pr-4 rounded-full border-border shadow-sm focus:ring-primary"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-            />
-            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-          </div>
-        </div>
+        {/* Middle part: This section previously held the search bar, now it acts as a spacer */}
+        <div className="flex-1" /> 
 
         {/* Right part: Actions (Cart, Profile/Login) */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0"> {/* Added flex-shrink-0 */}
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCartIcon className="h-5 w-5" />
