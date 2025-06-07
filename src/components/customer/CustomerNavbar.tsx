@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered } from 'lucide-react'; // Removed SearchIcon
+import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -12,21 +12,18 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { useState, useEffect } from 'react'; // Removed type KeyboardEvent
+import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
-// import { Input } from '@/components/ui/input'; // Removed Input import
+import { Input } from '@/components/ui/input';
 
 const navLinks: { href: string; label: string; icon?: React.ElementType }[] = [
-  // { href: '/', label: 'Home' }, // Maintained as removed
-  // { href: '/products', label: 'Products' }, // Maintained as removed
+  // { href: '/', label: 'Home' },
+  // { href: '/products', label: 'Products' },
 ];
 
-// Representing user's login state; in a real app, this would come from auth context/store
 const useAuth = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  // Simulate checking auth status on mount
   useEffect(() => {
-    // Replace with actual auth check, e.g., checking localStorage, cookie, or calling an API
     const loggedInStatus = typeof window !== 'undefined' && localStorage.getItem('isMockLoggedIn') === 'true';
     setIsLoggedIn(loggedInStatus);
   }, []);
@@ -49,7 +46,7 @@ export function CustomerNavbar() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems } = useCart();
-  // const [searchTerm, setSearchTerm] = useState(''); // Removed searchTerm state
+  const [searchTerm, setSearchTerm] = useState('');
 
   const cartItemCount = getTotalItems();
 
@@ -61,7 +58,18 @@ export function CustomerNavbar() {
     closeSheet();
   };
 
-  // Removed handleSearchSubmit and handleSearchKeyDown functions
+  const handleSearchSubmit = () => {
+    if (searchTerm.trim()) {
+      router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
+      closeSheet(); // Close sheet if open after search
+    }
+  };
+
+  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      handleSearchSubmit();
+    }
+  };
 
   const mainNavItems = [
     ...(isLoggedIn ? [
@@ -76,7 +84,7 @@ export function CustomerNavbar() {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
         {/* Left part: Mobile Menu toggle and Desktop Logo + Nav */}
-        <div className="flex items-center flex-shrink-0"> {/* Added flex-shrink-0 to prevent squishing */}
+        <div className="flex items-center flex-shrink-0">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
             <SheetTrigger asChild className="md:hidden mr-2">
               <Button variant="ghost" size="icon">
@@ -133,7 +141,6 @@ export function CustomerNavbar() {
             </SheetContent>
           </Sheet>
 
-          {/* Desktop Logo and Nav */}
           <div className="hidden md:flex items-center">
             <Logo textSize="text-xl" iconSize={28} className="mr-6" />
             <nav className="flex items-center space-x-4 text-sm font-medium">
@@ -152,17 +159,37 @@ export function CustomerNavbar() {
             </nav>
           </div>
 
-          {/* Mobile-only Logo (when sheet is closed, appears next to hamburger) */}
-          <div className="md:hidden"> {/* This logo is for mobile view when sheet is closed */}
+          <div className="md:hidden">
              <Logo textSize="text-lg" iconSize={24} href="/" />
           </div>
         </div>
 
-        {/* Middle part: This section previously held the search bar, now it acts as a spacer */}
-        <div className="flex-1" /> 
+        {/* Middle part: Search Bar */}
+        <div className="flex-1 px-4 sm:px-8 md:px-12 lg:px-20">
+          <div className="relative w-full max-w-md mx-auto">
+            <Input
+              type="search"
+              placeholder="Search for products..."
+              className="h-10 w-full pr-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              aria-label="Search products"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2"
+              onClick={handleSearchSubmit}
+              aria-label="Submit search"
+            >
+              <SearchIcon className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
 
         {/* Right part: Actions (Cart, Profile/Login) */}
-        <div className="flex items-center space-x-2 flex-shrink-0"> {/* Added flex-shrink-0 */}
+        <div className="flex items-center space-x-2 flex-shrink-0">
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCartIcon className="h-5 w-5" />
