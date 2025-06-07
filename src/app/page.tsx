@@ -1,3 +1,5 @@
-export default function Home() {
-  return <></>;
+import HomePage from "./(main)/page";
+
+export default function RootPage() {
+  return <HomePage />;
 }
