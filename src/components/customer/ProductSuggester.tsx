@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -38,58 +39,71 @@ export function ProductSuggester() {
 
   return (
     <section className="mb-12">
-      <Card className="shadow-xl bg-gradient-to-br from-primary/10 via-background to-secondary/10 border-primary/20">
-        <CardHeader className="text-center pt-8 pb-4">
-          <div className="flex items-center justify-center mb-3">
-            <Sparkles className="h-10 w-10 text-primary" />
+      <Card className="bg-gray-50 shadow-md rounded-lg border border-gray-200">
+        <CardHeader className="text-center pt-6 pb-3">
+          <div className="flex items-center justify-center mb-2">
+            <Sparkles className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold text-primary">
+          <CardTitle className="text-2xl font-semibold text-gray-800">
             Get Product Recommendations
           </CardTitle>
-          <CardDescription className="text-lg text-muted-foreground max-w-2xl mx-auto mt-2 px-2">
+          <CardDescription className="text-md text-muted-foreground max-w-2xl mx-auto mt-1 px-2">
             Tell us what you&apos;re looking for (e.g., &quot;healthy breakfast items&quot;, &quot;dinner for two&quot;, &quot;party snacks&quot;) and we&apos;ll suggest some items!
           </CardDescription>
         </CardHeader>
-        <CardContent className="max-w-xl mx-auto pb-8 px-6">
+        <CardContent className="max-w-xl mx-auto pb-6 px-6">
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="text"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                if (error && e.target.value.trim()) setError(null); // Clear error on new input
-              }}
-              placeholder="e.g., 'quick lunch ideas'"
-              className="h-12 text-base border-border focus:border-primary focus:ring-primary"
-              aria-label="Product suggestion query"
-            />
-            <Button type="submit" className="w-full h-12 text-lg font-semibold" disabled={isLoading}>
-              {isLoading ? (
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              ) : (
-                <Sparkles className="mr-2 h-5 w-5" />
-              )}
-              Suggest Items ✨
-            </Button>
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  if (error && e.target.value.trim()) setError(null); 
+                }}
+                placeholder="e.g., 'quick lunch ideas'"
+                className="h-11 text-base border-gray-300 focus:border-primary focus:ring-primary flex-grow rounded-md"
+                aria-label="Product suggestion query"
+              />
+              <Button 
+                type="submit" 
+                className="h-11 text-sm font-medium bg-[#708238] hover:bg-[#5f702f] text-white px-4 rounded-md" 
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-1.5 h-4 w-4" />
+                )}
+                Suggest Items
+              </Button>
+            </div>
           </form>
 
           {isLoading && (
-            <div className="mt-6 flex items-center justify-center text-muted-foreground">
+            <div className="mt-4 flex items-center justify-center text-muted-foreground">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               <span>Getting suggestions...</span>
             </div>
           )}
 
           {error && !isLoading && (
-            <Alert variant="destructive" className="mt-6">
+            <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Oops!</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+          
+          {/* Styled placeholder message for when input is empty and no search active */}
+          {!isLoading && !suggestionsOutput && !error && !query.trim() && (
+             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm">
+                Please enter a query for recommendations.
+            </div>
+          )}
 
           {suggestionsOutput && !isLoading && (
-            <div className="mt-8 p-6 bg-background rounded-lg shadow-md">
+            <div className="mt-6 p-4 bg-white rounded-lg shadow">
               {suggestionsOutput.message && (!suggestionsOutput.suggestedProducts || suggestionsOutput.suggestedProducts.length === 0) && (
                 <Alert variant="default" className="border-primary/50">
                   <Lightbulb className="h-4 w-4 text-primary" />
@@ -99,21 +113,15 @@ export function ProductSuggester() {
               )}
               {suggestionsOutput.suggestedProducts && suggestionsOutput.suggestedProducts.length > 0 && (
                 <>
-                  <h3 className="text-xl font-semibold mb-3 text-center text-primary">Here are some ideas:</h3>
-                  <ul className="space-y-2 list-disc list-inside bg-secondary/30 p-4 rounded-md">
+                  <h3 className="text-lg font-semibold mb-2 text-center text-primary">Here are some ideas:</h3>
+                  <ul className="space-y-1.5 list-disc list-inside bg-secondary/20 p-3 rounded-md">
                     {suggestionsOutput.suggestedProducts.map((item, index) => (
-                      <li key={index} className="text-card-foreground">{item}</li>
+                      <li key={index} className="text-gray-700">{item}</li>
                     ))}
                   </ul>
                 </>
               )}
             </div>
-          )}
-          
-          {!isLoading && !suggestionsOutput && !error && !query.trim() && (
-             <p className="mt-6 text-center text-muted-foreground italic">
-                Type a query above to get suggestions.
-            </p>
           )}
         </CardContent>
       </Card>
