@@ -14,8 +14,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription }
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
 import type { CartItem } from '@/lib/types';
-import { CheckCircle, Package, MapPin, CreditCard, Edit3, PlusCircle, Trash2, ChevronLeft, Tag, AlertCircle } from 'lucide-react';
+import { CheckCircle, Package, MapPin, CreditCard, Edit3, PlusCircle, Trash2, ChevronLeft, Tag, AlertCircle, ChevronDown } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
 const DELIVERY_CHARGE_AMOUNT = 50;
@@ -43,7 +49,7 @@ interface MockPromoCode {
 const mockPromoCodes: MockPromoCode[] = [
   { code: 'SAVE10', type: 'percentage', value: 0.10, description: '10% off your order' },
   { code: 'FLAT50', type: 'fixed', value: 50, description: 'Flat ₹50 off' },
-  { code: 'FREEDEL', type: 'fixed', value: DELIVERY_CHARGE_AMOUNT, description: 'Free Delivery (up to ₹50)' }, // Technically fixed for delivery
+  { code: 'FREEDEL', type: 'fixed', value: DELIVERY_CHARGE_AMOUNT, description: 'Free Delivery (up to ₹50)' },
 ];
 
 
@@ -80,8 +86,8 @@ export default function CheckoutPage() {
 
   const deliveryCharge = useMemo(() => {
     if (appliedPromoCode?.code === 'FREEDEL' && subtotal > 0) return 0; // Free delivery if FREEDEL applied
-    return subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0 ? DELIVERY_CHARGE_AMOUNT : 0;
-  }, [subtotal, appliedPromoCode]);
+    return discountedSubtotal < DELIVERY_CHARGE_THRESHOLD && discountedSubtotal > 0 ? DELIVERY_CHARGE_AMOUNT : 0;
+  }, [discountedSubtotal, subtotal, appliedPromoCode]);
   
   const gstAmount = discountedSubtotal > 0 ? discountedSubtotal * GST_RATE : 0;
   const totalAmount = discountedSubtotal > 0 ? discountedSubtotal + deliveryCharge + gstAmount + HANDLING_CHARGE : 0;
@@ -112,17 +118,15 @@ export default function CheckoutPage() {
         discount = subtotal * codeToApply.value;
       } else if (codeToApply.type === 'fixed') {
         discount = codeToApply.value;
-        // Special handling for FREEDEL to ensure it doesn't exceed actual delivery charge.
         if (codeToApply.code === 'FREEDEL') {
             const actualDeliveryCharge = subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0 ? DELIVERY_CHARGE_AMOUNT : 0;
             discount = Math.min(codeToApply.value, actualDeliveryCharge);
         }
       }
       
-      // Ensure discount does not make subtotal negative
       discount = Math.min(discount, subtotal);
 
-      if (discount <= 0 && codeToApply.code !== 'FREEDEL') { // FREEDEL might apply 0 if delivery is already free
+      if (discount <= 0 && !(codeToApply.code === 'FREEDEL' && (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0)) ) {
          setPromoMessage({ type: 'info', text: `Promo code "${codeToApply.code}" cannot be applied or provides no discount for your current cart.` });
          setAppliedPromoCode(null);
       } else {
@@ -292,10 +296,39 @@ export default function CheckoutPage() {
                 </Card>
               )}
               <div className="pt-4 space-y-2">
-                <Label htmlFor="promoCode" className="text-lg font-medium flex items-center"><Tag className="mr-2 h-5 w-5 text-primary" />Gift Card / Promo Code</Label>
-                <div className="flex gap-2">
-                  <Input id="promoCode" placeholder="Enter code (e.g., SAVE10)" value={promoCodeInput} onChange={e => setPromoCodeInput(e.target.value)} />
-                  <Button variant="outline" onClick={handleApplyPromoCode}>Apply</Button>
+                <Label htmlFor="promoCode" className="text-lg font-medium flex items-center">
+                  <Tag className="mr-2 h-5 w-5 text-primary" />Gift Card / Promo Code
+                </Label>
+                <div className="flex items-center gap-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
+                        <ChevronDown className="h-4 w-4" />
+                        <span className="sr-only">Show Promo Codes</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      {mockPromoCodes.map((promo) => (
+                        <DropdownMenuItem
+                          key={promo.code}
+                          onClick={() => {
+                            setPromoCodeInput(promo.code);
+                            setPromoMessage(null); // Clear previous messages
+                          }}
+                        >
+                          {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description}</span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Input 
+                    id="promoCode" 
+                    placeholder="Enter code" 
+                    value={promoCodeInput} 
+                    onChange={e => setPromoCodeInput(e.target.value)} 
+                    className="flex-grow"
+                  />
+                  <Button variant="outline" onClick={handleApplyPromoCode} className="shrink-0">Apply</Button>
                 </div>
                 {promoMessage && (
                     <Alert variant={promoMessage.type === 'error' ? 'destructive' : 'default'} className={`text-sm mt-2 ${promoMessage.type === 'success' ? 'border-green-500 bg-green-50 text-green-700 [&>svg]:text-green-700' : promoMessage.type === 'error' ? 'border-red-500 bg-red-50 text-red-700' : 'border-blue-500 bg-blue-50 text-blue-700 [&>svg]:text-blue-700'}`}>
@@ -305,7 +338,7 @@ export default function CheckoutPage() {
                     </Alert>
                 )}
                  <div className="text-xs text-muted-foreground pt-1">
-                    Available codes: SAVE10 (10% off), FLAT50 (₹50 off), FREEDEL (Free Delivery).
+                    Select from dropdown or enter code. Available codes: SAVE10, FLAT50, FREEDEL.
                 </div>
               </div>
               <Button onClick={() => setCurrentStep('finalReview')} className="w-full sm:w-auto float-right mt-4">Next: Review Order</Button>
@@ -372,3 +405,5 @@ export default function CheckoutPage() {
   );
 }
 
+
+    
