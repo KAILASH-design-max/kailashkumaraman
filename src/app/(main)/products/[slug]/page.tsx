@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { mockProducts, mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle } from 'lucide-react';
+import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle } from 'lucide-react'; // Added XCircle
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -17,7 +17,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCart } from '@/hooks/useCart';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react'; // Imported 'use'
 
 // Helper to simulate fetching a product by slug (can be adapted for actual API calls)
 async function getProductBySlug(slug: string): Promise<Product | undefined> {
@@ -26,20 +26,31 @@ async function getProductBySlug(slug: string): Promise<Product | undefined> {
   return mockProducts.find(p => p.slug === slug);
 }
 
-export default function ProductDetailPage({ params }: { params: { slug: string } }) {
+export default function ProductDetailPage({ params: paramsFromProps }: { params: { slug: string } }) {
+  // Per Next.js warning, params object should be unwrapped using React.use
+  // We cast paramsFromProps to `any` because its declared type is a plain object,
+  // but the warning suggests it should be treated as a promise for `use`.
+  const resolvedParams = use(paramsFromProps as any);
+  const slug = resolvedParams.slug;
+
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
 
   useEffect(() => {
     async function loadProduct() {
+      if (!slug) {
+        setProduct(null);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
-      const fetchedProduct = await getProductBySlug(params.slug);
+      const fetchedProduct = await getProductBySlug(slug);
       setProduct(fetchedProduct || null);
       setLoading(false);
     }
     loadProduct();
-  }, [params.slug]);
+  }, [slug]); // Depend on the resolved slug
 
   if (loading) {
     return (
@@ -121,7 +132,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
             </div>
           ) : (
             <div className="flex items-center space-x-2 text-destructive">
-              <CheckCircle className="h-5 w-5" />
+              <XCircle className="h-5 w-5" /> {/* Changed icon here */}
               <span>Out of Stock</span>
             </div>
           )}
@@ -134,7 +145,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
             ) : (
                <Button size="lg" className="w-full md:w-auto flex-grow" disabled>
                 <ShoppingCart className="mr-2 h-5 w-5" /> Out of Stock
-              </Button>
+               </Button>
             )}
           </div>
           
