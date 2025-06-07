@@ -55,7 +55,7 @@ export default function HomePage() {
       {/* Product Search Section */}
       <section className="mb-12">
         <div className="max-w-2xl mx-auto bg-card p-6 rounded-lg shadow-lg">
-          <h2 className="text-2xl font-semibold mb-4 text-center text-card-foreground">Search Products</h2>
+          
           <div className="flex flex-col sm:flex-row gap-3">
             <Input
               type="search"
