@@ -1,8 +1,8 @@
 
 'use client';
 
-import { CustomerNavbar } from '@/components/customer/CustomerNavbar';
 // CartProvider is removed from here as it's now in the RootLayout
+// CustomerNavbar is removed as it's now handled by RootLayout
 
 export default function MainLayout({
   children,
@@ -12,7 +12,7 @@ export default function MainLayout({
   return (
     // <CartProvider> No longer needed here
       <div className="flex min-h-screen flex-col">
-        <CustomerNavbar />
+        {/* <CustomerNavbar /> */} {/* Removed from here */}
         <main className="flex-1">{children}</main>
         <footer className="py-6 md:px-8 md:py-0 border-t">
           <div className="container flex flex-col items-center justify-between gap-4 md:h-20 md:flex-row">

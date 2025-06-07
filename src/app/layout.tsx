@@ -1,11 +1,13 @@
 
-'use client'; // Make RootLayout a client component for CartProvider
+'use client';
 
 // Removed Metadata import as it's no longer used directly for export
 // import type { Metadata } from 'next';
 import { Toaster } from "@/components/ui/toaster";
 import './globals.css';
-import { CartProvider } from '@/components/providers/CartProvider'; // Import CartProvider
+import { CartProvider } from '@/components/providers/CartProvider';
+import { CustomerNavbar } from '@/components/customer/CustomerNavbar';
+import { usePathname } from 'next/navigation';
 
 // Note: Metadata export is NOT supported in client components at the root level.
 // We remove it to fix the build error. Global metadata would need to be handled
@@ -20,6 +22,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isAuthPage = pathname.startsWith('/auth');
+
   return (
     <html lang="en">
       <head>
@@ -32,7 +37,8 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <CartProvider> {/* Wrap children with CartProvider */}
+        <CartProvider>
+          {!isAuthPage && <CustomerNavbar />}
           {children}
           <Toaster />
         </CartProvider>
