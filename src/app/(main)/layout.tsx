@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,9 +11,10 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [year, setYear] = useState<number | null>(null);
+  const [year, setYear] = useState<number | null>(null); // Initialize to null
 
   useEffect(() => {
+    // Set year on the client side after mount
     setYear(new Date().getFullYear());
   }, []);
 

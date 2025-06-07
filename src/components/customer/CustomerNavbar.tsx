@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown } from 'lucide-react';
+import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -25,32 +25,31 @@ const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType
 
 
 const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  useEffect(() => {
-    const loggedInStatus = typeof window !== 'undefined' && localStorage.getItem('isMockLoggedIn') === 'true';
-    setIsLoggedIn(loggedInStatus);
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Initialize to a server-renderable default
 
-    const handleStorageChange = () => {
-        const currentLoggedInStatus = localStorage.getItem('isMockLoggedIn') === 'true';
-        if (isLoggedIn !== currentLoggedInStatus) {
-            setIsLoggedIn(currentLoggedInStatus);
-        }
+  useEffect(() => {
+    // This runs only on the client after hydration
+    const checkAuthStatus = () => {
+      const loggedInStatus = localStorage.getItem('isMockLoggedIn') === 'true';
+      setIsLoggedIn(loggedInStatus);
     };
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('focus', handleStorageChange); 
+
+    checkAuthStatus(); // Initial check on mount
+
+    window.addEventListener('storage', checkAuthStatus); // Listen for changes in other tabs
+    window.addEventListener('focus', checkAuthStatus); // Listen for when window regains focus
 
     return () => {
-        window.removeEventListener('storage', handleStorageChange);
-        window.removeEventListener('focus', handleStorageChange);
+      window.removeEventListener('storage', checkAuthStatus);
+      window.removeEventListener('focus', checkAuthStatus);
     };
-  }, [isLoggedIn]); 
-
+  }, []); // Empty dependency array ensures this runs once on mount client-side
 
   const logout = () => {
     if (typeof window !== 'undefined') localStorage.removeItem('isMockLoggedIn');
-    setIsLoggedIn(false);
+    setIsLoggedIn(false); // Update state immediately
   };
-  return { isLoggedIn, logout }; 
+  return { isLoggedIn, logout };
 };
 
 
@@ -61,22 +60,23 @@ export function CustomerNavbar() {
   const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems, getCartTotal } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const [deliveryTime, setDeliveryTime] = useState<number | null>(null);
+
+  const [deliveryTime, setDeliveryTime] = useState<number | null>(null); // Initialize to null
   const [currentLocation, setCurrentLocation] = useState("Daryaganj, Delhi, 110002, India");
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
 
   const calculateDeliveryTime = () => {
-    return Math.floor(Math.random() * 21) + 10; 
+    return Math.floor(Math.random() * 21) + 10;
   };
 
   useEffect(() => {
+    // Set delivery time on the client side after mount
     setDeliveryTime(calculateDeliveryTime());
   }, []);
 
   const handleLocationUpdate = (newLocation: string) => {
     setCurrentLocation(newLocation);
-    setDeliveryTime(calculateDeliveryTime()); 
+    setDeliveryTime(calculateDeliveryTime());
     setIsLocationDialogOpen(false);
   };
 
@@ -94,8 +94,8 @@ export function CustomerNavbar() {
   const handleSearchSubmit = () => {
     if (searchTerm.trim()) {
       router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(''); 
-      closeSheet(); 
+      setSearchTerm('');
+      closeSheet();
     }
   };
 
@@ -161,11 +161,11 @@ export function CustomerNavbar() {
           </SheetContent>
         </Sheet>
 
-        <div className="hidden md:flex items-center space-x-6 flex-shrink-0"> 
-          <Logo icon={ShoppingCartIcon} textSize="text-3xl" iconSize={30} /> 
-          
-          <LocationDialog 
-              open={isLocationDialogOpen} 
+        <div className="hidden md:flex items-center space-x-6 flex-shrink-0">
+          <Logo icon={ShoppingCartIcon} textSize="text-3xl" iconSize={30} />
+
+          <LocationDialog
+              open={isLocationDialogOpen}
               onOpenChange={setIsLocationDialogOpen}
               onLocationUpdate={handleLocationUpdate}
           >
@@ -184,18 +184,18 @@ export function CustomerNavbar() {
               </div>
           </LocationDialog>
         </div>
-        
-         <div className="md:hidden flex-1"> 
+
+         <div className="md:hidden flex-1">
             <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
         </div>
 
-        <div className="hidden md:flex flex-1 justify-center px-4 mr-2"> 
-          <div className="relative w-full max-w-lg"> 
+        <div className="hidden md:flex flex-1 justify-center px-4 mr-2">
+          <div className="relative w-full max-w-lg">
             <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder='Search "butter"'
-              className="h-11 w-full pl-10 pr-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary" 
+              className="h-11 w-full pl-10 pr-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchKeyDown}
@@ -219,13 +219,13 @@ export function CustomerNavbar() {
             </Button>
            )}
 
-          <Button 
+          <Button
             onClick={() => router.push('/cart')}
             style={{ backgroundColor: '#5B8C28' }}
             className="text-white hover:bg-green-700 px-4 py-2 h-11 rounded-md text-sm"
           >
             <ShoppingCartIcon className="mr-2 h-5 w-5" />
-            <div className="flex flex-col items-start -my-1"> 
+            <div className="flex flex-col items-start -my-1">
               <span className="text-xs leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</span>
               <span className="font-semibold leading-tight">₹{cartTotalAmount.toFixed(2)}</span>
             </div>
