@@ -15,7 +15,7 @@ import { Search as SearchIcon, XCircle } from 'lucide-react';
 
 export default function HomePage() {
   const recommendedProducts = mockProducts.slice(0, 6); 
-  const allCategories = mockCategories.slice(0, 9); // Displaying 9 categories
+  const allCategories = mockCategories; // Displaying all categories
 
   // State for homepage search (currently removed from UI, logic remains)
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,7 +51,7 @@ export default function HomePage() {
       {/* Category Display Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 text-center">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3 md:gap-4"> {/* Adjusted grid for 9 items in 1 line on LG screens */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3 md:gap-4"> {/* Adjusted grid for all categories */}
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
               <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col aspect-square">
