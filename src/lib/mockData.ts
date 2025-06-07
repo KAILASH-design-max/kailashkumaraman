@@ -76,7 +76,6 @@ export const mockProducts: Product[] = [
   { id: 'prod49', slug: 'thums-up', name: 'Thums Up', description: 'Strong and fizzy Thums Up cola.', price: 1.25, category: 'cat4', imageUrls: ['https://banner2.cleanpng.com/20180401/pae/avim5x87i.webp'], dataAiHint: 'thumsup cola', rating: 4.7, reviewsCount: 420, stock: 100 },
   { id: 'prod50', slug: 'real-fruit-juice', name: 'Real Fruit Juice', description: 'Refreshing mixed fruit juice.', price: 2.20, category: 'cat4', imageUrls: ['https://banner2.cleanpng.com/20180615/uxs/aa7qsxdnn.webp'], dataAiHint: 'fruit juice', rating: 4.6, reviewsCount: 300, stock: 80 },
   { id: 'prod51', slug: 'tropicana-juice', name: 'Tropicana', description: 'Delicious Tropicana orange juice.', price: 2.50, category: 'cat4', imageUrls: ['https://banner2.cleanpng.com/20180620/fpz/aa6wzy256.webp'], dataAiHint: 'orange juice', rating: 4.7, reviewsCount: 350, stock: 70 },
-  // New Products with multiple images
   {
     id: 'prod52',
     slug: 'britannia-whole-wheat-bread',
@@ -127,6 +126,71 @@ export const mockProducts: Product[] = [
     rating: 4.8,
     reviewsCount: 210,
     stock: 70
+  },
+  {
+    id: 'prod55',
+    slug: 'lays-classic-salted',
+    name: 'Lay\'s Classic Salted',
+    description: 'Classic, crispy, and perfectly salted potato chips from Lay\'s.',
+    price: 1.00,
+    category: 'cat5', // Snacks & Munchies
+    imageUrls: ['https://banner2.cleanpng.com/20201009/yqt/transparent-potato-chips-lays-crisps-5f7ff942bfc556.7875924416029091222114.jpg'],
+    dataAiHint: 'lays chips',
+    rating: 4.7,
+    reviewsCount: 350,
+    stock: 120
+  },
+  {
+    id: 'prod56',
+    slug: 'kurkure-masala-munch',
+    name: 'Kurkure Masala Munch',
+    description: 'Spicy and crunchy corn puffs with a tangy masala flavor.',
+    price: 0.75,
+    category: 'cat5', // Snacks & Munchies
+    imageUrls: ['https://banner2.cleanpng.com/20180720/oww/kisspng-kurkure-lays-potato-chips-indian-cuisine-snakey-snak-5b521a9f0c3292.2298083115321047351405.jpg'],
+    dataAiHint: 'kurkure snack',
+    rating: 4.6,
+    reviewsCount: 280,
+    stock: 100
+  },
+  {
+    id: 'prod57',
+    slug: 'haldirams-aloo-bhujia',
+    name: 'Haldiram\'s Aloo Bhujia',
+    description: 'Crispy and spicy potato noodle snack from Haldiram\'s.',
+    price: 1.50,
+    category: 'cat5', // Snacks & Munchies
+    imageUrls: ['https://banner2.cleanpng.com/20190930/fvo/transparent-aloo-bhujia-indian-snack-5d926eb172a152.453694061569616049518.jpg'],
+    dataAiHint: 'aloo bhujia',
+    rating: 4.8,
+    reviewsCount: 220,
+    stock: 80
+  },
+  {
+    id: 'prod58',
+    slug: 'act-ii-butter-popcorn',
+    name: 'Act II Butter Popcorn',
+    description: 'Classic microwave butter popcorn, ready in minutes.',
+    price: 2.00,
+    category: 'cat5', // Snacks & Munchies
+    imageUrls: ['https://banner2.cleanpng.com/20180217/siw/kisspng-act-ii-microwave-popcorn-snack-hot-and-fresh-popcorn-5a8873e0b7c4f6.2757771315189141440355.jpg'],
+    dataAiHint: 'butter popcorn',
+    rating: 4.5,
+    reviewsCount: 150,
+    stock: 90
+  },
+  {
+    id: 'prod59',
+    slug: 'parle-g-biscuits',
+    name: 'Parle-G Biscuits',
+    description: 'India\'s favorite glucose biscuits, perfect with tea or coffee.',
+    price: 0.50,
+    category: 'cat6', // Bakery & Biscuits
+    imageUrls: ['https://banner2.cleanpng.com/20180302/veq/kisspng-parle-g-biscuit-parle-products-5a9931cf3c3ef3.4886154015199876639996.jpg'],
+    dataAiHint: 'parle g',
+    rating: 4.9,
+    reviewsCount: 500,
+    stock: 200
   }
 ];
 
@@ -189,3 +253,6 @@ export const mockOrders: Order[] = [
     estimatedDeliveryTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // Approx 15 mins
   }
 ];
+
+
+    
