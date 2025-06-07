@@ -113,7 +113,6 @@ export function ProductSuggester() {
               )}
               {suggestionsOutput.suggestedProducts && suggestionsOutput.suggestedProducts.length > 0 && (
                 <>
-                  <h3 className="text-lg font-semibold mb-2 text-center text-primary">Here are some ideas:</h3>
                   <ul className="space-y-1.5 list-disc list-inside bg-secondary/20 p-3 rounded-md">
                     {suggestionsOutput.suggestedProducts.map((item, index) => (
                       <li key={index} className="text-gray-700">{item}</li>
