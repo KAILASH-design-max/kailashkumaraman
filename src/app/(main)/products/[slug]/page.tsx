@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ProductCard } from '@/components/customer/ProductCard';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'; // Added Card imports
 import {
   Accordion,
   AccordionContent,
