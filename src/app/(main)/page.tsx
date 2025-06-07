@@ -61,15 +61,11 @@ export default function HomePage() {
                     alt={category.name}
                     fill
                     sizes="(max-width: 640px) 48vw, (max-width: 768px) 23vw, (max-width: 1024px) 18vw, 9vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-lg"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-lg"
                     data-ai-hint={category.dataAiHint || 'category image'}
                   />
                 </CardContent>
-                <div className="py-2 px-1 text-center">
-                  <p className="text-xs font-medium text-foreground truncate group-hover:text-primary">
-                    {category.name}
-                  </p>
-                </div>
+                {/* Removed category name display div from here */}
               </Card>
             </Link>
           ))}
