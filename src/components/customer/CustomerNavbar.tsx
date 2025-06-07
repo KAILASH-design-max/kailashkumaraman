@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered } from 'lucide-react'; // Added Settings, ListOrdered
+import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon } from 'lucide-react'; // Added Search as SearchIcon
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation'; 
@@ -12,8 +12,9 @@ import {
   SheetTrigger,
   SheetClose,
 } from "@/components/ui/sheet";
-import { useState, useEffect } from 'react'; // Added useEffect
+import { useState, useEffect } from 'react';
 import { useCart } from '@/hooks/useCart';
+import { Input } from '@/components/ui/input'; // Added Input import
 
 const navLinks: { href: string; label: string; icon?: React.ElementType }[] = [
   // { href: '/', label: 'Home' }, // Maintained as removed
@@ -26,16 +27,16 @@ const useAuth = () => {
   // Simulate checking auth status on mount
   useEffect(() => {
     // Replace with actual auth check, e.g., checking localStorage, cookie, or calling an API
-    const loggedInStatus = localStorage.getItem('isMockLoggedIn') === 'true';
+    const loggedInStatus = typeof window !== 'undefined' && localStorage.getItem('isMockLoggedIn') === 'true';
     setIsLoggedIn(loggedInStatus);
   }, []);
 
   const login = () => {
-    localStorage.setItem('isMockLoggedIn', 'true');
+    if (typeof window !== 'undefined') localStorage.setItem('isMockLoggedIn', 'true');
     setIsLoggedIn(true);
   };
   const logout = () => {
-    localStorage.removeItem('isMockLoggedIn');
+    if (typeof window !== 'undefined') localStorage.removeItem('isMockLoggedIn');
     setIsLoggedIn(false);
   };
   return { isLoggedIn, login, logout };
@@ -46,7 +47,7 @@ export function CustomerNavbar() {
   const pathname = usePathname();
   const router = useRouter(); 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { isLoggedIn, logout: performLogout } = useAuth(); // Using the mock auth hook
+  const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems } = useCart();
 
   const cartItemCount = getTotalItems();
@@ -57,30 +58,25 @@ export function CustomerNavbar() {
     performLogout(); 
     router.push('/'); 
     closeSheet();
-    // Optionally, add a toast message for logout confirmation
   };
   
   const mainNavItems = [
     ...(isLoggedIn ? [
       { href: '/profile/orders', label: 'My Orders', icon: ListOrdered },
-      { href: '/profile/smart-list', label: 'Smart List', icon: Settings }, // Example icon
+      { href: '/profile/smart-list', label: 'Smart List', icon: Settings },
     ] : []),
-    ...navLinks, // Other general links if any
+    ...navLinks,
   ];
 
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center">
-        <div className="mr-4 hidden md:flex">
-          <Logo textSize="text-xl" iconSize={28} />
-        </div>
-        
-        {/* Mobile Menu and Logo */}
-        <div className="md:hidden flex items-center">
+        {/* Left part: Mobile Menu toggle and Desktop Logo + Nav */}
+        <div className="flex items-center">
           <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="mr-2">
+            <SheetTrigger asChild className="md:hidden mr-2">
+              <Button variant="ghost" size="icon">
                 <Menu className="h-6 w-6" />
                 <span className="sr-only">Toggle Menu</span>
               </Button>
@@ -133,28 +129,46 @@ export function CustomerNavbar() {
               </div>
             </SheetContent>
           </Sheet>
-          <div className="md:hidden">
+          
+          {/* Desktop Logo and Nav */}
+          <div className="hidden md:flex items-center">
+            <Logo textSize="text-xl" iconSize={28} className="mr-6" />
+            <nav className="flex items-center space-x-4 text-sm font-medium">
+              {mainNavItems.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`transition-colors hover:text-foreground/80 flex items-center ${
+                    pathname === link.href ? 'text-foreground font-semibold' : 'text-foreground/60'
+                  }`}
+                >
+                  {link.icon && <link.icon className="mr-1.5 h-4 w-4" />}
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+          </div>
+          
+          {/* Mobile-only Logo (when sheet is closed, appears next to hamburger) */}
+          <div className="md:hidden"> {/* This logo is for mobile view when sheet is closed */}
              <Logo textSize="text-lg" iconSize={24} href="/" /> 
           </div>
         </div>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          {mainNavItems.map((link) => ( 
-            <Link
-              key={link.label}
-              href={link.href}
-              className={`transition-colors hover:text-foreground/80 flex items-center ${
-                pathname === link.href ? 'text-foreground font-semibold' : 'text-foreground/60'
-              }`}
-            >
-              {link.icon && <link.icon className="mr-1.5 h-4 w-4" />}
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Middle part: Search Bar (Desktop only for now) */}
+        <div className="flex-1 flex justify-center px-4">
+          <div className="hidden md:flex relative w-full max-w-md">
+            <Input
+              type="search"
+              placeholder="Search products..."
+              className="w-full h-10 pl-10 pr-4 rounded-full border-border shadow-sm focus:ring-primary"
+            />
+            <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+          </div>
+        </div>
 
-        <div className="flex flex-1 items-center justify-end space-x-2">
+        {/* Right part: Actions (Cart, Profile/Login) */}
+        <div className="flex items-center space-x-2">
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCartIcon className="h-5 w-5" />

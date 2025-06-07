@@ -8,7 +8,7 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { mockCategories, mockProducts } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { Star, Search, ShoppingCart } from 'lucide-react'; // Added ShoppingCart
-import { Input } from '@/components/ui/input';
+// Input component is no longer needed here as search bar is moved to navbar
 import { ProductCard } from '@/components/customer/ProductCard'; // Import the client ProductCard
 
 // ProductCard is now imported from its own file, no need to define it here.
@@ -24,14 +24,7 @@ export default function HomePage() {
         <p className="text-lg text-secondary-foreground mb-8 max-w-2xl mx-auto">
           Your favorite products, delivered at lightning speed. What are you looking for today?
         </p>
-        <div className="relative max-w-xl mx-auto">
-          <Input 
-            type="search" 
-            placeholder="Search for milk, bread, snacks..." 
-            className="w-full h-12 pl-12 pr-4 text-base rounded-full shadow-md"
-          />
-          <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-        </div>
+        {/* Search bar removed from here */}
       </section>
 
       <section className="mb-12 bg-primary text-primary-foreground p-8 rounded-lg text-center">
@@ -86,3 +79,4 @@ export default function HomePage() {
 }
 
     
+
