@@ -9,9 +9,11 @@ import {
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast'; // Corrected import
 
 export default function ProfileDashboardPage() {
   const router = useRouter();
+  const { toast } = useToast(); // Corrected usage
 
   const user = {
     name: 'Priya Sharma',
@@ -21,7 +23,10 @@ export default function ProfileDashboardPage() {
 
   const handleLogout = () => {
     console.log('User logging out...');
-    alert('You have been logged out (simulated).');
+    if (typeof window !== 'undefined') {
+        localStorage.removeItem('isMockLoggedIn'); 
+    }
+    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
     router.push('/'); 
   };
 

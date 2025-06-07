@@ -61,12 +61,16 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     if (mode === 'login') {
       console.log('Login attempt:', values);
-      // Mock success: In a real app, you'd set some auth state (e.g., in context or a global store)
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('isMockLoggedIn', 'true');
+      }
       toast({ title: 'Login Successful', description: 'Welcome to your dashboard!' });
       router.push('/profile'); // Redirect to Account Dashboard
     } else {
       console.log('Signup attempt:', values);
-      // Mock success
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('isMockLoggedIn', 'true');
+      }
       toast({ title: 'Signup Successful', description: 'Your account has been created. Welcome to your dashboard!' });
       router.push('/profile'); // Redirect to Account Dashboard
     }
