@@ -40,19 +40,17 @@ export function ProductSuggester() {
   return (
     <section className="mb-12">
       <Card className="bg-gray-50 shadow-md rounded-lg border border-gray-200">
-        <CardHeader className="text-center pt-6 pb-3">
-          <div className="flex items-center justify-center mb-2">
-            <Sparkles className="h-8 w-8 text-primary" />
-          </div>
+        <CardHeader className="text-center pt-4 pb-2"> {/* Adjusted padding */}
+          {/* Removed the standalone Sparkles icon from here */}
           <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center justify-center">
-            <Sparkles className="h-6 w-6 text-primary mr-2" /> {/* Added Sparkles icon here */}
+            <Sparkles className="h-6 w-6 text-primary mr-2" />
             Get Product Recommendations
           </CardTitle>
           <CardDescription className="text-md text-muted-foreground max-w-2xl mx-auto mt-1 px-2">
             Tell us what you&apos;re looking for (e.g., &quot;healthy breakfast items&quot;, &quot;dinner for two&quot;, &quot;party snacks&quot;) and we&apos;ll suggest some items!
           </CardDescription>
         </CardHeader>
-        <CardContent className="max-w-xl mx-auto pb-6 px-6">
+        <CardContent className="max-w-xl mx-auto pb-4 px-4"> {/* Adjusted padding */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-2">
               <Input
@@ -96,7 +94,6 @@ export function ProductSuggester() {
             </Alert>
           )}
           
-          {/* Styled placeholder message for when input is empty and no search active */}
           {!isLoading && !suggestionsOutput && !error && !query.trim() && (
              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm">
                 Please enter a query for recommendations.
