@@ -1,15 +1,24 @@
+'use client';
+
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star } from 'lucide-react';
+import { Star, ShoppingCart } from 'lucide-react';
+import { useCart } from '@/hooks/useCart';
 
 interface ProductCardProps {
   product: Product;
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const { addToCart } = useCart();
+
+  const handleAddToCart = () => {
+    addToCart(product, 1);
+  };
+
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl flex flex-col h-full group">
       <Link href={`/products/${product.slug}`} aria-label={product.name} className="block">
@@ -48,7 +57,9 @@ export function ProductCard({ product }: ProductCardProps) {
       </CardContent>
       <CardFooter className="p-4 pt-0">
         {product.stock && product.stock > 0 ? (
-           <Button className="w-full">Add to Cart</Button>
+           <Button className="w-full" onClick={handleAddToCart}>
+             <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+           </Button>
         ) : (
           <Button className="w-full" disabled variant="outline">Out of Stock</Button>
         )}

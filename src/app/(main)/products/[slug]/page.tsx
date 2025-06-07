@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import { mockProducts, mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
@@ -13,14 +15,38 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { useCart } from '@/hooks/useCart';
+import { useEffect, useState } from 'react';
 
-// Helper to simulate fetching a product by slug
+// Helper to simulate fetching a product by slug (can be adapted for actual API calls)
 async function getProductBySlug(slug: string): Promise<Product | undefined> {
+  // In a real app, this would fetch from an API.
+  // For now, it uses mock data.
   return mockProducts.find(p => p.slug === slug);
 }
 
-export default async function ProductDetailPage({ params }: { params: { slug: string } }) {
-  const product = await getProductBySlug(params.slug);
+export default function ProductDetailPage({ params }: { params: { slug: string } }) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { addToCart } = useCart();
+
+  useEffect(() => {
+    async function loadProduct() {
+      setLoading(true);
+      const fetchedProduct = await getProductBySlug(params.slug);
+      setProduct(fetchedProduct || null);
+      setLoading(false);
+    }
+    loadProduct();
+  }, [params.slug]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto py-12 px-4 text-center">
+        <p>Loading product details...</p>
+      </div>
+    );
+  }
 
   if (!product) {
     return (
@@ -32,6 +58,12 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
       </div>
     );
   }
+
+  const handleAddToCart = () => {
+    if (product) {
+      addToCart(product, 1);
+    }
+  };
 
   const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
   const categoryName = mockCategories.find(c => c.id === product.category)?.name;
@@ -46,7 +78,6 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
       </div>
 
       <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        {/* Product Image Gallery */}
         <div>
           <Image
             src={product.imageUrl}
@@ -56,10 +87,8 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
             className="w-full h-auto object-cover rounded-lg shadow-lg aspect-[4/3]"
             data-ai-hint={product.dataAiHint || 'product details'}
           />
-          {/* Add thumbnails here if multiple images */}
         </div>
 
-        {/* Product Details */}
         <div className="space-y-6">
           <h1 className="text-4xl font-bold">{product.name}</h1>
           {categoryName && <Badge variant="outline">{categoryName}</Badge>}
@@ -96,11 +125,9 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
             </div>
           )}
           
-          {/* Quantity Selector (Placeholder) */}
           <div className="flex items-center space-x-4">
-            {/* <Input type="number" defaultValue="1" min="1" max={product.stock || 1} className="w-20 text-center" /> */}
             {product.stock && product.stock > 0 ? (
-              <Button size="lg" className="w-full md:w-auto flex-grow">
+              <Button size="lg" className="w-full md:w-auto flex-grow" onClick={handleAddToCart}>
                 <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
               </Button>
             ) : (
@@ -131,7 +158,6 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
         </div>
       </div>
 
-      {/* Reviews Section Placeholder */}
       <section id="reviews" className="mt-16 pt-8 border-t">
         <h2 className="text-3xl font-semibold mb-6">Customer Reviews</h2>
         {product.reviewsCount && product.reviewsCount > 0 ? (
@@ -161,8 +187,6 @@ export default async function ProductDetailPage({ params }: { params: { slug: st
         )}
       </section>
 
-
-      {/* Related Products Section */}
       {relatedProducts.length > 0 && (
         <section className="mt-16 pt-8 border-t">
           <h2 className="text-3xl font-semibold mb-6">You Might Also Like</h2>

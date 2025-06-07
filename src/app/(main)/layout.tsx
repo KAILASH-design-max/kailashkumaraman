@@ -1,7 +1,8 @@
+
 'use client';
 
 import { CustomerNavbar } from '@/components/customer/CustomerNavbar';
-import { CartProvider } from '@/components/providers/CartProvider';
+// CartProvider is removed from here as it's now in the RootLayout
 
 export default function MainLayout({
   children,
@@ -9,7 +10,7 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <CartProvider>
+    // <CartProvider> No longer needed here
       <div className="flex min-h-screen flex-col">
         <CustomerNavbar />
         <main className="flex-1">{children}</main>
@@ -21,6 +22,6 @@ export default function MainLayout({
           </div>
         </footer>
       </div>
-    </CartProvider>
+    // </CartProvider>
   );
 }
