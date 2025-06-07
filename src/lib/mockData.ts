@@ -1,11 +1,11 @@
 import type { Product, Category, Order, UserProfile, DeliveryPartner } from './types';
 
 export const mockCategories: Category[] = [
-  { id: 'cat1', slug: 'fresh-produce', name: 'Fresh Produce', imageUrl: 'https://placehold.co/300x200.png', dataAiHint: 'fruits vegetables' },
-  { id: 'cat2', slug: 'dairy-bakery', name: 'Dairy & Bakery', imageUrl: 'https://placehold.co/300x200.png', dataAiHint: 'milk bread' },
-  { id: 'cat3', slug: 'snacks-beverages', name: 'Snacks & Beverages', imageUrl: 'https://placehold.co/300x200.png', dataAiHint: 'chips soda' },
-  { id: 'cat4', slug: 'household-items', name: 'Household Items', imageUrl: 'https://placehold.co/300x200.png', dataAiHint: 'cleaning supplies' },
-  { id: 'cat5', slug: 'personal-care', name: 'Personal Care', imageUrl: 'https://placehold.co/300x200.png', dataAiHint: 'soap shampoo' },
+  { id: 'cat1', slug: 'fresh-produce', name: 'Fresh Produce', imageUrl: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=50,metadata=none,w=270/layout-engine/2022-11/Slice-2_10.png', dataAiHint: 'fruits vegetables' },
+  { id: 'cat2', slug: 'dairy-bakery', name: 'Dairy & Bakery', imageUrl: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=50,metadata=none,w=270/layout-engine/2022-11/Slice-3_9.png', dataAiHint: 'milk bread' },
+  { id: 'cat3', slug: 'snacks-beverages', name: 'Snacks & Beverages', imageUrl: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=50,metadata=none,w=270/layout-engine/2022-11/Slice-6_5.png', dataAiHint: 'chips soda' },
+  { id: 'cat4', slug: 'household-items', name: 'Household Items', imageUrl: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=50,metadata=none,w=270/layout-engine/2022-11/Slice-4_9.png', dataAiHint: 'cleaning supplies' },
+  { id: 'cat5', slug: 'personal-care', name: 'Personal Care', imageUrl: 'https://cdn.grofers.com/cdn-cgi/image/f=auto,fit=scale-down,q=50,metadata=none,w=270/layout-engine/2022-11/Slice-5_4.png', dataAiHint: 'soap shampoo' },
 ];
 
 export const mockProducts: Product[] = [
