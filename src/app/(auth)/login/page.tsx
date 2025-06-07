@@ -5,9 +5,9 @@ import Link from 'next/link';
 export default function LoginPage() {
   return (
     <>
-      <h2 className="text-2xl font-semibold text-center mb-1">Welcome Back to SpeedyShop!</h2>
+      <h2 className="text-2xl font-semibold text-center mb-1">Secure Account Access</h2>
       <p className="text-sm text-muted-foreground text-center mb-6">
-        Enter your credentials to access your Account Dashboard.
+        Enter your registered phone number or email. You may receive a 6-digit OTP for verification to securely access your dashboard.
       </p>
       <AuthForm mode="login" />
       <p className="mt-6 text-center text-sm">
