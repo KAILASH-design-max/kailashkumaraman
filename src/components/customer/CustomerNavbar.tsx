@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon } from 'lucide-react';
+import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown } from 'lucide-react'; // Added ChevronDown
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -47,6 +47,13 @@ export function CustomerNavbar() {
   const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Generate a random delivery time between 10 and 30 minutes
+    // This runs only on the client after hydration.
+    setDeliveryTime(Math.floor(Math.random() * 21) + 10);
+  }, []);
 
   const cartItemCount = getTotalItems();
 
@@ -142,8 +149,24 @@ export function CustomerNavbar() {
           </Sheet>
 
           <div className="hidden md:flex items-center">
-            <Logo textSize="text-xl" iconSize={28} className="ml-2 mr-6" />
-            <nav className="flex items-center space-x-4 text-sm font-medium">
+            <Logo textSize="text-xl" iconSize={28} className="ml-2" />
+            
+            {/* Delivery Info Section - Desktop */}
+            <div className="ml-3 flex items-center cursor-pointer group">
+              <div className="text-left">
+                <p className="text-sm font-semibold text-foreground whitespace-nowrap">
+                  {deliveryTime !== null ? `Delivery in ${deliveryTime} min` : 'Checking...'}
+                </p>
+                <div className="flex items-center">
+                  <p className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-[200px] md:max-w-[150px] lg:max-w-[200px]">
+                    Daryaganj, Delhi, 110002, India
+                  </p>
+                  <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 group-hover:text-primary transition-colors shrink-0" />
+                </div>
+              </div>
+            </div>
+
+            <nav className="flex items-center space-x-3 text-sm font-medium ml-4"> {/* Adjusted spacing */}
               {mainNavItems.map((link) => (
                 <Link
                   key={link.label}
@@ -165,7 +188,7 @@ export function CustomerNavbar() {
         </div>
 
         {/* Middle part: Search Bar */}
-        <div className="flex-1 px-4 sm:px-8 md:px-12 lg:px-20 mr-2">
+        <div className="flex-1 px-4 sm:px-8 md:px-6 lg:px-8 mr-2"> {/* Adjusted padding for md screens */}
           <div className="relative w-full max-w-md mx-auto">
             <Input
               type="search"
@@ -202,7 +225,6 @@ export function CustomerNavbar() {
             </Link>
           </Button>
           
-          {/* User Icon Button - Replaces old Login/Profile buttons on desktop */}
           <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
             <Link 
               href={isLoggedIn ? "/profile" : "/auth/login"} 
