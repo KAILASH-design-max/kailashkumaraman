@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown } from 'lucide-react'; // Added ChevronDown
+import { ShoppingCartIcon, UserCircle, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ import {
 import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Input } from '@/components/ui/input';
+import { LocationDialog } from '@/components/shared/LocationDialog'; // Import the new dialog
 
 const navLinks: { href: string; label: string; icon?: React.ElementType }[] = [
   // { href: '/', label: 'Home' },
@@ -47,13 +48,25 @@ export function CustomerNavbar() {
   const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
+  
   const [deliveryTime, setDeliveryTime] = useState<number | null>(null);
+  const [currentLocation, setCurrentLocation] = useState("Daryaganj, Delhi, 110002, India");
+  const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
+
+  const calculateDeliveryTime = () => {
+    // Generate a random delivery time between 10 and 30 minutes
+    return Math.floor(Math.random() * 21) + 10;
+  };
 
   useEffect(() => {
-    // Generate a random delivery time between 10 and 30 minutes
-    // This runs only on the client after hydration.
-    setDeliveryTime(Math.floor(Math.random() * 21) + 10);
-  }, []);
+    setDeliveryTime(calculateDeliveryTime());
+  }, []); // Initial calculation
+
+  const handleLocationUpdate = (newLocation: string) => {
+    setCurrentLocation(newLocation);
+    setDeliveryTime(calculateDeliveryTime()); // Recalculate delivery time for new location
+    setIsLocationDialogOpen(false); // Close dialog
+  };
 
   const cartItemCount = getTotalItems();
 
@@ -152,19 +165,25 @@ export function CustomerNavbar() {
             <Logo textSize="text-xl" iconSize={28} className="ml-2" />
             
             {/* Delivery Info Section - Desktop */}
-            <div className="ml-3 flex items-center cursor-pointer group">
-              <div className="text-left">
-                <p className="text-sm font-semibold text-foreground whitespace-nowrap">
-                  {deliveryTime !== null ? `Delivery in ${deliveryTime} min` : 'Checking...'}
-                </p>
-                <div className="flex items-center">
-                  <p className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-[200px] md:max-w-[150px] lg:max-w-[200px]">
-                    Daryaganj, Delhi, 110002, India
-                  </p>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 group-hover:text-primary transition-colors shrink-0" />
+            <LocationDialog 
+                open={isLocationDialogOpen} 
+                onOpenChange={setIsLocationDialogOpen}
+                onLocationUpdate={handleLocationUpdate}
+            >
+                <div className="ml-3 flex items-center cursor-pointer group">
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-foreground whitespace-nowrap">
+                      {deliveryTime !== null ? `Delivery in ${deliveryTime} min` : 'Checking...'}
+                    </p>
+                    <div className="flex items-center">
+                      <p className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-[200px] md:max-w-[150px] lg:max-w-[200px]">
+                        {currentLocation}
+                      </p>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 group-hover:text-primary transition-colors shrink-0" />
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
+            </LocationDialog>
 
             <nav className="flex items-center space-x-3 text-sm font-medium ml-4"> {/* Adjusted spacing */}
               {mainNavItems.map((link) => (
