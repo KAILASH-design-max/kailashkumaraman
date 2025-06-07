@@ -19,15 +19,14 @@ import { useCart } from '@/hooks/useCart'; // Import useCart
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/products', label: 'Products' },
-  { href: '/profile/orders', label: 'My Orders' },
-  { href: '/profile/smart-list', label: 'Smart List' },
+  // "My Orders" and "Smart List" are conditional or might be better suited inside a user profile dropdown later
 ];
 
 export function CustomerNavbar() {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false); // Mock login state
-  const { getTotalItems } = useCart(); // Get cart functions
+  const { getTotalItems } = useCart();
 
   const cartItemCount = getTotalItems();
 
@@ -41,12 +40,11 @@ export function CustomerNavbar() {
     closeSheet();
   };
   
-  const handleLogin = () => {
-    // In a real app, this would likely navigate to /auth/login
-    // For this mock, we'll just toggle the state
-    setIsLoggedIn(true); 
-    closeSheet();
-  };
+  // This function is for demonstration if we had a login button directly in the navbar
+  // const handleLogin = () => {
+  //   setIsLoggedIn(true); 
+  //   closeSheet();
+  // };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -81,6 +79,25 @@ export function CustomerNavbar() {
                     </Link>
                   </SheetClose>
                 ))}
+                {isLoggedIn && (
+                  <>
+                    <SheetClose asChild>
+                      <Link href="/profile/orders" passHref>
+                        <Button variant={pathname === "/profile/orders" ? 'secondary' : 'ghost'} className="w-full justify-start">
+                          My Orders
+                        </Button>
+                      </Link>
+                    </SheetClose>
+                    <SheetClose asChild>
+                      <Link href="/profile/smart-list" passHref>
+                        <Button variant={pathname === "/profile/smart-list" ? 'secondary' : 'ghost'} className="w-full justify-start">
+                           Smart List
+                        </Button>
+                      </Link>
+                    </SheetClose>
+                  </>
+                )}
+                <hr className="my-2"/>
                 {isLoggedIn ? (
                   <>
                     <SheetClose asChild>
@@ -99,7 +116,7 @@ export function CustomerNavbar() {
                 ) : (
                   <SheetClose asChild>
                      <Link href="/auth/login" passHref>
-                        <Button variant='outline' className="w-full justify-start" onClick={() => setIsLoggedIn(false) /* Simulating going to login which would clear this state or be handled by auth flow */}>
+                        <Button variant='outline' className="w-full justify-start">
                             <UserCircle className="mr-2 h-5 w-5" />
                             Login / Sign Up
                         </Button>
@@ -116,7 +133,7 @@ export function CustomerNavbar() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-6 text-sm font-medium">
-          {navLinks.slice(0,2).map((link) => ( 
+          {navLinks.map((link) => ( 
             <Link
               key={link.label}
               href={link.href}
@@ -128,20 +145,30 @@ export function CustomerNavbar() {
             </Link>
           ))}
            {isLoggedIn && (
-            <Link
-              href="/profile/orders"
-              className={`transition-colors hover:text-foreground/80 ${
-                pathname === "/profile/orders" ? 'text-foreground' : 'text-foreground/60'
-              }`}
-            >
-              My Orders
-            </Link>
+            <>
+              <Link
+                href="/profile/orders"
+                className={`transition-colors hover:text-foreground/80 ${
+                  pathname === "/profile/orders" ? 'text-foreground' : 'text-foreground/60'
+                }`}
+              >
+                My Orders
+              </Link>
+              <Link
+                href="/profile/smart-list"
+                className={`transition-colors hover:text-foreground/80 ${
+                  pathname === "/profile/smart-list" ? 'text-foreground' : 'text-foreground/60'
+                }`}
+              >
+                Smart List
+              </Link>
+            </>
           )}
         </nav>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
           <div className="relative w-full max-w-xs hidden sm:block">
-            <Input type="search" placeholder="Search products..." className="pl-10 h-10" /> {/* Adjusted height for consistency */}
+            <Input type="search" placeholder="Search products..." className="pl-10 h-10" aria-label="Search products"/>
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           </div>
           <Button variant="ghost" size="icon" asChild>
