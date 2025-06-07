@@ -40,12 +40,12 @@ export function ProductSuggester() {
   return (
     <section className="mb-12">
       <Card className="bg-gray-50 shadow-md rounded-lg border border-gray-200">
-        <CardHeader className="text-center pt-4 pb-2">
-          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center justify-center">
+        <CardHeader className="pt-4 pb-2"> {/* Removed text-center */}
+          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center"> {/* Removed justify-center */}
             <Sparkles className="h-6 w-6 text-primary mr-2" />
             Get Product Recommendations
           </CardTitle>
-          <CardDescription className="text-md text-muted-foreground max-w-2xl mx-auto mt-1 px-2">
+          <CardDescription className="text-md text-muted-foreground max-w-2xl mt-1 px-2"> {/* Removed mx-auto */}
             Tell us what you&apos;re looking for (e.g., &quot;healthy breakfast items&quot;, &quot;dinner for two&quot;, &quot;party snacks&quot;) and we&apos;ll suggest some items!
           </CardDescription>
         </CardHeader>
@@ -67,8 +67,8 @@ export function ProductSuggester() {
                 type="submit" 
                 className="h-11 text-sm font-medium text-white px-4 rounded-md" 
                 style={{ backgroundColor: '#4F63AC' }}
-                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#40529B'} // Darken color on hover
-                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4F63AC'} // Reset color on mouse out
+                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#40529B'}
+                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#4F63AC'}
                 disabled={isLoading}
               >
                 {isLoading ? (
