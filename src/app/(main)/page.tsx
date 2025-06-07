@@ -15,7 +15,7 @@ import { Search as SearchIcon, XCircle } from 'lucide-react';
 
 export default function HomePage() {
   const recommendedProducts = mockProducts.slice(0, 6); 
-  const allCategories = mockCategories; // Displaying all categories
+  const allCategories = mockCategories; 
 
   // State for homepage search (currently removed from UI, logic remains)
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,20 +51,25 @@ export default function HomePage() {
       {/* Category Display Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 text-center">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3 md:gap-4"> {/* Adjusted grid for all categories */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-10 gap-3 md:gap-4">
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
-              <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col aspect-square">
-                <CardContent className="p-0 flex-grow flex items-center justify-center">
+              <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col h-full">
+                <CardContent className="p-0 relative aspect-square w-full">
                   <Image
                     src={category.imageUrl}
                     alt={category.name}
-                    width={200}
-                    height={200}
-                    className="aspect-square w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    sizes="(max-width: 640px) 48vw, (max-width: 768px) 23vw, (max-width: 1024px) 18vw, 9vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-t-lg"
                     data-ai-hint={category.dataAiHint || 'category image'}
                   />
                 </CardContent>
+                <div className="py-2 px-1 text-center">
+                  <p className="text-xs font-medium text-foreground truncate group-hover:text-primary">
+                    {category.name}
+                  </p>
+                </div>
               </Card>
             </Link>
           ))}
