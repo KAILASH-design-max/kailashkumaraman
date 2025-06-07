@@ -2,9 +2,8 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, UserCircle, Search, Menu, LogOut, User } from 'lucide-react';
+import { ShoppingCartIcon, UserCircle, Menu, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname } from 'next/navigation';
 import {
@@ -17,8 +16,8 @@ import { useState } from 'react';
 import { useCart } from '@/hooks/useCart'; // Import useCart
 
 const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/products', label: 'Products' },
+  // { href: '/', label: 'Home' }, // Removed
+  // { href: '/products', label: 'Products' }, // Removed
   // "My Orders" and "Smart List" are conditional or might be better suited inside a user profile dropdown later
 ];
 
@@ -127,7 +126,7 @@ export function CustomerNavbar() {
             </SheetContent>
           </Sheet>
           <div className="md:hidden">
-             <Logo textSize="text-lg" iconSize={24} />
+             <Logo textSize="text-lg" iconSize={24} href="/" /> {/* Ensure logo still links to home */}
           </div>
         </div>
 
@@ -167,10 +166,7 @@ export function CustomerNavbar() {
         </nav>
 
         <div className="flex flex-1 items-center justify-end space-x-2">
-          <div className="relative w-full max-w-xs hidden sm:block">
-            <Input type="search" placeholder="Search products..." className="pl-10 h-10" aria-label="Search products"/>
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          </div>
+          {/* Search bar removed */}
           <Button variant="ghost" size="icon" asChild>
             <Link href="/cart" aria-label="Shopping Cart">
               <ShoppingCartIcon className="h-5 w-5" />
