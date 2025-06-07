@@ -4,16 +4,37 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card'; // Removed CardFooter, CardHeader, CardTitle as they are not used for category display anymore
 import { mockCategories, mockProducts } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
-import { Star, ShoppingCart } from 'lucide-react'; 
 import { ProductCard } from '@/components/customer/ProductCard'; 
 import { ProductSuggester } from '@/components/customer/ProductSuggester';
+import { useState } from 'react'; // For homepage search
+import { Input } from '@/components/ui/input'; // For homepage search
+import { Search as SearchIcon, XCircle } from 'lucide-react'; // For homepage search and no results icon
 
 export default function HomePage() {
   const recommendedProducts = mockProducts.slice(0, 6); 
-  const allCategories = mockCategories; 
+  const allCategories = mockCategories.slice(0, 9); // Displaying 9 categories
+
+  // State for homepage search
+  const [searchTerm, setSearchTerm] = useState('');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setHasSearched(true);
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const results = mockProducts.filter(product =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.description.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setSearchResults(results);
+  };
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -24,26 +45,27 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* Product Search Section has been removed from here */}
-
+      {/* Product Suggester - AI based */}
       <ProductSuggester />
 
+      {/* Category Display Section */}
       <section className="mb-12">
-        <h2 className="text-3xl font-semibold mb-6">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-10 gap-3">
+        <h2 className="text-3xl font-semibold mb-6 text-center">Shop by Category</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3 md:gap-4"> {/* Adjusted grid for 9 items */}
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
-              <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col">
-                <CardContent className="p-0 flex-grow">
+              <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 h-full flex flex-col aspect-square">
+                <CardContent className="p-0 flex-grow flex items-center justify-center">
                   <Image
                     src={category.imageUrl}
                     alt={category.name}
                     width={200}
-                    height={150}
-                    className="aspect-[4/3] w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    height={200}
+                    className="aspect-square w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     data-ai-hint={category.dataAiHint || 'category image'}
                   />
                 </CardContent>
+                {/* Category name removed from here as per previous request */}
               </Card>
             </Link>
           ))}
