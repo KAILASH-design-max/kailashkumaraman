@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown, UserCircle } from 'lucide-react';
+import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -17,12 +17,9 @@ import { useCart } from '@/hooks/useCart';
 import { Input } from '@/components/ui/input';
 import { LocationDialog } from '@/components/shared/LocationDialog';
 
-// Desktop nav links are removed from here to match the new design
-// They will remain in the mobile sheet content.
 const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType }[] = [
   { href: '/profile/orders', label: 'My Orders', icon: ListOrdered },
   { href: '/profile/smart-list', label: 'Smart List', icon: Settings },
-  // You can add other general links like '/products' if needed in mobile
   { href: '/products', label: 'All Products' },
 ];
 
@@ -40,21 +37,20 @@ const useAuth = () => {
         }
     };
     window.addEventListener('storage', handleStorageChange);
-    // Also check on focus in case local storage was changed in another tab
     window.addEventListener('focus', handleStorageChange); 
 
     return () => {
         window.removeEventListener('storage', handleStorageChange);
         window.removeEventListener('focus', handleStorageChange);
     };
-  }, [isLoggedIn]); // Add isLoggedIn to dependency array to re-run if it changes programmatically
+  }, [isLoggedIn]); 
 
 
   const logout = () => {
     if (typeof window !== 'undefined') localStorage.removeItem('isMockLoggedIn');
     setIsLoggedIn(false);
   };
-  return { isLoggedIn, logout }; // Removed login as it's not used here
+  return { isLoggedIn, logout }; 
 };
 
 
@@ -71,11 +67,10 @@ export function CustomerNavbar() {
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
 
   const calculateDeliveryTime = () => {
-    return Math.floor(Math.random() * 21) + 10; // Random time 10-30 mins
+    return Math.floor(Math.random() * 21) + 10; 
   };
 
   useEffect(() => {
-    // Calculate delivery time only on the client-side after mount
     setDeliveryTime(calculateDeliveryTime());
   }, []);
 
@@ -99,7 +94,7 @@ export function CustomerNavbar() {
   const handleSearchSubmit = () => {
     if (searchTerm.trim()) {
       router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(''); // Clear search term after submit
+      setSearchTerm(''); 
       closeSheet(); 
     }
   };
@@ -113,7 +108,6 @@ export function CustomerNavbar() {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
-        {/* --- Mobile Menu --- */}
         <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild className="md:hidden mr-2">
             <Button variant="ghost" size="icon">
@@ -126,17 +120,14 @@ export function CustomerNavbar() {
                 <Logo icon={ShoppingCartIcon} textSize="text-xl" className="mb-4 p-2 border-b"/>
             </SheetClose>
             <nav className="flex flex-col gap-2 mt-4 flex-grow">
-              {mainSheetNavItems.map((link) => ( // Using mainSheetNavItems for mobile
+              {mainSheetNavItems.map((link) => (
                 <SheetClose asChild key={link.label}>
-                  <Link href={link.href} passHref>
-                    <Button
-                      variant={pathname === link.href ? 'secondary' : 'ghost'}
-                      className="w-full justify-start text-md py-3"
-                    >
+                  <Button asChild variant={pathname === link.href ? 'secondary' : 'ghost'} className="w-full justify-start text-md py-3">
+                    <Link href={link.href}>
                       {link.icon && <link.icon className="mr-2 h-5 w-5" />}
                       {link.label}
-                    </Button>
-                  </Link>
+                    </Link>
+                  </Button>
                 </SheetClose>
               ))}
             </nav>
@@ -144,12 +135,12 @@ export function CustomerNavbar() {
               {isLoggedIn ? (
                 <>
                   <SheetClose asChild>
-                    <Link href="/profile" passHref>
-                      <Button variant='ghost' className="w-full justify-start text-md py-3">
+                    <Button asChild variant='ghost' className="w-full justify-start text-md py-3">
+                      <Link href="/profile">
                           <User className="mr-2 h-5 w-5" />
                           My Profile
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </SheetClose>
                   <Button variant='outline' className="w-full justify-start text-md py-3" onClick={handleLogout}>
                       <LogOut className="mr-2 h-5 w-5" />
@@ -158,20 +149,18 @@ export function CustomerNavbar() {
                 </>
               ) : (
                 <SheetClose asChild>
-                   <Link href="/auth/login" passHref>
-                      <Button variant='default' className="w-full justify-start text-md py-3">
+                   <Button asChild variant='default' className="w-full justify-start text-md py-3">
+                      <Link href="/auth/login">
                           <User className="mr-2 h-5 w-5" />
                           Login / Sign Up
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                 </SheetClose>
               )}
             </div>
           </SheetContent>
         </Sheet>
 
-        {/* --- Desktop View --- */}
-        {/* Left Section: Logo and Delivery Info */}
         <div className="hidden md:flex items-center space-x-6 flex-shrink-0"> 
           <Logo icon={ShoppingCartIcon} textSize="text-3xl" iconSize={30} /> 
           
@@ -196,14 +185,11 @@ export function CustomerNavbar() {
           </LocationDialog>
         </div>
         
-        {/* Mobile Logo (appears next to hamburger if needed, if desktop logo is hidden first) */}
          <div className="md:hidden flex-1"> 
             <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
         </div>
 
-
-        {/* Middle Section: Search Bar (Desktop) */}
-        <div className="hidden md:flex flex-1 justify-center px-4 mr-2"> {/* Added mr-2 for spacing */}
+        <div className="hidden md:flex flex-1 justify-center px-4 mr-2"> 
           <div className="relative w-full max-w-lg"> 
             <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -218,20 +204,19 @@ export function CustomerNavbar() {
           </div>
         </div>
 
-        {/* Right Section: Login and Cart (Desktop) */}
         <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
            {isLoggedIn ? (
-             <Link href="/profile" passHref>
-               <Button variant="ghost" className="px-3 py-2 h-11 text-sm">
+             <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
+               <Link href="/profile">
                   Profile
-               </Button>
-             </Link>
+               </Link>
+             </Button>
            ) : (
-            <Link href="/auth/login" passHref>
-              <Button variant="ghost" className="px-3 py-2 h-11 text-sm">
+            <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
+              <Link href="/auth/login">
                  Login
-              </Button>
-            </Link>
+              </Link>
+            </Button>
            )}
 
           <Button 
@@ -247,7 +232,6 @@ export function CustomerNavbar() {
           </Button>
         </div>
 
-        {/* Cart Icon (Mobile - if search bar is not shown, or as a fallback) */}
         <div className="md:hidden ml-auto">
              <Button variant="ghost" size="icon" asChild className="relative">
                 <Link href="/cart" aria-label="Shopping Cart">
@@ -263,7 +247,6 @@ export function CustomerNavbar() {
         </div>
 
       </div>
-       {/* Search Bar (Mobile - below header, centered) */}
        <div className="md:hidden px-4 pb-3 pt-1 border-b">
           <div className="relative w-full">
             <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
