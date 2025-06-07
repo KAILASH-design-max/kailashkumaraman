@@ -1,3 +1,4 @@
+
 import { AuthForm } from '@/components/auth/AuthForm';
 import Link from 'next/link';
 
@@ -13,6 +14,12 @@ export default function SignupPage() {
         Already have an account?{' '}
         <Link href="/auth/login" className="font-medium text-primary hover:underline">
           Log in
+        </Link>
+      </p>
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        Need help?{' '}
+        <Link href="/support" className="underline hover:text-primary">
+          Contact Support
         </Link>
       </p>
     </>

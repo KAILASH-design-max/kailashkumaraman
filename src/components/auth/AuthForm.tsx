@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -60,13 +61,13 @@ export function AuthForm({ mode }: AuthFormProps) {
 
     if (mode === 'login') {
       console.log('Login attempt:', values);
-      // Mock success
+      // Mock success: In a real app, you'd set some auth state (e.g., in context or a global store)
       toast({ title: 'Login Successful', description: 'Welcome back!' });
       router.push('/'); // Redirect to homepage after login
     } else {
       console.log('Signup attempt:', values);
       // Mock success
-      toast({ title: 'Signup Successful', description: 'Your account has been created.' });
+      toast({ title: 'Signup Successful', description: 'Your account has been created. Please verify your email (simulated).' });
       router.push('/auth/login'); // Redirect to login after signup
     }
   }
@@ -117,9 +118,9 @@ export function AuthForm({ mode }: AuthFormProps) {
                     size="icon"
                     className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                   </Button>
                 </div>
               </FormControl>
@@ -143,9 +144,9 @@ export function AuthForm({ mode }: AuthFormProps) {
                       size="icon"
                       className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
                     >
                       {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      <span className="sr-only">{showConfirmPassword ? 'Hide password' : 'Show password'}</span>
                     </Button>
                   </div>
                 </FormControl>
