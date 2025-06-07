@@ -7,7 +7,7 @@ export default function LoginPage() {
     <>
       <h2 className="text-2xl font-semibold text-center mb-1">Secure Account Access</h2>
       <p className="text-sm text-muted-foreground text-center mb-6">
-        Enter your registered phone number or email. You may receive a 6-digit OTP for verification to securely access your dashboard.
+        Please enter your email and password to log in to your account.
       </p>
       <AuthForm mode="login" />
       <p className="mt-6 text-center text-sm">
