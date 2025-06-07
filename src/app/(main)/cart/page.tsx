@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/hooks/useCart';
@@ -148,7 +149,9 @@ export default function CartPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
-              <Button className="w-full" size="lg">Proceed to Checkout</Button>
+              <Button className="w-full" size="lg" asChild>
+                <Link href="/checkout">Proceed to Checkout</Link>
+              </Button>
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/products">Continue Shopping</Link>
               </Button>
