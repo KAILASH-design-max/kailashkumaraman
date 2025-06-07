@@ -7,8 +7,12 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { MinusCircle, PlusCircle, Trash2, ShoppingBag } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { MinusCircle, PlusCircle, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
 const DELIVERY_CHARGE_AMOUNT = 50;
@@ -18,12 +22,36 @@ const HANDLING_CHARGE = 5;
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
 
+  const [recipe, setRecipe] = useState<GenerateCartRecipeOutput | null>(null);
+  const [isRecipeLoading, setIsRecipeLoading] = useState(false);
+  const [recipeError, setRecipeError] = useState<string | null>(null);
+
   const subtotal = getCartTotal();
   const deliveryCharge = subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0 ? DELIVERY_CHARGE_AMOUNT : 0;
   const gstAmount = subtotal * GST_RATE;
   const totalAmount = subtotal + deliveryCharge + gstAmount + HANDLING_CHARGE;
 
-  if (cartItems.length === 0) {
+  const handleGenerateRecipe = async () => {
+    if (cartItems.length === 0) {
+      setRecipeError("Please add items to your cart before generating a recipe.");
+      return;
+    }
+    setIsRecipeLoading(true);
+    setRecipeError(null);
+    setRecipe(null);
+    try {
+      const itemNames = cartItems.map(item => item.name);
+      const result = await generateCartRecipe({ cartItems: itemNames });
+      setRecipe(result);
+    } catch (error) {
+      console.error("Error generating recipe:", error);
+      setRecipeError("Sorry, we couldn't generate a recipe at this time. Please try again later.");
+    } finally {
+      setIsRecipeLoading(false);
+    }
+  };
+
+  if (cartItems.length === 0 && !isRecipeLoading && !recipe && !recipeError) { // Ensure recipe elements don't trigger this
     return (
       <div className="container mx-auto py-12 px-4 text-center">
         <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
@@ -111,11 +139,83 @@ export default function CartPage() {
               </Button>
             </Card>
           ))}
-           <div className="flex justify-end mt-6">
-            <Button variant="outline" onClick={clearCart} className="text-destructive border-destructive hover:bg-destructive/10">
-              <Trash2 className="mr-2 h-4 w-4" /> Clear Cart
-            </Button>
-          </div>
+          {cartItems.length > 0 && (
+            <div className="flex justify-end mt-6">
+              <Button variant="outline" onClick={clearCart} className="text-destructive border-destructive hover:bg-destructive/10">
+                <Trash2 className="mr-2 h-4 w-4" /> Clear Cart
+              </Button>
+            </div>
+          )}
+
+          {/* Generate Recipe Section */}
+          <Card className="shadow-lg mt-8">
+            <CardHeader className="text-center">
+              <CardTitle className="text-2xl flex items-center justify-center">
+                <Sparkles className="mr-2 h-6 w-6 text-primary" /> Get a Recipe for Your Cart! <Sparkles className="ml-2 h-6 w-6 text-primary" />
+              </CardTitle>
+              <CardDescription>
+                Generate a recipe using the items currently in your cart!
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {isRecipeLoading && (
+                <div className="flex items-center justify-center py-6">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                  <p className="text-muted-foreground">Generating your delicious recipe...</p>
+                </div>
+              )}
+              {recipeError && !isRecipeLoading && (
+                <Alert variant="destructive">
+                  <ChefHat className="h-4 w-4" />
+                  <AlertTitle>Oops!</AlertTitle>
+                  <AlertDescription>{recipeError}</AlertDescription>
+                </Alert>
+              )}
+              {recipe && !isRecipeLoading && (
+                <div className="space-y-4">
+                  {!recipe.isPossible && recipe.notes && (
+                     <Alert variant="default">
+                        <ChefHat className="h-4 w-4" />
+                        <AlertTitle>{recipe.recipeName || "Recipe Suggestion"}</AlertTitle>
+                        <AlertDescription>{recipe.notes}</AlertDescription>
+                    </Alert>
+                  )}
+                  {recipe.isPossible && (
+                    <>
+                      <h3 className="text-xl font-semibold text-primary">{recipe.recipeName}</h3>
+                      <div>
+                        <h4 className="font-medium text-md mb-1">Ingredients:</h4>
+                        <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-0.5">
+                          {recipe.ingredients.map((ing, idx) => <li key={idx}>{ing}</li>)}
+                        </ul>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-md mb-1">Instructions:</h4>
+                        <p className="text-muted-foreground whitespace-pre-line">{recipe.instructions}</p>
+                      </div>
+                      {recipe.notes && (
+                        <div>
+                          <h4 className="font-medium text-md mb-1">Notes:</h4>
+                          <p className="text-sm text-muted-foreground italic">{recipe.notes}</p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                onClick={handleGenerateRecipe} 
+                disabled={isRecipeLoading || cartItems.length === 0}
+              >
+                {isRecipeLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChefHat className="mr-2 h-4 w-4" />}
+                Generate Recipe ✨
+              </Button>
+            </CardFooter>
+          </Card>
+
         </div>
 
         <div className="lg:col-span-1">
@@ -149,9 +249,15 @@ export default function CartPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
-              <Button className="w-full" size="lg" asChild>
-                <Link href="/checkout">Proceed to Checkout</Link>
-              </Button>
+               {cartItems.length > 0 ? (
+                <Button className="w-full" size="lg" asChild>
+                    <Link href="/checkout">Proceed to Checkout</Link>
+                </Button>
+               ) : (
+                 <Button className="w-full" size="lg" disabled>
+                    Proceed to Checkout
+                 </Button>
+               )}
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/products">Continue Shopping</Link>
               </Button>
