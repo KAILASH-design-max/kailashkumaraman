@@ -300,6 +300,13 @@ export default function CheckoutPage() {
                   <Tag className="mr-2 h-5 w-5 text-primary" />Gift Card / Promo Code
                 </Label>
                 <div className="flex items-center gap-2">
+                  <Input 
+                    id="promoCode" 
+                    placeholder="Enter code" 
+                    value={promoCodeInput} 
+                    onChange={e => setPromoCodeInput(e.target.value)} 
+                    className="flex-grow"
+                  />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
@@ -321,13 +328,6 @@ export default function CheckoutPage() {
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                  <Input 
-                    id="promoCode" 
-                    placeholder="Enter code" 
-                    value={promoCodeInput} 
-                    onChange={e => setPromoCodeInput(e.target.value)} 
-                    className="flex-grow"
-                  />
                   <Button variant="outline" onClick={handleApplyPromoCode} className="shrink-0">Apply</Button>
                 </div>
                 {promoMessage && (
@@ -337,9 +337,6 @@ export default function CheckoutPage() {
                         <AlertDescription>{promoMessage.text}</AlertDescription>
                     </Alert>
                 )}
-                 <div className="text-xs text-muted-foreground pt-1">
-                    Select from dropdown or enter code. Available codes: SAVE10, FLAT50, FREEDEL.
-                </div>
               </div>
               <Button onClick={() => setCurrentStep('finalReview')} className="w-full sm:w-auto float-right mt-4">Next: Review Order</Button>
             </AccordionContent>
@@ -404,6 +401,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-
-    
