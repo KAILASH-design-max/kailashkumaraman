@@ -24,7 +24,7 @@ export default function ProductsPage() {
   const initialSearchTerm = searchParams.get('q') || '';
 
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm); // Search term state remains for URL query
   const [sortBy, setSortBy] = useState('relevance'); // options: relevance, price-asc, price-desc, rating
 
   const filteredProducts = useMemo(() => {
@@ -65,18 +65,9 @@ export default function ProductsPage() {
         <p className="text-muted-foreground">Browse our wide selection of products.</p>
       </div>
 
-      {/* Filters and Search Bar */}
-      <div className="mb-8 p-4 bg-card rounded-lg shadow sticky top-16 z-40 flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative w-full md:flex-grow">
-          <Input 
-            type="search" 
-            placeholder="Search within this category..." 
-            className="pl-10 h-11"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-        </div>
+      {/* Filters Bar */}
+      <div className="mb-8 p-4 bg-card rounded-lg shadow sticky top-16 z-40 flex flex-col md:flex-row gap-4 items-center justify-center md:justify-end">
+        {/* Removed Search Input Div */}
         <div className="flex gap-2 w-full md:w-auto">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full md:w-[180px] h-11">
@@ -116,7 +107,7 @@ export default function ProductsPage() {
         <div className="text-center py-12">
           <h2 className="text-2xl font-semibold mb-4">No Products Found</h2>
           <p className="text-muted-foreground mb-6">
-            Try adjusting your search or filters.
+            Try adjusting your filters or search via the header bar.
           </p>
           <Button onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}>
             <X className="mr-2 h-4 w-4" /> Clear Filters
