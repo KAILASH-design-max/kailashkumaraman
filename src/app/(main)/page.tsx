@@ -15,7 +15,7 @@ import { ProductCard } from '@/components/customer/ProductCard'; // Import the c
 
 export default function HomePage() {
   const recommendedProducts = mockProducts.slice(0, 6); // Changed to 6
-  const popularCategories = mockCategories.slice(0, 5);
+  const popularCategories = mockCategories.slice(0, 9); // Changed to fetch up to 9 categories
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -37,7 +37,7 @@ export default function HomePage() {
 
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-4"> {/* Updated to lg:grid-cols-9 */}
           {popularCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
               <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1">
@@ -79,5 +79,6 @@ export default function HomePage() {
 }
 
     
+
 
 
