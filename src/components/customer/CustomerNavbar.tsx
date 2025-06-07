@@ -188,7 +188,7 @@ export function CustomerNavbar() {
           </div>
         </div>
 
-        {/* Right part: Actions (Cart, Profile/Login) */}
+        {/* Right part: Actions (Cart, User Icon) */}
         <div className="flex items-center space-x-2 flex-shrink-0">
           <Button variant="ghost" size="icon" asChild className="relative">
             <Link href="/cart" aria-label="Shopping Cart">
@@ -201,27 +201,16 @@ export function CustomerNavbar() {
               <span className="sr-only">Cart</span>
             </Link>
           </Button>
-          {isLoggedIn ? (
-            <div className="hidden md:flex items-center space-x-2">
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/profile">
-                  <User className="mr-2 h-4 w-4" />
-                  My Profile
-                </Link>
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Logout
-              </Button>
-            </div>
-          ) : (
-            <Button variant="outline" size="sm" asChild className="hidden md:inline-flex">
-              <Link href="/auth/login">
-                <UserCircle className="mr-2 h-4 w-4" />
-                Login / Sign Up
-              </Link>
-            </Button>
-          )}
+          
+          {/* User Icon Button - Replaces old Login/Profile buttons on desktop */}
+          <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
+            <Link 
+              href={isLoggedIn ? "/profile" : "/auth/login"} 
+              aria-label={isLoggedIn ? "My Profile" : "Login or Sign up"}
+            >
+              <UserCircle className="h-5 w-5" />
+            </Link>
+          </Button>
         </div>
       </div>
     </header>
