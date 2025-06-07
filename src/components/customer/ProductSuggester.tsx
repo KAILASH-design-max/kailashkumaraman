@@ -44,7 +44,8 @@ export function ProductSuggester() {
           <div className="flex items-center justify-center mb-2">
             <Sparkles className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-semibold text-gray-800">
+          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center justify-center">
+            <Sparkles className="h-6 w-6 text-primary mr-2" /> {/* Added Sparkles icon here */}
             Get Product Recommendations
           </CardTitle>
           <CardDescription className="text-md text-muted-foreground max-w-2xl mx-auto mt-1 px-2">
