@@ -66,8 +66,7 @@ export default function ProductsPage() {
       </div>
 
       {/* Filters Bar */}
-      <div className="mb-8 p-4 bg-card rounded-lg shadow sticky top-16 z-40 flex flex-col md:flex-row gap-4 items-center justify-center md:justify-end">
-        {/* Removed Search Input Div */}
+      <div className="mb-8 p-4 bg-card rounded-lg shadow sticky top-16 z-40 flex flex-col md:flex-row gap-4 items-center md:justify-start">
         <div className="flex gap-2 w-full md:w-auto">
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
             <SelectTrigger className="w-full md:w-[180px] h-11">
@@ -98,7 +97,7 @@ export default function ProductsPage() {
       </div>
 
       {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"> {/* Updated grid and gap */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {filteredProducts.map((product: Product) => (
             <ProductCard key={product.id} product={product} />
           ))}
