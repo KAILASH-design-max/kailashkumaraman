@@ -142,7 +142,7 @@ export function CustomerNavbar() {
           </Sheet>
 
           <div className="hidden md:flex items-center">
-            <Logo textSize="text-xl" iconSize={28} className="mr-6" />
+            <Logo textSize="text-xl" iconSize={28} className="ml-2 mr-6" />
             <nav className="flex items-center space-x-4 text-sm font-medium">
               {mainNavItems.map((link) => (
                 <Link
@@ -160,12 +160,12 @@ export function CustomerNavbar() {
           </div>
 
           <div className="md:hidden">
-             <Logo textSize="text-lg" iconSize={24} href="/" />
+             <Logo textSize="text-lg" iconSize={24} href="/" className="ml-2" />
           </div>
         </div>
 
         {/* Middle part: Search Bar */}
-        <div className="flex-1 px-4 sm:px-8 md:px-12 lg:px-20">
+        <div className="flex-1 px-4 sm:px-8 md:px-12 lg:px-20 mr-2">
           <div className="relative w-full max-w-md mx-auto">
             <Input
               type="search"
