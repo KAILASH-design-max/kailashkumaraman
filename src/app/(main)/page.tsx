@@ -1,3 +1,4 @@
+
 'use client'; // Make homepage client to use ProductCard which is now client
 
 import Link from 'next/link';
@@ -83,3 +84,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    

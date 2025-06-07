@@ -4,16 +4,16 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
-  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuestion, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch
+  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuestion, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain // Added ListChecks, Sparkles, Info, Brain
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
-import { useToast } from '@/hooks/use-toast'; // Corrected import
+import { useToast } from '@/hooks/use-toast'; 
 
 export default function ProfileDashboardPage() {
   const router = useRouter();
-  const { toast } = useToast(); // Corrected usage
+  const { toast } = useToast(); 
 
   const user = {
     name: 'Priya Sharma',
@@ -123,6 +123,24 @@ export default function ProfileDashboardPage() {
             </div>
           </CardContent>
         </Card>
+        
+        <Card className="shadow-lg hover:shadow-xl transition-shadow">
+          <CardHeader>
+            <CardTitle className="flex items-center text-xl font-semibold">
+              <ListChecks className="mr-3 h-7 w-7 text-primary" /> AI Smart Shopping List
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <CardDescription>Let our AI craft a personalized shopping list based on your recent purchases, upcoming events, and household needs.</CardDescription>
+            <Button asChild className="w-full mt-2">
+              <Link href="/profile/smart-list">Generate Smart List</Link>
+            </Button>
+             <div className="text-sm text-muted-foreground space-y-1 pt-2">
+                <p className="flex items-center"><Sparkles className="mr-2 h-4 w-4 text-accent" /> Personalized Suggestions</p>
+                <p className="flex items-center"><Info className="mr-2 h-4 w-4 text-accent" /> Get Reasoning</p>
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="shadow-lg hover:shadow-xl transition-shadow">
           <CardHeader>
@@ -190,3 +208,5 @@ export default function ProfileDashboardPage() {
     </div>
   );
 }
+
+    
