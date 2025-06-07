@@ -14,7 +14,7 @@ import { ProductCard } from '@/components/customer/ProductCard'; // Import the c
 // ProductCard is now imported from its own file, no need to define it here.
 
 export default function HomePage() {
-  const recommendedProducts = mockProducts.slice(0, 4);
+  const recommendedProducts = mockProducts.slice(0, 6); // Changed to 6
   const popularCategories = mockCategories.slice(0, 5);
 
   return (
@@ -67,7 +67,7 @@ export default function HomePage() {
             <Button variant="link" className="text-primary">View All &rarr;</Button>
           </Link>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"> {/* Updated grid and gap */}
           {recommendedProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -79,4 +79,5 @@ export default function HomePage() {
 }
 
     
+
 
