@@ -40,12 +40,12 @@ export function ProductSuggester() {
   return (
     <section className="mb-12">
       <Card className="bg-gray-50 shadow-md rounded-lg border border-gray-200">
-        <CardHeader className="pt-4 pb-2"> {/* Removed text-center */}
-          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center"> {/* Removed justify-center */}
+        <CardHeader className="pt-4 pb-2">
+          <CardTitle className="text-2xl font-semibold text-gray-800 flex items-center">
             <Sparkles className="h-6 w-6 text-primary mr-2" />
             Get Product Recommendations
           </CardTitle>
-          <CardDescription className="text-md text-muted-foreground max-w-2xl mt-1 px-2"> {/* Removed mx-auto */}
+          <CardDescription className="text-md text-muted-foreground max-w-2xl mt-1 px-2">
             Tell us what you&apos;re looking for (e.g., &quot;healthy breakfast items&quot;, &quot;dinner for two&quot;, &quot;party snacks&quot;) and we&apos;ll suggest some items!
           </CardDescription>
         </CardHeader>
@@ -97,7 +97,7 @@ export function ProductSuggester() {
           )}
           
           {!isLoading && !suggestionsOutput && !error && !query.trim() && (
-             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm">
+             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-sm text-left">
                 Please enter a query for recommendations.
             </div>
           )}
