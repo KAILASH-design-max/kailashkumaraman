@@ -125,7 +125,7 @@ export default function CheckoutPage() {
       <p className="text-muted-foreground text-center mb-8">Complete your purchase in a few simple steps.</p>
 
       <div className="max-w-3xl mx-auto bg-card p-6 sm:p-8 rounded-lg shadow-xl">
-        <Accordion type="single" collapsible value={currentStep} onValueChange={setCurrentStep} className="w-full">
+        <Accordion type="single" value={currentStep} onValueChange={setCurrentStep} className="w-full">
           {/* Step 1: Verify Items */}
           <AccordionItem value="verifyItems">
             <AccordionTrigger className="text-xl font-semibold hover:no-underline">
