@@ -1,5 +1,5 @@
 
-'use client'; // Make homepage client to use ProductCard which is now client
+'use client'; 
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -7,15 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { mockCategories, mockProducts } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
-import { Star, Search, ShoppingCart } from 'lucide-react'; // Added ShoppingCart
-// Input component is no longer needed here as search bar is moved to navbar
-import { ProductCard } from '@/components/customer/ProductCard'; // Import the client ProductCard
-
-// ProductCard is now imported from its own file, no need to define it here.
+import { Star, ShoppingCart } from 'lucide-react'; 
+import { ProductCard } from '@/components/customer/ProductCard'; 
+import { ProductSuggester } from '@/components/customer/ProductSuggester'; // Import the new component
 
 export default function HomePage() {
-  const recommendedProducts = mockProducts.slice(0, 6); // Changed to 6
-  const popularCategories = mockCategories.slice(0, 9); // Changed to fetch up to 9 categories
+  const recommendedProducts = mockProducts.slice(0, 6); 
+  const popularCategories = mockCategories.slice(0, 9); 
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -24,20 +22,13 @@ export default function HomePage() {
         <p className="text-lg text-secondary-foreground mb-8 max-w-2xl mx-auto">
           Your favorite products, delivered at lightning speed. What are you looking for today?
         </p>
-        {/* Search bar removed from here */}
       </section>
 
-      <section className="mb-12 bg-primary text-primary-foreground p-8 rounded-lg text-center">
-        <h2 className="text-3xl font-semibold mb-4">Tired of making lists?</h2>
-        <p className="text-lg mb-6">Let our AI craft your Smart Shopping List based on your needs!</p>
-        <Link href="/profile/smart-list" passHref>
-          <Button variant="secondary" size="lg">Try Smart List</Button>
-        </Link>
-      </section>
+      <ProductSuggester /> {/* Replaced "Try Smart List" section */}
 
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-4"> {/* Updated to lg:grid-cols-9 */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-4">
           {popularCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
               <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1">
@@ -67,7 +58,7 @@ export default function HomePage() {
             <Button variant="link" className="text-primary">View All &rarr;</Button>
           </Link>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"> {/* Updated grid and gap */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {recommendedProducts.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -77,8 +68,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-    
-
-
-
