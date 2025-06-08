@@ -31,7 +31,7 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null); // Stores URL string
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -45,7 +45,7 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
       const fetchedProduct = await getProductBySlug(slug);
       setProduct(fetchedProduct || null);
       if (fetchedProduct && fetchedProduct.imageUrls && fetchedProduct.imageUrls.length > 0) {
-        setSelectedImageUrl(fetchedProduct.imageUrls[0]);
+        setSelectedImageUrl(fetchedProduct.imageUrls[0].url);
       } else {
         setSelectedImageUrl('https://placehold.co/600x450.png'); // Default fallback
       }
@@ -54,18 +54,9 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
     loadProduct();
   }, [slug]);
 
-  useEffect(() => {
-    // Update selectedImageUrl if product changes and has images
-    if (product && product.imageUrls && product.imageUrls.length > 0) {
-        // If selectedImageUrl is not among the product's images or is null, reset to first
-        if (!selectedImageUrl || !product.imageUrls.includes(selectedImageUrl)) {
-             setSelectedImageUrl(product.imageUrls[0]);
-        }
-    } else if (product) { // Product exists but no images
-        setSelectedImageUrl('https://placehold.co/600x450.png');
-    }
-  }, [product, selectedImageUrl]);
-
+  // This useEffect was potentially problematic and has been removed.
+  // Initial selected image is set when product loads (above).
+  // Subsequent changes are handled by handleThumbnailClick.
 
   if (loading) {
     return (
@@ -99,7 +90,17 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
     setSelectedImageUrl(imageUrl);
   };
 
-  const mainImageToDisplay = selectedImageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'https://placehold.co/600x450.png');
+  const mainImageSrc = selectedImageUrl || 
+                       (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0].url : 'https://placehold.co/600x450.png');
+  
+  let mainImageDataAiHint = product.dataAiHint || 'product details main';
+  if (selectedImageUrl && product && product.imageUrls) {
+    const currentImageObject = product.imageUrls.find(img => img.url === selectedImageUrl);
+    if (currentImageObject && currentImageObject.dataAiHint) {
+      mainImageDataAiHint = currentImageObject.dataAiHint;
+    }
+  }
+
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -115,12 +116,12 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
           {/* Main Image Display */}
           <div className="mb-4">
             <Image
-              src={mainImageToDisplay}
+              src={mainImageSrc}
               alt={product.name}
               width={600}
               height={450}
               className="w-full h-auto object-cover rounded-lg shadow-lg aspect-[4/3]"
-              data-ai-hint={product.dataAiHint || 'product details main'}
+              data-ai-hint={mainImageDataAiHint}
               priority // Prioritize loading for LCP
             />
           </div>
@@ -128,22 +129,22 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
           {/* Thumbnails Display */}
           {product.imageUrls && product.imageUrls.length > 1 && (
             <div className="flex space-x-2 overflow-x-auto pb-2">
-              {product.imageUrls.map((url, index) => (
+              {product.imageUrls.map((imgObj, index) => (
                 <button
                   key={index}
-                  onClick={() => handleThumbnailClick(url)}
+                  onClick={() => handleThumbnailClick(imgObj.url)}
                   className={cn(
                     "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md overflow-hidden border-2",
-                    selectedImageUrl === url ? "border-primary" : "border-transparent hover:border-muted"
+                    selectedImageUrl === imgObj.url ? "border-primary" : "border-transparent hover:border-muted"
                   )}
                 >
                   <Image
-                    src={url}
+                    src={imgObj.url}
                     alt={`${product.name} thumbnail ${index + 1}`}
                     width={100}
                     height={75}
-                    className="object-cover aspect-[4/3] w-24 h-[calc(0.75*6rem)] sm:w-28 sm:h-[calc(0.75*7rem)]" // Fixed width, auto height
-                    data-ai-hint={product.dataAiHint || `product thumbnail ${index + 1}`}
+                    className="object-cover aspect-[4/3] w-24 h-[calc(0.75*6rem)] sm:w-28 sm:h-[calc(0.75*7rem)]"
+                    data-ai-hint={imgObj.dataAiHint || product.dataAiHint || `product thumbnail ${index + 1}`}
                   />
                 </button>
               ))}

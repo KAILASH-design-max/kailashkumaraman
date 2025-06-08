@@ -203,11 +203,11 @@ export default function CheckoutPage() {
             <AccordionContent className="pt-4 pb-6 px-1 space-y-4">
               <p className="text-muted-foreground text-sm">Please review your cart contents, quantities, and prices.</p>
               {cartItems.map((item: CartItem) => {
-                const primaryImageUrl = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : 'https://placehold.co/60x60.png';
+                const primaryImage = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : { url: 'https://placehold.co/60x60.png', dataAiHint: 'checkout item' };
                 return (
                   <Card key={item.id} className="flex items-center p-3 gap-3 shadow-sm border">
                      <div className="relative w-16 h-16 rounded-md overflow-hidden shrink-0">
-                        <Image src={primaryImageUrl} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={item.dataAiHint || 'checkout item'} />
+                        <Image src={primaryImage.url} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={primaryImage.dataAiHint || item.dataAiHint || 'checkout item'} />
                     </div>
                     <div className="flex-grow">
                       <h3 className="font-medium text-sm sm:text-base">{item.name}</h3>

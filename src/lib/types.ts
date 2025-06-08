@@ -6,8 +6,8 @@ export interface Product {
   description: string;
   price: number;
   category: string;
-  imageUrls: string[]; // Changed from imageUrl to imageUrls array
-  dataAiHint?: string;
+  imageUrls: Array<{ url: string; dataAiHint?: string }>; // Changed from string[]
+  dataAiHint?: string; // Product-level fallback hint
   rating?: number;
   reviewsCount?: number;
   stock?: number; // Added for inventory management

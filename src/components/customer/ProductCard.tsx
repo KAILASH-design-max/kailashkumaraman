@@ -20,21 +20,21 @@ export function ProductCard({ product }: ProductCardProps) {
     addToCart(product, 1);
   };
 
-  const primaryImageUrl = product.imageUrls && product.imageUrls.length > 0
+  const primaryImage = product.imageUrls && product.imageUrls.length > 0
     ? product.imageUrls[0]
-    : 'https://placehold.co/400x300.png'; // Fallback image
+    : { url: 'https://placehold.co/400x300.png', dataAiHint: 'product image' }; // Fallback image object
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl flex flex-col h-full group">
       <Link href={`/products/${product.slug}`} aria-label={product.name} className="block">
         <CardHeader className="p-0 relative">
           <Image
-            src={primaryImageUrl}
+            src={primaryImage.url}
             alt={product.name}
             width={400}
             height={300}
             className="aspect-[4/3] w-full object-cover group-hover:scale-105 transition-transform duration-300"
-            data-ai-hint={product.dataAiHint || 'product image'}
+            data-ai-hint={primaryImage.dataAiHint || product.dataAiHint || 'product image'}
           />
            {product.stock === 0 && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
