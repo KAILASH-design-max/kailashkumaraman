@@ -29,7 +29,7 @@ const useAuth = () => {
 
   useEffect(() => {
     const checkAuthStatus = () => {
-      const loggedInStatus = localStorage.getItem('isMockLoggedIn') === 'true';
+      const loggedInStatus = typeof window !== 'undefined' && localStorage.getItem('isMockLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
     };
 
@@ -69,13 +69,16 @@ export function CustomerNavbar() {
   };
 
   useEffect(() => {
+    // Set deliveryTime on the client side after mount
     setDeliveryTime(calculateDeliveryTime());
   }, []);
 
   const handleLocationUpdate = (newLocation: string) => {
     setCurrentLocation(newLocation);
-    setDeliveryTime(calculateDeliveryTime());
-    setIsLocationDialogOpen(false);
+    setDeliveryTime(calculateDeliveryTime()); // Recalculate or fetch new time
+    if (typeof window !== 'undefined') { // Ensure onOpenChange is only called on client
+      setIsLocationDialogOpen(false);
+    }
   };
 
   const cartItemCount = getTotalItems();
@@ -187,7 +190,7 @@ export function CustomerNavbar() {
             <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
         </div>
 
-        <div className="hidden md:flex flex-1 justify-center px-4"> {/* Removed mr-2 from here */}
+        <div className="hidden md:flex flex-1 justify-center px-2"> {/* Reduced px-4 to px-2 */}
           <div className="relative w-full max-w-lg">
             <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -262,4 +265,3 @@ export function CustomerNavbar() {
     </header>
   );
 }
-
