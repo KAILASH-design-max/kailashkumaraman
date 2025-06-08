@@ -6,7 +6,7 @@ export interface Product {
   description: string;
   price: number;
   category: string;
-  imageUrls: Array<{ url: string; dataAiHint?: string }>; // Changed from string[]
+  imageUrls: Array<{ url: string; dataAiHint?: string }>; // Supports multiple images with individual hints
   dataAiHint?: string; // Product-level fallback hint
   rating?: number;
   reviewsCount?: number;
