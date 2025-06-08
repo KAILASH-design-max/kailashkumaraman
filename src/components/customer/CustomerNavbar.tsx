@@ -25,29 +25,28 @@ const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType
 
 
 const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Initialize to a server-renderable default
+  const [isLoggedIn, setIsLoggedIn] = useState(false); 
 
   useEffect(() => {
-    // This runs only on the client after hydration
     const checkAuthStatus = () => {
       const loggedInStatus = localStorage.getItem('isMockLoggedIn') === 'true';
       setIsLoggedIn(loggedInStatus);
     };
 
-    checkAuthStatus(); // Initial check on mount
+    checkAuthStatus(); 
 
-    window.addEventListener('storage', checkAuthStatus); // Listen for changes in other tabs
-    window.addEventListener('focus', checkAuthStatus); // Listen for when window regains focus
+    window.addEventListener('storage', checkAuthStatus); 
+    window.addEventListener('focus', checkAuthStatus); 
 
     return () => {
       window.removeEventListener('storage', checkAuthStatus);
       window.removeEventListener('focus', checkAuthStatus);
     };
-  }, []); // Empty dependency array ensures this runs once on mount client-side
+  }, []); 
 
   const logout = () => {
     if (typeof window !== 'undefined') localStorage.removeItem('isMockLoggedIn');
-    setIsLoggedIn(false); // Update state immediately
+    setIsLoggedIn(false); 
   };
   return { isLoggedIn, logout };
 };
@@ -61,7 +60,7 @@ export function CustomerNavbar() {
   const { getTotalItems, getCartTotal } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
 
-  const [deliveryTime, setDeliveryTime] = useState<number | null>(null); // Initialize to null
+  const [deliveryTime, setDeliveryTime] = useState<number | null>(null); 
   const [currentLocation, setCurrentLocation] = useState("Daryaganj, Delhi, 110002, India");
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
 
@@ -70,7 +69,6 @@ export function CustomerNavbar() {
   };
 
   useEffect(() => {
-    // Set delivery time on the client side after mount
     setDeliveryTime(calculateDeliveryTime());
   }, []);
 
@@ -189,7 +187,7 @@ export function CustomerNavbar() {
             <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
         </div>
 
-        <div className="hidden md:flex flex-1 justify-center px-4 mr-2">
+        <div className="hidden md:flex flex-1 justify-center px-4"> {/* Removed mr-2 from here */}
           <div className="relative w-full max-w-lg">
             <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -264,3 +262,4 @@ export function CustomerNavbar() {
     </header>
   );
 }
+
