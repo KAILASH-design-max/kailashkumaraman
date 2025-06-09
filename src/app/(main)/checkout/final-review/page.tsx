@@ -78,11 +78,11 @@ export default function FinalReviewPage() {
     setIsLoading(false);
     toast({
       title: "Order Placed Successfully!",
-      description: "Thank you for your purchase. You'll receive an email confirmation shortly.",
+      description: "Thank you for your purchase. You'll be redirected shortly.",
       variant: "default", 
-      duration: 5000, 
+      duration: 3000, 
     });
-    router.push('/profile'); // Redirect to profile or a dedicated order confirmation page
+    router.push('/checkout/order-confirmation'); // Redirect to the new order confirmation page
   };
 
   if (!finalOrderData && !pageError) {
