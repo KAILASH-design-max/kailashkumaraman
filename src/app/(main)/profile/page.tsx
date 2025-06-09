@@ -4,24 +4,35 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
-  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuote, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain, // Existing icons
-  Truck, TrendingDown, Gift // Added new icons
+  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuote, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain,
+  Truck, TrendingDown, Gift 
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast'; 
-import { auth } from '@/lib/firebase'; // Import Firebase auth
-import { signOut } from 'firebase/auth'; // Import signOut
+import { auth } from '@/lib/firebase'; 
+import { signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth'; 
+import { useState, useEffect } from 'react';
 
 export default function ProfileDashboardPage() {
   const router = useRouter();
   const { toast } = useToast(); 
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
-  const user = {
-    name: 'Priya Sharma',
-    email: 'priya@example.com',
-    joinDate: 'Joined on January 15, 2023',
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsLoadingAuth(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const userDetails = {
+    name: currentUser?.displayName || 'Guest User',
+    email: currentUser?.email || 'No email available',
+    joinDate: 'Joined on January 15, 2023', // This remains static as an example
   };
 
   const handleLogout = async () => {
@@ -36,15 +47,35 @@ export default function ProfileDashboardPage() {
     }
   };
 
+  if (isLoadingAuth) {
+    return (
+      <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
+        <p>Loading user profile...</p>
+      </div>
+    );
+  }
+
+  if (!currentUser) {
+    // Optionally redirect to login or show a message
+    // For now, showing a limited view for non-logged-in users might be an option, or just redirect.
+    // router.push('/login'); // Uncomment to redirect if user must be logged in
+    return (
+      <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
+        <p>Please <Link href="/login" className="text-primary underline">log in</Link> to view your profile.</p>
+      </div>
+    );
+  }
+
+
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8">
       <header className="mb-10">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 p-6 bg-card rounded-lg shadow-md">
           <UserCircle className="h-20 w-20 sm:h-24 sm:w-24 text-primary" />
           <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-card-foreground">Welcome to your Dashboard, {user.name}!</h1>
-            <p className="text-md sm:text-lg text-muted-foreground">{user.email}</p>
-            <p className="text-xs sm:text-sm text-muted-foreground">{user.joinDate}</p>
+            <h1 className="text-3xl sm:text-4xl font-bold text-card-foreground">Welcome to your Dashboard, {userDetails.name}!</h1>
+            <p className="text-md sm:text-lg text-muted-foreground">{userDetails.email}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{userDetails.joinDate}</p>
             <Button variant="outline" size="sm" className="mt-4">
               <Edit3 className="mr-2 h-4 w-4" /> Update Profile/Preferences
             </Button>
@@ -214,3 +245,5 @@ export default function ProfileDashboardPage() {
     </div>
   );
 }
+
+    
