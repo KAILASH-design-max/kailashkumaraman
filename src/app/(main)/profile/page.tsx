@@ -76,9 +76,7 @@ export default function ProfileDashboardPage() {
             <h1 className="text-3xl sm:text-4xl font-bold text-card-foreground">Welcome to your Dashboard, {userDetails.name}!</h1>
             <p className="text-md sm:text-lg text-muted-foreground">{userDetails.email}</p>
             <p className="text-xs sm:text-sm text-muted-foreground">{userDetails.joinDate}</p>
-            <Button variant="outline" size="sm" className="mt-4">
-              <Edit3 className="mr-2 h-4 w-4" /> Update Profile/Preferences
-            </Button>
+            {/* Removed "Update Profile/Preferences" button from here */}
           </div>
         </div>
       </header>
