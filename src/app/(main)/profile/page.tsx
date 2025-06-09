@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
-  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuestion, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain // Added ListChecks, Sparkles, Info, Brain
+  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuote, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain // Added ListChecks, Sparkles, Info, Brain
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -175,7 +175,7 @@ export default function ProfileDashboardPage() {
              <div className="text-sm text-muted-foreground space-y-1 pt-2">
                 <p className="flex items-center"><ShieldCheck className="mr-2 h-4 w-4 text-accent" /> Enable 2FA</p>
                 <p className="flex items-center"><Activity className="mr-2 h-4 w-4 text-accent" /> View Login Activity</p>
-                <p className="flex items-center"><MessageSquareQuestion className="mr-2 h-4 w-4 text-accent" /> Contact Support</p>
+                <p className="flex items-center"><MessageSquareQuote className="mr-2 h-4 w-4 text-accent" /> Contact Support</p>
             </div>
           </CardContent>
         </Card>
@@ -202,7 +202,7 @@ export default function ProfileDashboardPage() {
       <footer className="mt-12 text-center">
         <p className="text-muted-foreground mb-1">Need help or have questions about your account?</p>
         <Button variant="link" asChild className="text-primary text-lg">
-          <Link href="/support"><MessageSquareQuestion className="mr-2 h-5 w-5" />Contact Support Center</Link>
+          <Link href="/support"><MessageSquareQuote className="mr-2 h-5 w-5" />Contact Support Center</Link>
         </Button>
       </footer>
     </div>
