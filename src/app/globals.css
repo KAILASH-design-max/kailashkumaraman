@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -87,4 +88,20 @@
   h1, h2, h3, h4, h5, h6 {
     @apply font-headline;
   }
+}
+
+/* Styles for cart icon state */
+.cart-empty {
+  opacity: 0.6;
+  cursor: not-allowed !important; /* Ensure cursor changes even if nested */
+}
+
+/* Ensure the button or link itself is non-interactive */
+button.cart-empty,
+a.cart-empty { /* Handles Button with asChild rendering a Link */
+  pointer-events: none;
+}
+
+.cart-active .lucide-shopping-cart {
+  color: #16a34a; /* Tailwind's green-600 */
 }

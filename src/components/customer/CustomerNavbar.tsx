@@ -20,6 +20,7 @@ import { mockProducts } from '@/lib/mockData';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
+import { cn } from '@/lib/utils';
 
 
 const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType }[] = [
@@ -246,7 +247,11 @@ export function CustomerNavbar() {
 
           <Button
             onClick={() => router.push('/cart')}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 h-11 rounded-md text-sm"
+            className={cn(
+              "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 h-11 rounded-md text-sm",
+              cartItemCount === 0 ? 'cart-empty' : 'cart-active'
+            )}
+            aria-disabled={cartItemCount === 0}
           >
             <ShoppingCartIcon className="mr-2 h-5 w-5" />
             <div className="flex flex-col items-start -my-1">
@@ -257,7 +262,16 @@ export function CustomerNavbar() {
         </div>
 
         <div className="md:hidden ml-auto">
-             <Button variant="ghost" size="icon" asChild className="relative">
+             <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                className={cn(
+                  "relative",
+                  cartItemCount === 0 ? 'cart-empty' : 'cart-active'
+                )}
+                aria-disabled={cartItemCount === 0}
+              >
                 <Link href="/cart" aria-label="Shopping Cart">
                 <ShoppingCartIcon className="h-5 w-5" />
                 {cartItemCount > 0 && (
