@@ -4,7 +4,8 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
-  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuote, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain // Added ListChecks, Sparkles, Info, Brain
+  ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuote, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain, // Existing icons
+  Truck, TrendingDown, Gift // Added new icons
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -154,9 +155,9 @@ export default function ProfileDashboardPage() {
               <Link href="/profile/notifications">Manage Notifications</Link>
             </Button>
              <div className="text-sm text-muted-foreground space-y-1 pt-2">
-                <p className="flex items-center"><ListOrdered className="mr-2 h-4 w-4 text-accent" /> Order/Shipping Updates</p>
-                <p className="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-accent"><path d="M12 6V2H8"/><path d="M12 18v-4"/><path d="M12 12v-2"/><path d="M12 8V7"/><path d="M12 3v1"/><path d="M15 6.343A8.001 8.001 0 0 1 12 20a8 8 0 0 1 0-16"/><path d="m8 7 1.841 1.841A6.005 6.005 0 0 0 12 18V12H6l3-3"/></svg> Price Drop Alerts</p>
-                <p className="flex items-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 text-accent"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/><polyline points="16 5 17.58 6.58"/><line x1="2" y1="22" x2="22" y2="2"/></svg> Exclusive Promotions</p>
+                <p className="flex items-center"><Truck className="mr-2 h-4 w-4 text-accent" /> Order/Shipping Updates</p>
+                <p className="flex items-center"><TrendingDown className="mr-2 h-4 w-4 text-accent" /> Price Drop Alerts</p>
+                <p className="flex items-center"><Gift className="mr-2 h-4 w-4 text-accent" /> Exclusive Promotions</p>
             </div>
           </CardContent>
         </Card>
