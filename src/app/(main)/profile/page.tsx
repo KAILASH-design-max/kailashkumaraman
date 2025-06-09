@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast'; 
+import { auth } from '@/lib/firebase'; // Import Firebase auth
+import { signOut } from 'firebase/auth'; // Import signOut
 
 export default function ProfileDashboardPage() {
   const router = useRouter();
@@ -22,13 +24,16 @@ export default function ProfileDashboardPage() {
     joinDate: 'Joined on January 15, 2023',
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log('User logging out...');
-    if (typeof window !== 'undefined') {
-        localStorage.removeItem('isMockLoggedIn'); 
+    try {
+      await signOut(auth);
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      router.push('/'); 
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
     }
-    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-    router.push('/'); 
   };
 
   return (
@@ -209,5 +214,3 @@ export default function ProfileDashboardPage() {
     </div>
   );
 }
-
-    
