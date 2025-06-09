@@ -15,20 +15,19 @@ import { useCart } from '@/hooks/useCart';
 import { CheckCircle, CreditCard, ChevronLeft, Tag, AlertCircle, ShoppingBag, Lock, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-// These constants would ideally be shared or fetched, but for prototype:
 const GST_RATE = 0.18;
 const HANDLING_CHARGE = 5;
 
 interface SavedPaymentMethod {
   id: string;
   type: 'card' | 'upi';
-  displayName: string; // e.g., "Visa **** 1234" or "upi@okhdfcbank"
+  displayName: string; 
   icon?: React.ElementType;
 }
 
 const savedPaymentMethods: SavedPaymentMethod[] = [
   { id: 'card1', type: 'card', displayName: 'Visa ending in 1234', icon: CreditCard },
-  { id: 'upi1', type: 'upi', displayName: 'upi@examplebank', icon: CreditCard }, // Generic icon for now
+  { id: 'upi1', type: 'upi', displayName: 'upi@examplebank', icon: CreditCard }, 
 ];
 
 interface ShippingInfo {
@@ -36,20 +35,21 @@ interface ShippingInfo {
   method: string;
   promoCode: { code: string; discountAmount: number; description: string } | null;
   summary: { subtotal: number; discount: number; deliveryCharge: number; gstAmount: number; handlingCharge: number; totalAmount: number };
+  cartItems: any[]; // Add cartItems to ShippingInfo to pass to final review
 }
 
 
 export default function PaymentDetailsPage() {
-  const { cartItems, clearCart } = useCart(); // Added clearCart
+  const { cartItems } = useCart(); 
   const router = useRouter();
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null);
-  const [paymentOption, setPaymentOption] = useState('saved'); // 'saved', 'new_card', 'upi'
+  const [paymentOption, setPaymentOption] = useState('saved'); 
   const [selectedPaymentId, setSelectedPaymentId] = useState(savedPaymentMethods[0]?.id || '');
   const [newCardDetails, setNewCardDetails] = useState({ number: '', expiry: '', cvc: '', name: '' });
   const [newUpiId, setNewUpiId] = useState('');
   
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Kept for potential future use, but primary action moves
   const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,7 +61,9 @@ export default function PaymentDetailsPage() {
         const storedInfo = localStorage.getItem('checkoutShippingInfo');
         if (storedInfo) {
             try {
-                setShippingInfo(JSON.parse(storedInfo) as ShippingInfo);
+                const parsedInfo = JSON.parse(storedInfo);
+                 // Ensure cartItems are part of what's loaded or add them here
+                setShippingInfo({ ...parsedInfo, cartItems: cartItems });
             } catch (e) {
                 console.error("Error parsing shipping info from localStorage", e);
                 setPageError("Could not load shipping details. Please go back and try again.");
@@ -98,35 +100,23 @@ export default function PaymentDetailsPage() {
 
     const paymentDetails = {
         method: paymentOption,
-        details: paymentOption === 'saved' ? savedPaymentMethods.find(p => p.id === selectedPaymentId) 
-                : paymentOption === 'new_card' ? newCardDetails 
-                : { upiId: newUpiId }
+        details: paymentOption === 'saved' 
+                    ? savedPaymentMethods.find(p => p.id === selectedPaymentId) 
+                    : paymentOption === 'new_card' 
+                        ? newCardDetails 
+                        : { upiId: newUpiId }
     };
     
-    const orderData = {
-        ...shippingInfo,
+    const finalOrderData = {
+        ...shippingInfo, // This now includes cartItems from the useEffect
         paymentDetails,
     };
 
     if (typeof window !== 'undefined') {
-        localStorage.setItem('finalOrderData', JSON.stringify(orderData));
+        localStorage.setItem('finalOrderData', JSON.stringify(finalOrderData));
     }
-    console.log("Proceeding to final review with:", orderData);
-    // Simulate placing order for now, as final review page isn't built
-    // In a real app, this would go to /checkout/final-review
-    
-    // Simulate API call for placing order
-    setIsLoading(true);
-    setTimeout(() => {
-        setIsLoading(false);
-        // clearCart(); // Clear cart after "successful" order
-        if (typeof window !== 'undefined') {
-            localStorage.removeItem('checkoutShippingInfo'); // Clear temp shipping info
-        }
-        // For now, just an alert, then redirect to a placeholder confirmation or home.
-        alert("Order Placed (Simulated)! Payment Successful. Redirecting to profile.");
-        router.push('/profile'); // Or a dedicated order confirmation page
-    }, 2000);
+    console.log("Proceeding to final review with:", finalOrderData);
+    router.push('/checkout/final-review');
   };
 
   if (!shippingInfo && !pageError) {
@@ -212,7 +202,7 @@ export default function PaymentDetailsPage() {
             </RadioGroup>
             <Separator className="my-4"/>
              <p className="text-sm text-muted-foreground italic">
-                This is a prototype. No real payment will be processed. Clicking "Proceed to Final Review" will simulate order placement.
+                Clicking "Proceed to Final Review" will take you to the final order confirmation page. No real payment will be processed.
             </p>
         </div>
 
@@ -248,8 +238,8 @@ export default function PaymentDetailsPage() {
                     onClick={handleProceedToFinalReview} 
                     disabled={isLoading || cartItems.length === 0 || shippingInfo.summary.totalAmount <= 0 || !isPaymentDetailsValid()}
                 >
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Proceed to Final Review & Place Order
+                {/* Loader removed as action is now navigation */}
+                Proceed to Final Review
                 </Button>
             </CardFooter>
             </Card>
