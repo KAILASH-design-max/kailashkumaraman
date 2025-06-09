@@ -12,6 +12,9 @@ import { MinusCircle, PlusCircle, Trash2, ShoppingBag, ChefHat, Loader2, Sparkle
 import { useState } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
@@ -21,6 +24,8 @@ const HANDLING_CHARGE = 5;
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
+  const router = useRouter();
+  const { toast } = useToast();
 
   const [recipe, setRecipe] = useState<GenerateCartRecipeOutput | null>(null);
   const [isRecipeLoading, setIsRecipeLoading] = useState(false);
@@ -48,6 +53,19 @@ export default function CartPage() {
       setRecipeError("Sorry, we couldn't generate a recipe at this time. Please try again later.");
     } finally {
       setIsRecipeLoading(false);
+    }
+  };
+
+  const handleProceedToCheckout = () => {
+    if (auth.currentUser) {
+      router.push('/checkout');
+    } else {
+      toast({
+        title: "Login Required",
+        description: "Please log in to proceed to checkout.",
+        variant: "default",
+      });
+      router.push('/auth/login?redirect=/checkout');
     }
   };
 
@@ -254,8 +272,8 @@ export default function CartPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-2">
                {cartItems.length > 0 ? (
-                <Button className="w-full" size="lg" asChild>
-                    <Link href="/checkout">Proceed to Checkout</Link>
+                <Button className="w-full" size="lg" onClick={handleProceedToCheckout}>
+                    Proceed to Checkout
                 </Button>
                ) : (
                  <Button className="w-full" size="lg" disabled>

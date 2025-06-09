@@ -16,7 +16,11 @@ import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Input } from '@/components/ui/input';
 import { LocationDialog } from '@/components/shared/LocationDialog';
-import { mockProducts } from '@/lib/mockData'; // Import mockProducts
+import { mockProducts } from '@/lib/mockData'; 
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
+import { useToast } from "@/hooks/use-toast";
+
 
 const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType }[] = [
   { href: '/profile/orders', label: 'My Orders', icon: ListOrdered },
@@ -25,31 +29,31 @@ const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType
 ];
 
 
-const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+const useAuthHook = () => { // Renamed to avoid conflict if a global useAuth is added later
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
-    const checkAuthStatus = () => {
-      const loggedInStatus = typeof window !== 'undefined' && localStorage.getItem('isMockLoggedIn') === 'true';
-      setIsLoggedIn(loggedInStatus);
-    };
-
-    checkAuthStatus();
-
-    window.addEventListener('storage', checkAuthStatus);
-    window.addEventListener('focus', checkAuthStatus);
-
-    return () => {
-      window.removeEventListener('storage', checkAuthStatus);
-      window.removeEventListener('focus', checkAuthStatus);
-    };
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
-  const logout = () => {
-    if (typeof window !== 'undefined') localStorage.removeItem('isMockLoggedIn');
-    setIsLoggedIn(false);
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      router.push('/'); // Redirect to home page after logout
+    } catch (error) {
+      console.error("Error signing out: ", error);
+      toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
+    }
   };
-  return { isLoggedIn, logout };
+  return { currentUser, isLoggedIn: !!currentUser, logout, isLoading };
 };
 
 
@@ -57,10 +61,10 @@ export function CustomerNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { isLoggedIn, logout: performLogout } = useAuth();
+  const { currentUser, isLoggedIn, logout: performLogout, isLoading: authIsLoading } = useAuthHook();
   const { getTotalItems, getCartTotal } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); // New state for placeholder
+  const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); 
 
   const [deliveryTime, setDeliveryTime] = useState<number | null>(null);
   const [currentLocation, setCurrentLocation] = useState("Daryaganj, Delhi, 110002, India");
@@ -71,27 +75,23 @@ export function CustomerNavbar() {
   };
 
   useEffect(() => {
-    // Delivery time update interval
     setDeliveryTime(calculateDeliveryTime());
     const deliveryIntervalId = setInterval(() => {
       setDeliveryTime(calculateDeliveryTime());
     }, 1000);
 
-    // Search placeholder update interval
     if (mockProducts && mockProducts.length > 0) {
       const placeholderIntervalId = setInterval(() => {
         const randomIndex = Math.floor(Math.random() * mockProducts.length);
         const randomProductName = mockProducts[randomIndex].name;
-        setSearchPlaceholder(`Search "${randomProductName}"`);
-      }, 4000); // Change placeholder every 4 seconds
+        setSearchPlaceholder(`Search "${randomProductName}"...`);
+      }, 4000); 
 
       return () => {
         clearInterval(deliveryIntervalId);
-        clearInterval(placeholderIntervalId); // Clear placeholder interval
+        clearInterval(placeholderIntervalId); 
       };
     }
-
-    // Fallback cleanup if mockProducts is empty
     return () => clearInterval(deliveryIntervalId);
   }, []);
 
@@ -107,16 +107,15 @@ export function CustomerNavbar() {
 
   const closeSheet = () => setIsSheetOpen(false);
 
-  const handleLogout = () => {
-    performLogout();
-    router.push('/');
+  const handleLogout = async () => {
+    await performLogout();
     closeSheet();
   };
 
   const handleSearchSubmit = () => {
     if (searchTerm.trim()) {
       router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(''); // Clear user input after search
+      setSearchTerm(''); 
       closeSheet();
     }
   };
@@ -154,30 +153,32 @@ export function CustomerNavbar() {
               ))}
             </nav>
             <div className="mt-auto border-t pt-4">
-              {isLoggedIn ? (
-                <>
+              {!authIsLoading && (
+                isLoggedIn ? (
+                  <>
+                    <SheetClose asChild>
+                      <Button asChild variant='ghost' className="w-full justify-start text-md py-3">
+                        <Link href="/profile">
+                            <User className="mr-2 h-5 w-5" />
+                            {currentUser?.displayName || 'My Profile'}
+                        </Link>
+                      </Button>
+                    </SheetClose>
+                    <Button variant='outline' className="w-full justify-start text-md py-3" onClick={handleLogout}>
+                        <LogOut className="mr-2 h-5 w-5" />
+                        Logout
+                    </Button>
+                  </>
+                ) : (
                   <SheetClose asChild>
-                    <Button asChild variant='ghost' className="w-full justify-start text-md py-3">
-                      <Link href="/profile">
-                          <User className="mr-2 h-5 w-5" />
-                          My Profile
-                      </Link>
-                    </Button>
+                     <Button asChild variant='default' className="w-full justify-start text-md py-3">
+                        <Link href="/auth/login">
+                            <User className="mr-2 h-5 w-5" />
+                            Login / Sign Up
+                        </Link>
+                      </Button>
                   </SheetClose>
-                  <Button variant='outline' className="w-full justify-start text-md py-3" onClick={handleLogout}>
-                      <LogOut className="mr-2 h-5 w-5" />
-                      Logout
-                  </Button>
-                </>
-              ) : (
-                <SheetClose asChild>
-                   <Button asChild variant='default' className="w-full justify-start text-md py-3">
-                      <Link href="/auth/login">
-                          <User className="mr-2 h-5 w-5" />
-                          Login / Sign Up
-                      </Link>
-                    </Button>
-                </SheetClose>
+                )
               )}
             </div>
           </SheetContent>
@@ -217,7 +218,7 @@ export function CustomerNavbar() {
             <Input
               type="search"
               placeholder={searchPlaceholder}
-              className="h-11 w-full pl-10 pr-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary"
+              className="h-11 w-full pl-10 pr-4 rounded-lg border-input focus:border-primary focus:ring-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchKeyDown}
@@ -227,24 +228,25 @@ export function CustomerNavbar() {
         </div>
 
         <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
-           {isLoggedIn ? (
-             <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
-               <Link href="/profile">
-                  Profile
-               </Link>
-             </Button>
-           ) : (
-            <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
-              <Link href="/auth/login">
-                 Login
-              </Link>
-            </Button>
+           {!authIsLoading && (
+             isLoggedIn ? (
+               <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
+                 <Link href="/profile">
+                    {currentUser?.displayName || 'Profile'}
+                 </Link>
+               </Button>
+             ) : (
+              <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
+                <Link href="/auth/login">
+                   Login
+                </Link>
+              </Button>
+             )
            )}
 
           <Button
             onClick={() => router.push('/cart')}
-            style={{ backgroundColor: '#5B8C28' }}
-            className="text-white hover:bg-green-700 px-4 py-2 h-11 rounded-md text-sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 h-11 rounded-md text-sm"
           >
             <ShoppingCartIcon className="mr-2 h-5 w-5" />
             <div className="flex flex-col items-start -my-1">
@@ -269,13 +271,13 @@ export function CustomerNavbar() {
         </div>
 
       </div>
-       <div className="md:hidden px-4 pb-3 pt-1 border-b">
+       <div className="md:hidden px-4 pb-3 pt-1 border-t">
           <div className="relative w-full">
             <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
               placeholder={searchPlaceholder}
-              className="h-10 w-full pl-9 pr-4 rounded-md text-sm"
+              className="h-10 w-full pl-9 pr-4 rounded-md text-sm border-input"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchKeyDown}

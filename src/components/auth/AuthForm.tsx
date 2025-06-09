@@ -15,9 +15,16 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+  type AuthError
+} from 'firebase/auth';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -41,6 +48,7 @@ type AuthFormProps = {
 export function AuthForm({ mode }: AuthFormProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -53,26 +61,66 @@ export function AuthForm({ mode }: AuthFormProps) {
     defaultValues: mode === 'login' ? { email: '', password: '' } : { name: '', email: '', password: '', confirmPassword: '' },
   });
 
+  const handleFirebaseAuthError = (error: AuthError) => {
+    console.error("Firebase Auth Error:", error);
+    let errorMessage = "An unexpected error occurred. Please try again.";
+    switch (error.code) {
+      case "auth/invalid-email":
+        errorMessage = "Invalid email address format.";
+        break;
+      case "auth/user-disabled":
+        errorMessage = "This user account has been disabled.";
+        break;
+      case "auth/user-not-found":
+        errorMessage = "No user found with this email.";
+        break;
+      case "auth/wrong-password":
+        errorMessage = "Incorrect password. Please try again.";
+        break;
+      case "auth/email-already-in-use":
+        errorMessage = "This email address is already in use.";
+        break;
+      case "auth/weak-password":
+        errorMessage = "The password is too weak.";
+        break;
+      case "auth/operation-not-allowed":
+        errorMessage = "Email/password accounts are not enabled.";
+        break;
+      default:
+        errorMessage = error.message || errorMessage;
+    }
+    toast({
+      title: mode === 'login' ? 'Login Failed' : 'Signup Failed',
+      description: errorMessage,
+      variant: 'destructive',
+    });
+  };
+
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setIsLoading(false);
+    const redirectUrl = searchParams.get('redirect') || '/profile';
 
-    if (mode === 'login') {
-      console.log('Login attempt:', values);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('isMockLoggedIn', 'true');
+    try {
+      if (mode === 'login') {
+        const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
+        console.log('Login successful:', userCredential.user);
+        toast({ title: 'Login Successful', description: 'Welcome back!' });
+        router.push(redirectUrl);
+      } else { // mode === 'signup'
+        const signupValues = values as z.infer<typeof signupSchema>; // Type assertion for signup
+        const userCredential = await createUserWithEmailAndPassword(auth, signupValues.email, signupValues.password);
+        console.log('Signup successful:', userCredential.user);
+        // Update profile with name
+        if (auth.currentUser) {
+          await updateProfile(auth.currentUser, { displayName: signupValues.name });
+        }
+        toast({ title: 'Signup Successful', description: 'Your account has been created. Welcome!' });
+        router.push(redirectUrl);
       }
-      toast({ title: 'Login Successful', description: 'Welcome to your dashboard!' });
-      router.push('/profile'); // Redirect to Account Dashboard
-    } else {
-      console.log('Signup attempt:', values);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('isMockLoggedIn', 'true');
-      }
-      toast({ title: 'Signup Successful', description: 'Your account has been created. Welcome to your dashboard!' });
-      router.push('/profile'); // Redirect to Account Dashboard
+    } catch (error) {
+      handleFirebaseAuthError(error as AuthError);
+    } finally {
+      setIsLoading(false);
     }
   }
 
