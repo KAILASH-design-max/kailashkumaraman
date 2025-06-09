@@ -84,7 +84,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         errorMessage = "The password is too weak.";
         break;
       case "auth/operation-not-allowed":
-        errorMessage = "Email/password accounts are not enabled.";
+        errorMessage = "Email/password accounts are not enabled. Please check Firebase console.";
         break;
       default:
         errorMessage = error.message || errorMessage;
@@ -98,7 +98,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
-    const redirectUrl = searchParams.get('redirect') || '/profile';
+    const redirectUrl = searchParams.get('redirect') || '/'; // Default to home page
 
     try {
       if (mode === 'login') {
