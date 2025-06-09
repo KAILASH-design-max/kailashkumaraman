@@ -138,11 +138,9 @@ export default function ShippingDetailsPage() {
 
   const handleProceedToPayment = () => {
     if (!isAddressValid()) {
-        // This should ideally be handled by disabling the button, but as a fallback:
         setPromoMessage({ type: 'error', text: 'Please select or enter a valid shipping address.'});
         return;
     }
-    // Store shipping details in localStorage or context for next step
     const shippingInfo = {
         address: shippingOption === 'saved' ? savedAddresses.find(a => a.id === selectedAddressId) : newAddress,
         method: shippingMethod,
@@ -153,8 +151,7 @@ export default function ShippingDetailsPage() {
         localStorage.setItem('checkoutShippingInfo', JSON.stringify(shippingInfo));
     }
     console.log("Proceeding to payment with shipping:", shippingInfo);
-    // router.push('/checkout/payment-details'); // TODO: Implement payment page
-    alert("Shipping details saved. Next: Payment page (to be implemented).");
+    router.push('/checkout/payment-details');
   };
 
   if (cartItems.length === 0) {
@@ -230,7 +227,7 @@ export default function ShippingDetailsPage() {
                     onChange={e => setPromoCodeInput(e.target.value)} 
                     className="flex-grow"
                   />
-                  <DropdownMenu>
+                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
                         <ChevronDown className="h-4 w-4" />
