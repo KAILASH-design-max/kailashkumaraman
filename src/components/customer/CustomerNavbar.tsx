@@ -16,6 +16,7 @@ import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Input } from '@/components/ui/input';
 import { LocationDialog } from '@/components/shared/LocationDialog';
+import { mockProducts } from '@/lib/mockData'; // Import mockProducts
 
 const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType }[] = [
   { href: '/profile/orders', label: 'My Orders', icon: ListOrdered },
@@ -25,7 +26,7 @@ const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType
 
 
 const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false); 
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
     const checkAuthStatus = () => {
@@ -33,20 +34,20 @@ const useAuth = () => {
       setIsLoggedIn(loggedInStatus);
     };
 
-    checkAuthStatus(); 
+    checkAuthStatus();
 
-    window.addEventListener('storage', checkAuthStatus); 
-    window.addEventListener('focus', checkAuthStatus); 
+    window.addEventListener('storage', checkAuthStatus);
+    window.addEventListener('focus', checkAuthStatus);
 
     return () => {
       window.removeEventListener('storage', checkAuthStatus);
       window.removeEventListener('focus', checkAuthStatus);
     };
-  }, []); 
+  }, []);
 
   const logout = () => {
     if (typeof window !== 'undefined') localStorage.removeItem('isMockLoggedIn');
-    setIsLoggedIn(false); 
+    setIsLoggedIn(false);
   };
   return { isLoggedIn, logout };
 };
@@ -59,8 +60,9 @@ export function CustomerNavbar() {
   const { isLoggedIn, logout: performLogout } = useAuth();
   const { getTotalItems, getCartTotal } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); // New state for placeholder
 
-  const [deliveryTime, setDeliveryTime] = useState<number | null>(null); 
+  const [deliveryTime, setDeliveryTime] = useState<number | null>(null);
   const [currentLocation, setCurrentLocation] = useState("Daryaganj, Delhi, 110002, India");
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
 
@@ -69,22 +71,33 @@ export function CustomerNavbar() {
   };
 
   useEffect(() => {
-    // Set initial delivery time
+    // Delivery time update interval
     setDeliveryTime(calculateDeliveryTime());
-
-    // Update delivery time every second
-    const intervalId = setInterval(() => {
+    const deliveryIntervalId = setInterval(() => {
       setDeliveryTime(calculateDeliveryTime());
-    }, 1000); // 1000 milliseconds = 1 second
+    }, 1000);
 
-    // Cleanup function to clear the interval when the component unmounts
-    return () => clearInterval(intervalId);
-  }, []); // Empty dependency array, so effect runs once on mount and cleanup on unmount
+    // Search placeholder update interval
+    if (mockProducts && mockProducts.length > 0) {
+      const placeholderIntervalId = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * mockProducts.length);
+        const randomProductName = mockProducts[randomIndex].name;
+        setSearchPlaceholder(`Search "${randomProductName}"`);
+      }, 4000); // Change placeholder every 4 seconds
+
+      return () => {
+        clearInterval(deliveryIntervalId);
+        clearInterval(placeholderIntervalId); // Clear placeholder interval
+      };
+    }
+
+    // Fallback cleanup if mockProducts is empty
+    return () => clearInterval(deliveryIntervalId);
+  }, []);
 
   const handleLocationUpdate = (newLocation: string) => {
     setCurrentLocation(newLocation);
-    // The interval will continue to update the delivery time automatically
-    if (typeof window !== 'undefined') { 
+    if (typeof window !== 'undefined') {
       setIsLocationDialogOpen(false);
     }
   };
@@ -103,7 +116,7 @@ export function CustomerNavbar() {
   const handleSearchSubmit = () => {
     if (searchTerm.trim()) {
       router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm('');
+      setSearchTerm(''); // Clear user input after search
       closeSheet();
     }
   };
@@ -203,7 +216,7 @@ export function CustomerNavbar() {
             <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder='Search "butter"'
+              placeholder={searchPlaceholder}
               className="h-11 w-full pl-10 pr-4 rounded-lg border-gray-300 focus:border-primary focus:ring-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -261,7 +274,7 @@ export function CustomerNavbar() {
             <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="search"
-              placeholder='Search "butter"'
+              placeholder={searchPlaceholder}
               className="h-10 w-full pl-9 pr-4 rounded-md text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -273,4 +286,3 @@ export function CustomerNavbar() {
     </header>
   );
 }
-
