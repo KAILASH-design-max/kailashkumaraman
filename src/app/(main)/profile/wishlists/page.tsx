@@ -8,7 +8,10 @@ import { ChevronLeft, Heart, Edit3, Trash2, PlusCircle, Share2, ShoppingCart } f
 import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
-import { mockProducts } from '@/lib/mockData'; // Assuming mockProducts are available
+import { mockProducts } from '@/lib/mockData';
+import type { Product } from '@/lib/types';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/use-toast';
 
 interface WishlistItem {
   id: string;
@@ -41,22 +44,29 @@ export default function WishlistsPage() {
   ]);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newWishlistName, setNewWishlistName] = useState('');
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   const handleCreateWishlist = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newWishlistName.trim()) {
-        alert("Please enter a name for your new wishlist.");
+        toast({ title: "Error", description: "Please enter a name for your new wishlist.", variant: "destructive" });
         return;
     }
     const newWishlist: Wishlist = { id: `wl${Date.now()}`, name: newWishlistName, items: [] };
     setWishlists(prev => [...prev, newWishlist]);
     setNewWishlistName('');
     setShowCreateForm(false);
+    toast({ title: "Wishlist Created", description: `"${newWishlistName}" has been created.` });
     // API call to create wishlist
   };
   
   const handleDeleteWishlist = (id: string) => {
+    const wishlistToDelete = wishlists.find(wl => wl.id === id);
     setWishlists(prev => prev.filter(wl => wl.id !== id));
+    if (wishlistToDelete) {
+        toast({ title: "Wishlist Deleted", description: `"${wishlistToDelete.name}" has been deleted.`, variant: "destructive" });
+    }
     // API call to delete wishlist
   };
 
@@ -65,25 +75,45 @@ export default function WishlistsPage() {
     if (wishlist) {
         const shareUrl = `${window.location.origin}/wishlist/${id}`; // Example share URL
         navigator.clipboard.writeText(shareUrl).then(() => {
-            alert(`Share link for "${wishlist.name}" copied to clipboard!\n${shareUrl}`);
+            toast({ title: "Link Copied!", description: `Share link for "${wishlist.name}" copied to clipboard.` });
         }).catch(err => {
-            alert(`Could not copy link. You can manually copy: ${shareUrl}`);
+            toast({ title: "Error", description: `Could not copy link. You can manually copy: ${shareUrl}`, variant: "destructive" });
         });
     }
   };
 
   const handleMoveToCart = (wishlistId: string, itemId: string) => {
-    alert(`Item ${itemId} from wishlist ${wishlistId} would be moved to cart (functionality to be implemented).`);
-    // Actual logic would involve removing from wishlist state and adding to cart context/state
+    const wishlist = wishlists.find(wl => wl.id === wishlistId);
+    if (!wishlist) return;
+
+    const itemToMove = wishlist.items.find(item => item.id === itemId);
+    if (!itemToMove) return;
+
+    const productDetails = mockProducts.find(p => p.id === itemToMove.productId);
+    if (productDetails) {
+      addToCart(productDetails, 1); // addToCart already shows a toast
+      // Remove item from wishlist
+      handleDeleteItemFromWishlist(wishlistId, itemId, false); // false to suppress individual delete toast
+      toast({ title: "Moved to Cart", description: `"${itemToMove.name}" moved to your cart.`});
+    } else {
+      toast({ title: "Error", description: "Could not find product details to add to cart.", variant: "destructive"});
+    }
   };
   
-  const handleDeleteItemFromWishlist = (wishlistId: string, itemId: string) => {
+  const handleDeleteItemFromWishlist = (wishlistId: string, itemId: string, showToast: boolean = true) => {
+    let itemName = "";
     setWishlists(prev => prev.map(wl => {
         if (wl.id === wishlistId) {
+            const itemToDelete = wl.items.find(item => item.id === itemId);
+            if(itemToDelete) itemName = itemToDelete.name;
             return { ...wl, items: wl.items.filter(item => item.id !== itemId) };
         }
         return wl;
     }));
+
+    if (showToast && itemName) {
+         toast({ title: "Item Removed", description: `"${itemName}" removed from wishlist.`, variant: "destructive" });
+    }
     // API call to remove item
   };
 
@@ -132,7 +162,13 @@ export default function WishlistsPage() {
 
       <div className="space-y-8">
         {wishlists.length === 0 && !showCreateForm ? (
-          <p>You have no wishlists. Create one to start saving your favorite items!</p>
+          <Card className="shadow-md">
+            <CardContent className="p-6 text-center">
+              <Heart className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">Your wishlists are empty.</p>
+              <p className="text-sm text-muted-foreground">Create one to start saving your favorite items!</p>
+            </CardContent>
+          </Card>
         ) : (
           wishlists.map((wishlist) => (
             <Card key={wishlist.id} className="shadow-xl">
@@ -140,7 +176,7 @@ export default function WishlistsPage() {
                 <div className="flex justify-between items-center">
                   <CardTitle className="text-xl">{wishlist.name}</CardTitle>
                   <div className="flex gap-2">
-                     <Button variant="outline" size="sm" onClick={() => alert('Edit wishlist name functionality to be implemented.')}>
+                     <Button variant="outline" size="sm" onClick={() => toast({ title: "Info", description: 'Edit wishlist name functionality to be implemented.'})}>
                         <Edit3 className="mr-1 h-3 w-3" /> Rename
                      </Button>
                      <Button variant="outline" size="sm" onClick={() => handleShareWishlist(wishlist.id)}>
@@ -154,24 +190,26 @@ export default function WishlistsPage() {
               </CardHeader>
               <CardContent>
                 {wishlist.items.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">This wishlist is empty. Add some products!</p>
+                  <p className="text-sm text-muted-foreground p-4 text-center border border-dashed rounded-md">This wishlist is empty. Add some products from their product pages!</p>
                 ) : (
                   <div className="space-y-3">
                     {wishlist.items.map(item => (
-                      <div key={item.id} className="flex items-center justify-between p-2 border rounded-md">
-                        <div className="flex items-center gap-3">
-                          <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="rounded object-cover aspect-square" data-ai-hint={item.dataAiHint || 'wishlist item'} />
+                      <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg shadow-sm bg-secondary/30 hover:shadow-md transition-shadow">
+                        <div className="flex items-center gap-4">
+                          <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="rounded-md object-cover aspect-square border" data-ai-hint={item.dataAiHint || 'wishlist item'} />
                           <div>
-                            <p className="font-medium text-sm">{item.name}</p>
-                            <p className="text-xs text-primary">₹{item.price.toFixed(2)}</p>
+                            <Link href={`/products/${mockProducts.find(p => p.id === item.productId)?.slug || ''}`} passHref>
+                                <p className="font-medium text-base hover:text-primary transition-colors">{item.name}</p>
+                            </Link>
+                            <p className="text-sm text-primary font-semibold">₹{item.price.toFixed(2)}</p>
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                           <Button variant="ghost" size="icon" onClick={() => handleMoveToCart(wishlist.id, item.id)} title="Move to Cart">
-                                <ShoppingCart className="h-4 w-4 text-green-600"/>
+                        <div className="flex gap-1.5">
+                           <Button variant="ghost" size="icon" onClick={() => handleMoveToCart(wishlist.id, item.id)} title="Move to Cart" className="hover:bg-green-100">
+                                <ShoppingCart className="h-5 w-5 text-green-600 hover:text-green-700"/>
                             </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleDeleteItemFromWishlist(wishlist.id, item.id)} title="Remove from Wishlist">
-                                <Trash2 className="h-4 w-4 text-destructive"/>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteItemFromWishlist(wishlist.id, item.id)} title="Remove from Wishlist" className="hover:bg-red-100">
+                                <Trash2 className="h-5 w-5 text-destructive hover:text-red-700"/>
                             </Button>
                         </div>
                       </div>
