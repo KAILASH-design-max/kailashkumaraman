@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import { CheckCircle, CreditCard, ChevronLeft, Tag, AlertCircle, ShoppingBag, Lock } from 'lucide-react';
+import { CheckCircle, CreditCard, ChevronLeft, Tag, AlertCircle, ShoppingBag, Lock, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 // These constants would ideally be shared or fetched, but for prototype:
