@@ -12,7 +12,7 @@ export default function LoginPage() {
       <AuthForm mode="login" />
       <p className="mt-6 text-center text-sm">
         Don&apos;t have an account?{' '}
-        <Link href="/auth/signup" className="font-medium text-primary hover:underline">
+        <Link href="/signup" className="font-medium text-primary hover:underline">
           Sign up
         </Link>
       </p>

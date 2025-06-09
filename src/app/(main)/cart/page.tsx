@@ -65,7 +65,7 @@ export default function CartPage() {
         description: "Please log in to proceed to checkout.",
         variant: "default",
       });
-      router.push('/auth/login?redirect=/checkout');
+      router.push('/login?redirect=/checkout');
     }
   };
 

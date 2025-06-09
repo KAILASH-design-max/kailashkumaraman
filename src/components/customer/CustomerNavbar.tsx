@@ -172,7 +172,7 @@ export function CustomerNavbar() {
                 ) : (
                   <SheetClose asChild>
                      <Button asChild variant='default' className="w-full justify-start text-md py-3">
-                        <Link href="/auth/login">
+                        <Link href="/login">
                             <User className="mr-2 h-5 w-5" />
                             Login / Sign Up
                         </Link>
@@ -237,7 +237,7 @@ export function CustomerNavbar() {
                </Button>
              ) : (
               <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
-                <Link href="/auth/login">
+                <Link href="/login">
                    Login
                 </Link>
               </Button>
