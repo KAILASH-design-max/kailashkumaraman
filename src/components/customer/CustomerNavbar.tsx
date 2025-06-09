@@ -69,14 +69,22 @@ export function CustomerNavbar() {
   };
 
   useEffect(() => {
-    // Set deliveryTime on the client side after mount
+    // Set initial delivery time
     setDeliveryTime(calculateDeliveryTime());
-  }, []);
+
+    // Update delivery time every second
+    const intervalId = setInterval(() => {
+      setDeliveryTime(calculateDeliveryTime());
+    }, 1000); // 1000 milliseconds = 1 second
+
+    // Cleanup function to clear the interval when the component unmounts
+    return () => clearInterval(intervalId);
+  }, []); // Empty dependency array, so effect runs once on mount and cleanup on unmount
 
   const handleLocationUpdate = (newLocation: string) => {
     setCurrentLocation(newLocation);
-    setDeliveryTime(calculateDeliveryTime()); // Recalculate or fetch new time
-    if (typeof window !== 'undefined') { // Ensure onOpenChange is only called on client
+    // The interval will continue to update the delivery time automatically
+    if (typeof window !== 'undefined') { 
       setIsLocationDialogOpen(false);
     }
   };
@@ -190,7 +198,7 @@ export function CustomerNavbar() {
             <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
         </div>
 
-        <div className="hidden md:flex flex-1 justify-center px-2"> {/* Reduced px-4 to px-2 */}
+        <div className="hidden md:flex flex-1 justify-center px-2">
           <div className="relative w-full max-w-lg">
             <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -265,3 +273,4 @@ export function CustomerNavbar() {
     </header>
   );
 }
+
