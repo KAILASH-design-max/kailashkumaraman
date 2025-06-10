@@ -58,6 +58,12 @@ const nextConfig: NextConfig = {
         hostname: 'icon2.cleanpng.com', // Added new domain
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'storage.googleapis.com', // Added for the new banner image
+        port: '',
+        pathname: '/**',
       }
     ],
   },

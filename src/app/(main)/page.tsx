@@ -45,6 +45,21 @@ export default function HomePage() {
         </p>
       </section>
 
+      {/* New Banner Image Section */}
+      <section className="mb-12">
+        <div className="relative w-full aspect-[1263/396] rounded-lg overflow-hidden shadow-lg">
+          <Image
+            src="https://storage.googleapis.com/chat_gen_images/production/98814864-9733-4c85-ac18-7813dfa4643c/img_9_1263806823.png"
+            alt="Promotional banner for wellness, home cleaning, and elder care supplies"
+            fill
+            sizes="(max-width: 768px) 100vw, 80vw"
+            className="object-cover"
+            data-ai-hint="promo banner"
+            priority 
+          />
+        </div>
+      </section>
+
       {/* Product Suggester - AI based */}
       <ProductSuggester />
 
