@@ -1,15 +1,16 @@
 
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
-import { getFirestore, type Firestore } from "firebase/firestore"; // Added Firestore import
+import { getFirestore, type Firestore } from "firebase/firestore";
 
+// Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  apiKey: "AIzaSyCN1zAZsbo6_HDcFNVRvXekmY_JdTF4M3U",
+  authDomain: "ai-app-bb63d.firebaseapp.com",
+  projectId: "ai-app-bb63d",
+  storageBucket: "ai-app-bb63d.firebasestorage.app",
+  messagingSenderId: "511120628966",
+  appId: "1:511120628966:web:8b08b99bca1d3b3acfaf27"
 };
 
 let app: FirebaseApp;
@@ -22,5 +23,4 @@ if (!getApps().length) {
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app); // Initialize Firestore
 
-export { app, auth, db }; // Export db
-
+export { app, auth, db };
