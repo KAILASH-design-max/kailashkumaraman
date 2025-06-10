@@ -30,12 +30,21 @@ const savedPaymentMethods: SavedPaymentMethod[] = [
   { id: 'upi1', type: 'upi', displayName: 'upi@examplebank', icon: CreditCard }, 
 ];
 
+interface AddressInfo {
+  name: string;
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone: string; // Added phone
+}
+
 interface ShippingInfo {
-  address: { name: string; street: string; city: string; postalCode: string; country: string };
+  address: AddressInfo;
   method: string;
   promoCode: { code: string; discountAmount: number; description: string } | null;
   summary: { subtotal: number; discount: number; deliveryCharge: number; gstAmount: number; handlingCharge: number; totalAmount: number };
-  cartItems: any[]; // Add cartItems to ShippingInfo to pass to final review
+  cartItems: any[]; 
 }
 
 
@@ -49,7 +58,7 @@ export default function PaymentDetailsPage() {
   const [newCardDetails, setNewCardDetails] = useState({ number: '', expiry: '', cvc: '', name: '' });
   const [newUpiId, setNewUpiId] = useState('');
   
-  const [isLoading, setIsLoading] = useState(false); // Kept for potential future use, but primary action moves
+  const [isLoading, setIsLoading] = useState(false); 
   const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -62,7 +71,6 @@ export default function PaymentDetailsPage() {
         if (storedInfo) {
             try {
                 const parsedInfo = JSON.parse(storedInfo);
-                 // Ensure cartItems are part of what's loaded or add them here
                 setShippingInfo({ ...parsedInfo, cartItems: cartItems });
             } catch (e) {
                 console.error("Error parsing shipping info from localStorage", e);
@@ -108,7 +116,7 @@ export default function PaymentDetailsPage() {
     };
     
     const finalOrderData = {
-        ...shippingInfo, // This now includes cartItems from the useEffect
+        ...shippingInfo, 
         paymentDetails,
     };
 
@@ -238,7 +246,6 @@ export default function PaymentDetailsPage() {
                     onClick={handleProceedToFinalReview} 
                     disabled={isLoading || cartItems.length === 0 || shippingInfo.summary.totalAmount <= 0 || !isPaymentDetailsValid()}
                 >
-                {/* Loader removed as action is now navigation */}
                 Proceed to Final Review
                 </Button>
             </CardFooter>

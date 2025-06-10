@@ -9,33 +9,43 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import type { CartItem as CartItemType } from '@/lib/types'; // Renamed to avoid conflict
-import { ChevronLeft, ShoppingBag, AlertCircle, Package, MapPin, CreditCard, Loader2, CheckCircle } from 'lucide-react';
+import type { CartItem as CartItemType } from '@/lib/types';
+import { ChevronLeft, ShoppingBag, AlertCircle, Package, MapPin, CreditCard, Loader2, CheckCircle, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { auth, db } from '@/lib/firebase'; // Import db
+import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Import Firestore functions
 
+interface AddressInfo {
+  name: string;
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phone: string; // Added phone
+}
 interface FinalOrderData {
-  address: { name: string; street: string; city: string; postalCode: string; country: string };
-  method: string; // Shipping method
+  address: AddressInfo;
+  method: string; 
   promoCode: { code: string; discountAmount: number; description: string } | null;
   summary: { subtotal: number; discount: number; deliveryCharge: number; gstAmount: number; handlingCharge: number; totalAmount: number };
   cartItems: CartItemType[];
   paymentDetails: {
-    method: string; // 'saved', 'new_card', 'upi'
-    details: any; // Could be SavedPaymentMethod, newCardDetails, or { upiId: string }
+    method: string; 
+    details: any; 
   };
 }
 
 export default function FinalReviewPage() {
-  const { cartItems, clearCart } = useCart(); // cartItems from useCart is the source of truth for display here
+  const { cartItems: contextCartItems, clearCart } = useCart(); 
   const router = useRouter();
   const { toast } = useToast();
 
   const [finalOrderData, setFinalOrderData] = useState<FinalOrderData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (cartItems.length === 0 && !localStorage.getItem('finalOrderData')) { // Check if cart is truly empty AND no order data persisted
+    if (contextCartItems.length === 0 && !localStorage.getItem('finalOrderData')) { 
       router.push('/cart');
       return;
     }
@@ -44,45 +54,91 @@ export default function FinalReviewPage() {
         if (storedData) {
             try {
                 const parsedData = JSON.parse(storedData) as FinalOrderData;
-                // Crucially, override cartItems from localStorage with live cartItems from context
-                // This ensures if user went back and changed cart, review page shows current cart
-                setFinalOrderData({ ...parsedData, cartItems: cartItems });
+                setFinalOrderData({ ...parsedData, cartItems: contextCartItems });
             } catch (e) {
                 console.error("Error parsing final order data from localStorage", e);
                 setPageError("Could not load order details. Please go back and try again.");
                 router.push('/checkout/payment-details'); 
             }
-        } else if (cartItems.length > 0) { // If no stored data but cart has items, means user jumped here or error
+        } else if (contextCartItems.length > 0) { 
             setPageError("Order details are incomplete. Please proceed through checkout again.");
-            // Potentially create a minimal finalOrderData from cart if appropriate, or force back
-            // For now, let's assume they must have payment details to reach here.
-            // router.push('/checkout/payment-details'); 
         }
     }
-  }, [cartItems, router]);
+  }, [contextCartItems, router]);
 
   const handlePlaceOrder = async () => {
     if (!finalOrderData) {
         setPageError("Cannot place order, data is missing.");
         return;
     }
-    setIsLoading(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    clearCart();
-    if (typeof window !== 'undefined') {
-        localStorage.removeItem('finalOrderData');
-        localStorage.removeItem('checkoutShippingInfo'); // Also clear previous step's data
+    if (!auth.currentUser) {
+        toast({
+            title: "Authentication Error",
+            description: "You must be logged in to place an order. Redirecting to login...",
+            variant: "destructive",
+        });
+        router.push('/login?redirect=/checkout/final-review');
+        return;
     }
-    setIsLoading(false);
-    toast({
-      title: "Order Placed Successfully!",
-      description: "Thank you for your purchase. You'll be redirected shortly.",
-      variant: "default", 
-      duration: 3000, 
-    });
-    router.push('/checkout/order-confirmation'); // Redirect to the new order confirmation page
+
+    setIsPlacingOrder(true);
+    setPageError(null);
+
+    const orderDataToSave = {
+        userId: auth.currentUser.uid,
+        name: finalOrderData.address.name, // Recipient's name
+        phone: finalOrderData.address.phone,
+        address: finalOrderData.address,
+        items: finalOrderData.cartItems.map(item => ({
+            productId: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            imageUrl: item.imageUrls?.[0]?.url || 'https://placehold.co/60x60.png' // Storing primary image URL for convenience
+        })),
+        total: finalOrderData.summary.totalAmount,
+        orderStatus: 'Placed',
+        orderDate: serverTimestamp(),
+        shippingMethod: finalOrderData.method,
+        paymentMethod: finalOrderData.paymentDetails.method,
+        promoCodeApplied: finalOrderData.promoCode ? finalOrderData.promoCode.code : null,
+        discountAmount: finalOrderData.summary.discount,
+        deliveryCharge: finalOrderData.summary.deliveryCharge,
+        gstAmount: finalOrderData.summary.gstAmount,
+        handlingCharge: finalOrderData.summary.handlingCharge
+    };
+
+    try {
+      // Simulate API call for a moment before Firestore
+      // await new Promise(resolve => setTimeout(resolve, 1000)); 
+      
+      const docRef = await addDoc(collection(db, "orders"), orderDataToSave);
+      console.log("Order placed and saved to Firestore with ID: ", docRef.id);
+
+      clearCart();
+      if (typeof window !== 'undefined') {
+          localStorage.removeItem('finalOrderData');
+          localStorage.removeItem('checkoutShippingInfo'); 
+      }
+      
+      toast({
+        title: "Order Placed Successfully!",
+        description: `Thank you for your purchase. Order ID: ${docRef.id.substring(0,6)}...`, // Show a short ID
+        variant: "default", 
+        duration: 5000, 
+      });
+      router.push('/checkout/order-confirmation'); 
+    } catch (error) {
+        console.error("Error placing order / saving to Firestore: ", error);
+        setPageError("There was an issue placing your order. Please try again. If the problem persists, contact support.");
+        toast({
+            title: "Order Placement Failed",
+            description: "Could not save your order. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsPlacingOrder(false);
+    }
   };
 
   if (!finalOrderData && !pageError) {
@@ -94,7 +150,7 @@ export default function FinalReviewPage() {
     );
   }
   
-  if (pageError) {
+  if (pageError && !isPlacingOrder) { // Only show page error if not in the middle of placing order
      return (
       <div className="container mx-auto py-12 px-4 text-center">
         <AlertCircle className="mx-auto h-24 w-24 text-destructive mb-6" />
@@ -105,9 +161,8 @@ export default function FinalReviewPage() {
     );
   }
   
-  // Derived state from finalOrderData for cleaner rendering
   const { address, method: shippingMethod, promoCode, summary, paymentDetails } = finalOrderData!;
-  const displayCartItems = finalOrderData!.cartItems; // Use cartItems from finalOrderData
+  const displayCartItems = finalOrderData!.cartItems; 
 
 
   return (
@@ -151,6 +206,7 @@ export default function FinalReviewPage() {
                     <p><strong>{address.name}</strong></p>
                     <p>{address.street}</p>
                     <p>{address.city}, {address.postalCode}, {address.country}</p>
+                    <p className="flex items-center mt-1"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/> {address.phone}</p>
                     <p className="mt-2 text-sm text-muted-foreground">Shipping Method: <span className="font-medium text-foreground">{shippingMethod.charAt(0).toUpperCase() + shippingMethod.slice(1)}</span></p>
                 </Card>
             </section>
@@ -195,16 +251,19 @@ export default function FinalReviewPage() {
                 )}
                 <Separator className="my-2"/>
                 <div className="flex justify-between font-bold text-base"><span>Total Amount:</span><span>₹{summary.totalAmount.toFixed(2)}</span></div>
+                 {pageError && isPlacingOrder && ( // Show specific error during order placement attempt
+                    <p className="text-destructive text-xs mt-2">{pageError}</p>
+                 )}
             </CardContent>
             <CardFooter>
                 <Button 
                     size="lg" 
                     className="w-full" 
                     onClick={handlePlaceOrder} 
-                    disabled={isLoading || displayCartItems.length === 0 || summary.totalAmount <= 0}
+                    disabled={isPlacingOrder || displayCartItems.length === 0 || summary.totalAmount <= 0}
                 >
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                Place Order & Pay
+                {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                {isPlacingOrder ? 'Placing Order...' : 'Place Order & Pay'}
                 </Button>
             </CardFooter>
             </Card>

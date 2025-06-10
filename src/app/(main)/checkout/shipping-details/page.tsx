@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import { CheckCircle, Package, MapPin, CreditCard, Edit3, PlusCircle, Trash2, ChevronLeft, Tag, AlertCircle, ChevronDown, ShoppingBag } from 'lucide-react';
+import { CheckCircle, Package, MapPin, CreditCard, Edit3, PlusCircle, Trash2, ChevronLeft, Tag, AlertCircle, ChevronDown, ShoppingBag, Phone } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   DropdownMenu,
@@ -28,8 +28,8 @@ const GST_RATE = 0.18;
 const HANDLING_CHARGE = 5;
 
 const savedAddresses = [
-  { id: 'addr1', name: 'Home', street: '123 Main St', city: 'Mumbai', postalCode: '400001', country: 'India' },
-  { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India' },
+  { id: 'addr1', name: 'Home', street: '123 Main St', city: 'Mumbai', postalCode: '400001', country: 'India', phone: '9876543210' },
+  { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India', phone: '9876543211' },
 ];
 
 interface MockPromoCode {
@@ -51,7 +51,7 @@ export default function ShippingDetailsPage() {
 
   const [shippingOption, setShippingOption] = useState('saved');
   const [selectedAddressId, setSelectedAddressId] = useState(savedAddresses[0]?.id || '');
-  const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India' });
+  const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phone: '' });
   const [shippingMethod, setShippingMethod] = useState('standard'); // 'standard', 'express', 'pickup'
 
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -131,18 +131,29 @@ export default function ShippingDetailsPage() {
   const isAddressValid = () => {
     if (shippingOption === 'saved') return !!selectedAddressId;
     if (shippingOption === 'new') {
-      return newAddress.name.trim() !== '' && newAddress.street.trim() !== '' && newAddress.city.trim() !== '' && newAddress.postalCode.trim() !== '' && newAddress.country.trim() !== '';
+      return newAddress.name.trim() !== '' && newAddress.street.trim() !== '' && 
+             newAddress.city.trim() !== '' && newAddress.postalCode.trim() !== '' && 
+             newAddress.country.trim() !== '' && newAddress.phone.trim() !== '';
     }
     return false;
   };
 
   const handleProceedToPayment = () => {
     if (!isAddressValid()) {
-        setPromoMessage({ type: 'error', text: 'Please select or enter a valid shipping address.'});
+        setPromoMessage({ type: 'error', text: 'Please select or enter a valid shipping address, including phone number.'});
         return;
     }
+    const currentAddress = shippingOption === 'saved' 
+      ? savedAddresses.find(a => a.id === selectedAddressId) 
+      : newAddress;
+
+    if (!currentAddress) {
+        setPromoMessage({ type: 'error', text: 'Selected address not found.'});
+        return;
+    }
+
     const shippingInfo = {
-        address: shippingOption === 'saved' ? savedAddresses.find(a => a.id === selectedAddressId) : newAddress,
+        address: currentAddress,
         method: shippingMethod,
         promoCode: appliedPromoCode,
         summary: { subtotal, discount: calculatedDiscount, deliveryCharge, gstAmount, handlingCharge: HANDLING_CHARGE, totalAmount }
@@ -201,6 +212,10 @@ export default function ShippingDetailsPage() {
                     <Input placeholder="Postal Code" value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} />
                   </div>
                   <Input placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({...newAddress, country: e.target.value})} />
+                  <div className="relative">
+                     <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                     <Input type="tel" placeholder="Phone Number" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} className="pl-10" />
+                  </div>
                 </Card>
               )}
               <Separator />
