@@ -20,20 +20,34 @@ export default function ProfileDashboardPage() {
   const { toast } = useToast(); 
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
+  const [userDetails, setUserDetails] = useState({
+    name: 'Guest User',
+    email: 'No email available',
+    joinDate: 'N/A',
+  });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
+      if (user) {
+        setUserDetails({
+          name: user.displayName || 'User',
+          email: user.email || 'No email provided',
+          joinDate: user.metadata.creationTime 
+            ? `Joined on ${new Date(user.metadata.creationTime).toLocaleDateString()}` 
+            : 'Joined date not available',
+        });
+      } else {
+        setUserDetails({
+          name: 'Guest User',
+          email: 'No email available',
+          joinDate: 'N/A',
+        });
+      }
       setIsLoadingAuth(false);
     });
     return () => unsubscribe();
   }, []);
-
-  const userDetails = {
-    name: currentUser?.displayName || 'Guest User',
-    email: currentUser?.email || 'No email available',
-    joinDate: 'Joined on January 15, 2023', // This remains static as an example
-  };
 
   const handleLogout = async () => {
     console.log('User logging out...');
@@ -56,9 +70,6 @@ export default function ProfileDashboardPage() {
   }
 
   if (!currentUser) {
-    // Optionally redirect to login or show a message
-    // For now, showing a limited view for non-logged-in users might be an option, or just redirect.
-    // router.push('/login'); // Uncomment to redirect if user must be logged in
     return (
       <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
         <p>Please <Link href="/login" className="text-primary underline">log in</Link> to view your profile.</p>
@@ -76,7 +87,6 @@ export default function ProfileDashboardPage() {
             <h1 className="text-3xl sm:text-4xl font-bold text-card-foreground">Welcome to your Dashboard, {userDetails.name}!</h1>
             <p className="text-md sm:text-lg text-muted-foreground">{userDetails.email}</p>
             <p className="text-xs sm:text-sm text-muted-foreground">{userDetails.joinDate}</p>
-            {/* Removed "Update Profile/Preferences" button from here */}
           </div>
         </div>
       </header>
@@ -243,5 +253,4 @@ export default function ProfileDashboardPage() {
     </div>
   );
 }
-
     
