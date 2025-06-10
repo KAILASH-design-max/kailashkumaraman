@@ -45,22 +45,7 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* Existing Banner Image Section */}
-      <section className="mb-12">
-        <div className="relative w-full aspect-[1263/396] rounded-lg overflow-hidden shadow-lg">
-          <Image
-            src="https://storage.googleapis.com/chat_gen_images/production/98814864-9733-4c85-ac18-7813dfa4643c/img_9_1263806823.png"
-            alt="Promotional banner for wellness, home cleaning, and elder care supplies"
-            fill
-            sizes="(max-width: 768px) 100vw, 80vw"
-            className="object-cover"
-            data-ai-hint="promo banner"
-            priority 
-          />
-        </div>
-      </section>
-
-      {/* New Banner Image Section requested by user */}
+      {/* New Banner Image Section requested by user (now the only main banner) */}
       <section className="mb-12">
         <div className="relative w-full aspect-[1200/400] rounded-lg overflow-hidden shadow-lg">
           <Image
@@ -70,6 +55,7 @@ export default function HomePage() {
             sizes="(max-width: 768px) 100vw, 80vw"
             className="object-cover"
             data-ai-hint="promo banner"
+            priority
           />
         </div>
       </section>
