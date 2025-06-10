@@ -5,9 +5,9 @@ import Link from 'next/link';
 export default function LoginPage() {
   return (
     <>
-      <h2 className="text-2xl font-semibold text-center mb-1">Secure Account Access</h2>
+      <h2 className="text-2xl font-semibold text-center mb-1">Log in to your SpeedyShop account</h2>
       <p className="text-sm text-muted-foreground text-center mb-6">
-        Please enter your email and password to log in to your account.
+        Access your orders, saved items, and personalized offers.
       </p>
       <AuthForm mode="login" />
       <p className="mt-6 text-center text-sm">

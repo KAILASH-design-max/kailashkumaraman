@@ -228,7 +228,7 @@ export function CustomerNavbar() {
           </div>
         </div>
 
-        <div className="hidden md:flex items-center space-x-4 flex-shrink-0">
+        <div className="hidden md:flex items-center space-x-3 flex-shrink-0"> {/* Reduced space-x from 4 to 3 */}
            {!authIsLoading && (
              isLoggedIn ? (
                <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">

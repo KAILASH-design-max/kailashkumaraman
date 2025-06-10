@@ -98,7 +98,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
-    const redirectUrl = searchParams.get('redirect') || '/'; // Default to home page
+    const redirectUrl = searchParams.get('redirect') || '/'; 
 
     try {
       if (mode === 'login') {
@@ -149,7 +149,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="priya@example.com" {...field} />
+                <Input type="email" placeholder="Enter your registered email address" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -163,7 +163,7 @@ export function AuthForm({ mode }: AuthFormProps) {
               <FormLabel>Password</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                  <Input type={showPassword ? "text" : "password"} placeholder="Enter your account password" {...field} />
                   <Button
                     type="button"
                     variant="ghost"
