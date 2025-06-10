@@ -64,6 +64,12 @@ const nextConfig: NextConfig = {
         hostname: 'storage.googleapis.com', // Added for the new banner image
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'sdmntprwestus.oaiusercontent.com', // Added for the new banner image
+        port: '',
+        pathname: '/**',
       }
     ],
   },

@@ -45,7 +45,7 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* New Banner Image Section */}
+      {/* Existing Banner Image Section */}
       <section className="mb-12">
         <div className="relative w-full aspect-[1263/396] rounded-lg overflow-hidden shadow-lg">
           <Image
@@ -56,6 +56,20 @@ export default function HomePage() {
             className="object-cover"
             data-ai-hint="promo banner"
             priority 
+          />
+        </div>
+      </section>
+
+      {/* New Banner Image Section requested by user */}
+      <section className="mb-12">
+        <div className="relative w-full aspect-[1200/400] rounded-lg overflow-hidden shadow-lg">
+          <Image
+            src="https://sdmntprwestus.oaiusercontent.com/files/00000000-5250-6230-af1d-94f9012057ed/raw?se=2025-06-10T13%3A58%3A10Z&sp=r&sv=2024-08-04&sr=b&scid=73492e29-0436-5d7d-86fe-d20e71978f65&skoid=b64a43d9-3512-45c2-98b4-dea55d094240&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-09T22%3A01%3A57Z&ske=2025-06-10T22%3A01%3A57Z&sks=b&skv=2024-08-04&sig=csQKfYWjNqRGiy%2Bp1XCWcL/uWY6up4OKFGI%2BwiwmLDU%3D"
+            alt="New promotional banner"
+            fill
+            sizes="(max-width: 768px) 100vw, 80vw"
+            className="object-cover"
+            data-ai-hint="promo banner"
           />
         </div>
       </section>
