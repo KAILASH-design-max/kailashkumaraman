@@ -38,7 +38,22 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      {/* Replaced "Groceries in Minutes!" text section with this new banner */}
+      {/* New Wide Promotional Banner */}
+      <section className="mb-12">
+        <div className="relative w-full aspect-[16/5] rounded-lg overflow-hidden shadow-xl">
+          <Image
+            src="https://placehold.co/1600x500.png"
+            alt="Promotional banner for Pharma, Home Cleaning, Elder & Baby Care"
+            fill
+            sizes="(max-width: 768px) 100vw, 80vw"
+            className="object-cover"
+            data-ai-hint="pharma cleaning care"
+            priority 
+          />
+        </div>
+      </section>
+
+      {/* Existing Hero Banner (formerly "Groceries in Minutes!" replacement) */}
       <section className="mb-12">
         <div className="relative w-full aspect-[1200/400] rounded-lg overflow-hidden shadow-xl">
           <Image
@@ -53,7 +68,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Existing Banner Image Section (the one with a very long URL) */}
+      {/* Existing Second Banner Image Section */}
       <section className="mb-12">
         <div className="relative w-full aspect-[1200/400] rounded-lg overflow-hidden shadow-lg">
           <Image
