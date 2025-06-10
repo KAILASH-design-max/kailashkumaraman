@@ -38,14 +38,22 @@ export default function HomePage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <section className="mb-12 text-center rounded-lg bg-secondary p-8 md:p-12">
-        <h1 className="text-4xl md:text-5xl font-bold mb-4 text-primary">Groceries in Minutes!</h1>
-        <p className="text-lg text-secondary-foreground mb-8 max-w-2xl mx-auto">
-          Your favorite products, delivered at lightning speed. What are you looking for today?
-        </p>
+      {/* Replaced "Groceries in Minutes!" text section with this new banner */}
+      <section className="mb-12">
+        <div className="relative w-full aspect-[1200/400] rounded-lg overflow-hidden shadow-xl">
+          <Image
+            src="https://sdmntprwestus.oaiusercontent.com/files/00000000-4eb0-6230-a7e6-bd48b2d996c2/raw?se=2025-06-10T14%3A06%3A21Z&sp=r&sv=2024-08-04&sr=b&scid=33b84762-f949-570f-b4fa-6ef131dbef21&skoid=b64a43d9-3512-45c2-98b4-dea55d094240&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-09T22%3A02%3A05Z&ske=2025-06-10T22%3A02%3A05Z&sks=b&skv=2024-08-04&sig=XF/ImMMypL6ZDE5CdRqZpkb7Or1VgZIG4HPaVQN5XZA%3D"
+            alt="Promotional Hero Banner"
+            fill
+            sizes="(max-width: 768px) 100vw, 80vw"
+            className="object-cover"
+            data-ai-hint="hero banner"
+            priority 
+          />
+        </div>
       </section>
 
-      {/* New Banner Image Section requested by user (now the only main banner) */}
+      {/* Existing Banner Image Section (the one with a very long URL) */}
       <section className="mb-12">
         <div className="relative w-full aspect-[1200/400] rounded-lg overflow-hidden shadow-lg">
           <Image
