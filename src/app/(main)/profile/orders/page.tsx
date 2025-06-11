@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, ListOrdered, Filter, Repeat, RotateCcw, PackageSearch, ShoppingBag, Loader2 } from 'lucide-react';
+import { ChevronLeft, ListOrdered, Filter, Repeat, RotateCcw, PackageSearch, ShoppingBag, Loader2, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
@@ -27,14 +27,14 @@ interface FirestoreOrderAddress {
     city: string;
     postalCode: string;
     country: string;
-    phone: string;
+    phoneNumber: string; // Changed from phone
 }
 
 interface FirestoreOrder extends DocumentData {
   id: string; // Firestore document ID
   userId: string;
   name: string; // Recipient's name
-  phone: string;
+  phoneNumber: string; // Changed from phone
   address: FirestoreOrderAddress; // Full address object
   items: FirestoreOrderItem[];
   total: number; // totalAmount
@@ -171,19 +171,6 @@ export default function OrdersPage() {
         </p>
       </header>
 
-      {/* Placeholder for filter controls - Future Implementation */}
-      {/* <Card className="shadow-lg mb-8">
-        <CardHeader>
-          <CardTitle className="text-xl">Filter & Search Orders</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <Button variant="outline"><Filter className="mr-2 h-4 w-4" />Filter by Status</Button>
-            <input type="date" className="input border p-2 rounded-md text-sm" placeholder="Filter by date"/>
-          </div>
-        </CardContent>
-      </Card> */}
-
       <div className="space-y-6">
         {orders.length === 0 ? (
           <Card className="shadow-md">
@@ -231,10 +218,10 @@ export default function OrdersPage() {
                 <Separator className="my-3"/>
                  <div className="mb-3">
                     <h4 className="font-medium text-sm mb-1">Shipping Address:</h4>
-                    <p className="text-xs text-muted-foreground">{order.address.name}</p>
+                    <p className="text-xs text-muted-foreground"><strong>{order.name}</strong></p>
                     <p className="text-xs text-muted-foreground">{order.address.street}</p>
                     <p className="text-xs text-muted-foreground">{order.address.city}, {order.address.postalCode}, {order.address.country}</p>
-                    <p className="text-xs text-muted-foreground">Phone: {order.address.phone}</p>
+                    <p className="text-xs text-muted-foreground flex items-center"><Phone className="mr-1.5 h-3 w-3"/> {order.phoneNumber || order.address.phoneNumber || 'N/A'}</p>
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 mt-4">
@@ -258,3 +245,4 @@ export default function OrdersPage() {
     </div>
   );
 }
+

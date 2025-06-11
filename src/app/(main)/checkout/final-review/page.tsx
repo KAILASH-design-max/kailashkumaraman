@@ -21,7 +21,7 @@ interface AddressInfo {
   city: string;
   postalCode: string;
   country: string;
-  phone: string; // Added phone
+  phoneNumber: string; // Changed from phone
 }
 interface FinalOrderData {
   address: AddressInfo;
@@ -87,14 +87,14 @@ export default function FinalReviewPage() {
     const orderDataToSave = {
         userId: auth.currentUser.uid,
         name: finalOrderData.address.name, // Recipient's name
-        phone: finalOrderData.address.phone,
-        address: finalOrderData.address,
+        phoneNumber: finalOrderData.address.phoneNumber, // Changed from phone
+        address: finalOrderData.address, // Address object itself will now contain phoneNumber
         items: finalOrderData.cartItems.map(item => ({
             productId: item.id,
             name: item.name,
             quantity: item.quantity,
             price: item.price,
-            imageUrl: item.imageUrls?.[0]?.url || 'https://placehold.co/60x60.png' // Storing primary image URL for convenience
+            imageUrl: item.imageUrls?.[0]?.url || 'https://placehold.co/60x60.png'
         })),
         total: finalOrderData.summary.totalAmount,
         orderStatus: 'Placed',
@@ -109,9 +109,6 @@ export default function FinalReviewPage() {
     };
 
     try {
-      // Simulate API call for a moment before Firestore
-      // await new Promise(resolve => setTimeout(resolve, 1000)); 
-      
       const docRef = await addDoc(collection(db, "orders"), orderDataToSave);
       console.log("Order placed and saved to Firestore with ID: ", docRef.id);
 
@@ -123,7 +120,7 @@ export default function FinalReviewPage() {
       
       toast({
         title: "Order Placed Successfully!",
-        description: `Thank you for your purchase. Order ID: ${docRef.id.substring(0,6)}...`, // Show a short ID
+        description: `Thank you for your purchase. Order ID: ${docRef.id.substring(0,6)}...`,
         variant: "default", 
         duration: 5000, 
       });
@@ -150,7 +147,7 @@ export default function FinalReviewPage() {
     );
   }
   
-  if (pageError && !isPlacingOrder) { // Only show page error if not in the middle of placing order
+  if (pageError && !isPlacingOrder) {
      return (
       <div className="container mx-auto py-12 px-4 text-center">
         <AlertCircle className="mx-auto h-24 w-24 text-destructive mb-6" />
@@ -206,7 +203,7 @@ export default function FinalReviewPage() {
                     <p><strong>{address.name}</strong></p>
                     <p>{address.street}</p>
                     <p>{address.city}, {address.postalCode}, {address.country}</p>
-                    <p className="flex items-center mt-1"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/> {address.phone}</p>
+                    <p className="flex items-center mt-1"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/> {address.phoneNumber}</p>
                     <p className="mt-2 text-sm text-muted-foreground">Shipping Method: <span className="font-medium text-foreground">{shippingMethod.charAt(0).toUpperCase() + shippingMethod.slice(1)}</span></p>
                 </Card>
             </section>
@@ -251,7 +248,7 @@ export default function FinalReviewPage() {
                 )}
                 <Separator className="my-2"/>
                 <div className="flex justify-between font-bold text-base"><span>Total Amount:</span><span>₹{summary.totalAmount.toFixed(2)}</span></div>
-                 {pageError && isPlacingOrder && ( // Show specific error during order placement attempt
+                 {pageError && isPlacingOrder && ( 
                     <p className="text-destructive text-xs mt-2">{pageError}</p>
                  )}
             </CardContent>

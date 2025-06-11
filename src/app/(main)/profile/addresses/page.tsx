@@ -4,9 +4,11 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MapPin, Edit3, Trash2, PlusCircle, CheckCircle } from 'lucide-react';
+import { ChevronLeft, MapPin, Edit3, Trash2, PlusCircle, CheckCircle, Phone } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface Address {
   id: string;
@@ -15,17 +17,17 @@ interface Address {
   city: string;
   postalCode: string;
   country: string;
+  phoneNumber: string; // Changed from phone, and made mandatory
   isDefault?: boolean;
 }
 
 export default function AddressesPage() {
   const [addresses, setAddresses] = useState<Address[]>([
-    { id: 'addr1', name: 'Home', street: '123 Main St, Apt 4B', city: 'Mumbai', postalCode: '400001', country: 'India', isDefault: true },
-    { id: 'addr2', name: 'Work', street: '789 Business Park, Suite 200', city: 'Delhi', postalCode: '110001', country: 'India' },
+    { id: 'addr1', name: 'Home', street: '123 Main St, Apt 4B', city: 'Mumbai', postalCode: '400001', country: 'India', phoneNumber: '9876543210', isDefault: true },
+    { id: 'addr2', name: 'Work', street: '789 Business Park, Suite 200', city: 'Delhi', postalCode: '110001', country: 'India', phoneNumber: '9876543211' },
   ]);
   const [showAddForm, setShowAddForm] = useState(false);
-  // Basic form state for new address, can be expanded with react-hook-form
-  const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India' });
+  const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
 
   const handleSetDefault = (id: string) => {
     setAddresses(prev => prev.map(addr => ({ ...addr, isDefault: addr.id === id })));
@@ -40,13 +42,13 @@ export default function AddressesPage() {
   const handleAddNewAddress = (e: React.FormEvent) => {
     e.preventDefault();
     // Basic validation
-    if (!newAddress.name || !newAddress.street || !newAddress.city || !newAddress.postalCode) {
-        alert("Please fill all required fields.");
+    if (!newAddress.name || !newAddress.street || !newAddress.city || !newAddress.postalCode || !newAddress.phoneNumber) {
+        alert("Please fill all required fields, including phone number.");
         return;
     }
     const newAddr: Address = { ...newAddress, id: `addr${Date.now()}`};
     setAddresses(prev => [...prev, newAddr]);
-    setNewAddress({ name: '', street: '', city: '', postalCode: '', country: 'India' });
+    setNewAddress({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
     setShowAddForm(false);
     // API call to add new address would go here
   }
@@ -82,11 +84,35 @@ export default function AddressesPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleAddNewAddress} className="space-y-4">
-              <input type="text" placeholder="Address Nickname (e.g., Home, Office)" value={newAddress.name} onChange={e => setNewAddress({...newAddress, name: e.target.value})} className="input border p-2 rounded-md w-full text-sm" required />
-              <input type="text" placeholder="Street Address, Apt, Suite" value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} className="input border p-2 rounded-md w-full text-sm" required />
-              <input type="text" placeholder="City" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} className="input border p-2 rounded-md w-full text-sm" required />
-              <input type="text" placeholder="Postal Code" value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} className="input border p-2 rounded-md w-full text-sm" required />
-              <input type="text" placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({...newAddress, country: e.target.value})} className="input border p-2 rounded-md w-full text-sm" required />
+              <div>
+                <Label htmlFor="addrName">Address Nickname</Label>
+                <Input id="addrName" type="text" placeholder="e.g., Home, Office" value={newAddress.name} onChange={e => setNewAddress({...newAddress, name: e.target.value})} required />
+              </div>
+              <div>
+                <Label htmlFor="addrStreet">Street Address</Label>
+                <Input id="addrStreet" type="text" placeholder="Street Address, Apt, Suite" value={newAddress.street} onChange={e => setNewAddress({...newAddress, street: e.target.value})} required />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="addrCity">City</Label>
+                  <Input id="addrCity" type="text" placeholder="City" value={newAddress.city} onChange={e => setNewAddress({...newAddress, city: e.target.value})} required />
+                </div>
+                <div>
+                  <Label htmlFor="addrPostalCode">Postal Code</Label>
+                  <Input id="addrPostalCode" type="text" placeholder="Postal Code" value={newAddress.postalCode} onChange={e => setNewAddress({...newAddress, postalCode: e.target.value})} required />
+                </div>
+              </div>
+              <div>
+                <Label htmlFor="addrCountry">Country</Label>
+                <Input id="addrCountry" type="text" placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({...newAddress, country: e.target.value})} required />
+              </div>
+              <div>
+                <Label htmlFor="addrPhoneNumber">Phone Number</Label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input id="addrPhoneNumber" type="tel" placeholder="Phone Number" value={newAddress.phoneNumber} onChange={e => setNewAddress({...newAddress, phoneNumber: e.target.value})} className="pl-10" required />
+                </div>
+              </div>
               <Button type="submit">Save New Address</Button>
             </form>
           </CardContent>
@@ -116,6 +142,7 @@ export default function AddressesPage() {
               <CardContent>
                 <p className="text-sm">{address.street}</p>
                 <p className="text-sm">{address.city}, {address.postalCode}, {address.country}</p>
+                <p className="text-sm flex items-center"><Phone className="mr-1.5 h-3.5 w-3.5 text-muted-foreground"/>{address.phoneNumber}</p>
                 {!address.isDefault && (
                   <Button variant="link" size="sm" onClick={() => handleSetDefault(address.id)} className="p-0 h-auto mt-2 text-primary">
                     <CheckCircle className="mr-1 h-3 w-3"/> Set as Default
@@ -134,3 +161,4 @@ export default function AddressesPage() {
     </div>
   );
 }
+

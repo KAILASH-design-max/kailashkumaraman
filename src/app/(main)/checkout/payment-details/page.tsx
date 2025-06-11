@@ -36,7 +36,7 @@ interface AddressInfo {
   city: string;
   postalCode: string;
   country: string;
-  phone: string; // Added phone
+  phoneNumber: string; // Changed from phone
 }
 
 interface ShippingInfo {

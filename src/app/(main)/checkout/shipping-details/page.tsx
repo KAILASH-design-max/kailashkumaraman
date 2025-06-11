@@ -28,8 +28,8 @@ const GST_RATE = 0.18;
 const HANDLING_CHARGE = 5;
 
 const savedAddresses = [
-  { id: 'addr1', name: 'Home', street: '123 Main St', city: 'Mumbai', postalCode: '400001', country: 'India', phone: '9876543210' },
-  { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India', phone: '9876543211' },
+  { id: 'addr1', name: 'Home', street: '123 Main St', city: 'Mumbai', postalCode: '400001', country: 'India', phoneNumber: '9876543210' },
+  { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India', phoneNumber: '9876543211' },
 ];
 
 interface MockPromoCode {
@@ -51,7 +51,7 @@ export default function ShippingDetailsPage() {
 
   const [shippingOption, setShippingOption] = useState('saved');
   const [selectedAddressId, setSelectedAddressId] = useState(savedAddresses[0]?.id || '');
-  const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phone: '' });
+  const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
   const [shippingMethod, setShippingMethod] = useState('standard'); // 'standard', 'express', 'pickup'
 
   const [promoCodeInput, setPromoCodeInput] = useState('');
@@ -133,7 +133,7 @@ export default function ShippingDetailsPage() {
     if (shippingOption === 'new') {
       return newAddress.name.trim() !== '' && newAddress.street.trim() !== '' && 
              newAddress.city.trim() !== '' && newAddress.postalCode.trim() !== '' && 
-             newAddress.country.trim() !== '' && newAddress.phone.trim() !== '';
+             newAddress.country.trim() !== '' && newAddress.phoneNumber.trim() !== '';
     }
     return false;
   };
@@ -153,7 +153,7 @@ export default function ShippingDetailsPage() {
     }
 
     const shippingInfo = {
-        address: currentAddress,
+        address: currentAddress, // This will now have phoneNumber
         method: shippingMethod,
         promoCode: appliedPromoCode,
         summary: { subtotal, discount: calculatedDiscount, deliveryCharge, gstAmount, handlingCharge: HANDLING_CHARGE, totalAmount }
@@ -214,7 +214,7 @@ export default function ShippingDetailsPage() {
                   <Input placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({...newAddress, country: e.target.value})} />
                   <div className="relative">
                      <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                     <Input type="tel" placeholder="Phone Number" value={newAddress.phone} onChange={e => setNewAddress({...newAddress, phone: e.target.value})} className="pl-10" />
+                     <Input type="tel" placeholder="Phone Number" value={newAddress.phoneNumber} onChange={e => setNewAddress({...newAddress, phoneNumber: e.target.value})} className="pl-10" />
                   </div>
                 </Card>
               )}
@@ -315,3 +315,4 @@ export default function ShippingDetailsPage() {
     </div>
   );
 }
+
