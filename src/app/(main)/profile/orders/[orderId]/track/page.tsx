@@ -9,25 +9,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone, AlertTriangle } from 'lucide-react';
-import { GoogleMap, useJsApiLoader, MarkerF, DirectionsRenderer } from '@react-google-maps/api';
-import { mockOrders, mockDeliveryPartners } from '@/lib/mockData'; // Using mock data
-import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderAddress } from '@/lib/types'; // Adjusted import for OrderType
+// import { GoogleMap, useJsApiLoader, MarkerF, DirectionsRenderer } from '@react-google-maps/api'; // Temporarily commented out
+import { mockOrders, mockDeliveryPartners } from '@/lib/mockData'; 
+import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderAddress } from '@/lib/types'; 
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const containerStyle = {
-  width: '100%',
-  height: '400px',
-  borderRadius: '0.5rem',
-};
+// const containerStyle = { // Temporarily commented out
+//   width: '100%',
+//   height: '400px',
+//   borderRadius: '0.5rem',
+// };
 
-// Mock customer and delivery partner starting locations
-// These would typically come from your backend/order data
 const MOCK_CUSTOMER_LOCATIONS: { [key: string]: { lat: number; lng: number } } = {
   'order001': { lat: 19.0760, lng: 72.8777 }, // Mumbai
   'order002': { lat: 28.7041, lng: 77.1025 }, // Delhi
   'order003': { lat: 12.9716, lng: 77.5946 }, // Bangalore
-  'default': { lat: 20.5937, lng: 78.9629 } // India center (fallback)
+  'default': { lat: 20.5937, lng: 78.9629 } 
 };
 
 const getOrderStatusSteps = (status: string) => {
@@ -63,97 +61,92 @@ export default function TrackOrderPage() {
 
   const [order, setOrder] = useState<OrderType | null>(null);
   const [deliveryPartner, setDeliveryPartner] = useState<DeliveryPartnerType | null>(null);
-  const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [agentLocation, setAgentLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [eta, setEta] = useState<number>(15); // Simulated ETA in minutes
-  const [distance, setDistance] = useState<number>(5.2); // Simulated distance in km
-  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  // const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null); // Still kept, but not used by iframe
+  // const [agentLocation, setAgentLocation] = useState<{ lat: number; lng: number } | null>(null); // Temporarily commented out
+  const [eta, setEta] = useState<number>(15); 
+  const [distance, setDistance] = useState<number>(5.2); 
+  // const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null); // Temporarily commented out
   const [isLoading, setIsLoading] = useState(true);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-    libraries: ['places', 'directions'],
-  });
+  // const { isLoaded, loadError } = useJsApiLoader({ // Temporarily commented out
+  //   googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
+  //   libraries: ['places', 'directions'],
+  // });
+  const isLoaded = true; // Assume loaded for iframe
+  const loadError = null; // Assume no error for iframe
 
   useEffect(() => {
     if (orderId) {
       setIsLoading(true);
-      // Simulate fetching order data
       const foundOrder = mockOrders.find(o => o.id === orderId);
       if (foundOrder) {
         setOrder(foundOrder);
         const partner = mockDeliveryPartners.find(dp => dp.id === foundOrder.deliveryPartnerId);
-        setDeliveryPartner(partner || mockDeliveryPartners[0]); // Fallback DP
+        setDeliveryPartner(partner || mockDeliveryPartners[0]); 
 
-        const mockCustLoc = MOCK_CUSTOMER_LOCATIONS[orderId] || MOCK_CUSTOMER_LOCATIONS['default'];
-        setCustomerLocation(mockCustLoc);
+        // const mockCustLoc = MOCK_CUSTOMER_LOCATIONS[orderId] || MOCK_CUSTOMER_LOCATIONS['default']; // Customer location not used by iframe
+        // setCustomerLocation(mockCustLoc);
         
-        // Simulate initial agent location slightly offset from customer
-        setAgentLocation({ lat: mockCustLoc.lat + 0.05, lng: mockCustLoc.lng + 0.05 });
+        // setAgentLocation({ lat: mockCustLoc.lat + 0.05, lng: mockCustLoc.lng + 0.05 }); // Agent location not used by iframe
       } else {
-        // Handle order not found
         router.push('/profile/orders');
       }
       setIsLoading(false);
     }
   }, [orderId, router]);
 
-  useEffect(() => {
-    if (!isLoaded || !agentLocation || !customerLocation || loadError) return;
+  // useEffect(() => { // Temporarily commented out - Directions logic
+  //   if (!isLoaded || !agentLocation || !customerLocation || loadError) return;
 
-    const directionsService = new google.maps.DirectionsService();
-    directionsService.route(
-      {
-        origin: agentLocation,
-        destination: customerLocation,
-        travelMode: google.maps.TravelMode.DRIVING,
-      },
-      (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
-          setDirections(result);
-          // Simulate ETA and distance from directions
-          const route = result.routes[0];
-          if (route && route.legs[0]) {
-            const leg = route.legs[0];
-            setEta(Math.round((leg.duration?.value || 900) / 60)); // seconds to minutes
-            setDistance(parseFloat(((leg.distance?.value || 5200) / 1000).toFixed(1))); // meters to km
-          }
-        } else {
-          console.error(`Directions request failed due to ${status}`);
-        }
-      }
-    );
-  }, [isLoaded, agentLocation, customerLocation, loadError]);
+  //   const directionsService = new google.maps.DirectionsService();
+  //   directionsService.route(
+  //     {
+  //       origin: agentLocation,
+  //       destination: customerLocation,
+  //       travelMode: google.maps.TravelMode.DRIVING,
+  //     },
+  //     (result, status) => {
+  //       if (status === google.maps.DirectionsStatus.OK && result) {
+  //         setDirections(result);
+  //         const route = result.routes[0];
+  //         if (route && route.legs[0]) {
+  //           const leg = route.legs[0];
+  //           setEta(Math.round((leg.duration?.value || 900) / 60)); 
+  //           setDistance(parseFloat(((leg.distance?.value || 5200) / 1000).toFixed(1)));
+  //         }
+  //       } else {
+  //         console.error(`Directions request failed due to ${status}`);
+  //       }
+  //     }
+  //   );
+  // }, [isLoaded, agentLocation, customerLocation, loadError]);
 
-  // Simulate agent movement and ETA update
-  useEffect(() => {
-    if (!order || order.status === 'Delivered' || order.status === 'Cancelled' || order.status === 'Failed' || loadError) {
-      if (order && order.status === 'Delivered' && customerLocation) {
-         setAgentLocation(customerLocation); // Agent at customer location if delivered
-      }
-      return;
-    }
+  // useEffect(() => { // Temporarily commented out - Agent movement simulation
+  //   if (!order || order.status === 'Delivered' || order.status === 'Cancelled' || order.status === 'Failed' || loadError) {
+  //     if (order && order.status === 'Delivered' && customerLocation) {
+  //        setAgentLocation(customerLocation);
+  //     }
+  //     return;
+  //   }
 
-    const interval = setInterval(() => {
-      setAgentLocation(prev => {
-        if (!prev || !customerLocation) return prev;
-        // Simple linear interpolation towards customer for simulation
-        const newLat = prev.lat - (prev.lat - customerLocation.lat) * 0.1;
-        const newLng = prev.lng - (prev.lng - customerLocation.lng) * 0.1;
-        // Stop very close to destination
-        if (Math.abs(newLat - customerLocation.lat) < 0.0001 && Math.abs(newLng - customerLocation.lng) < 0.0001) {
-          clearInterval(interval);
-          setOrder(o => o ? ({...o, status: 'Delivered'}) : null);
-          return customerLocation;
-        }
-        return { lat: newLat, lng: newLng };
-      });
-      setEta(prev => Math.max(1, prev - 1)); // Decrease ETA by 1 min, min 1
-      setDistance(prev => Math.max(0.1, parseFloat((prev - 0.5).toFixed(1)))); // Decrease distance
-    }, 5000); // Update every 5 seconds
+  //   const interval = setInterval(() => {
+  //     setAgentLocation(prev => {
+  //       if (!prev || !customerLocation) return prev;
+  //       const newLat = prev.lat - (prev.lat - customerLocation.lat) * 0.1;
+  //       const newLng = prev.lng - (prev.lng - customerLocation.lng) * 0.1;
+  //       if (Math.abs(newLat - customerLocation.lat) < 0.0001 && Math.abs(newLng - customerLocation.lng) < 0.0001) {
+  //         clearInterval(interval);
+  //         setOrder(o => o ? ({...o, status: 'Delivered'}) : null);
+  //         return customerLocation;
+  //       }
+  //       return { lat: newLat, lng: newLng };
+  //     });
+  //     setEta(prev => Math.max(1, prev - 1)); 
+  //     setDistance(prev => Math.max(0.1, parseFloat((prev - 0.5).toFixed(1)))); 
+  //   }, 5000); 
 
-    return () => clearInterval(interval);
-  }, [order, customerLocation, loadError]);
+  //   return () => clearInterval(interval);
+  // }, [order, customerLocation, loadError]);
 
 
   const orderStatusSteps = useMemo(() => order ? getOrderStatusSteps(order.status) : [], [order]);
@@ -171,7 +164,7 @@ export default function TrackOrderPage() {
     );
   }
   
-  const mapCenter = customerLocation || MOCK_CUSTOMER_LOCATIONS.default;
+  // const mapCenter = customerLocation || MOCK_CUSTOMER_LOCATIONS.default; // Not used by iframe
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -198,15 +191,15 @@ export default function TrackOrderPage() {
               <CardTitle className="flex items-center"><MapPin className="mr-2 h-5 w-5 text-accent"/>Delivery Map</CardTitle>
             </CardHeader>
             <CardContent>
-              {loadError && (
+              {/* {loadError && ( // Error for API key is less relevant with iframe
                 <div className="p-4 rounded-md bg-destructive text-destructive-foreground text-center">
                   <AlertTriangle className="mx-auto h-10 w-10 mb-2" />
                   <p className="font-semibold">Error loading Google Maps.</p>
                   <p className="text-sm mt-1">Please ensure your Google Maps API key is correctly configured, has the necessary APIs enabled (Maps JavaScript API, Directions API), and that there are no billing issues or referrer restrictions blocking access.</p>
-                  <p className="text-xs mt-2">({loadError.message})</p>
+                  <p className="text-xs mt-2">({(loadError as Error).message})</p>
                 </div>
-              )}
-              {!loadError && isLoaded && (
+              )} */}
+              {/* {!loadError && isLoaded && ( // Temporarily commented out - Dynamic Map
                 <GoogleMap
                   mapContainerStyle={containerStyle}
                   center={mapCenter}
@@ -216,10 +209,21 @@ export default function TrackOrderPage() {
                   {agentLocation && <MarkerF position={agentLocation} label={{ text: deliveryPartner?.name || "Rider", fontWeight: "bold"}} icon={{url: '/truck-icon.svg', scaledSize: new google.maps.Size(35,35)}} />}
                   {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true, polylineOptions: { strokeColor: '#4F63AC', strokeWeight: 5 } }} />}
                 </GoogleMap>
-              )}
-              {!loadError && !isLoaded && (
+              )} */}
+              {/* {!loadError && !isLoaded && ( // Temporarily commented out - Skeleton
                 <Skeleton className="w-full h-[400px] rounded-md" />
-              )}
+              )} */}
+              <div style={{ width: '100%', height: '450px', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                <iframe 
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d57302.63291536073!2d85.86197830599366!3d26.15062508977816!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39edb835434acdb1%3A0x70ec31d04822699e!2sDarbhanga%2C%20Bihar!5e0!3m2!1sen!2sin!4v1749675032868!5m2!1sen!2sin" 
+                  width="100%" 
+                  height="100%" 
+                  style={{ border:0 }} 
+                  allowFullScreen={true} 
+                  loading="lazy" 
+                  referrerPolicy="no-referrer-when-downgrade">
+                </iframe>
+              </div>
             </CardContent>
           </Card>
             
