@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone } from 'lucide-react';
+import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone, AlertTriangle } from 'lucide-react';
 import { GoogleMap, useJsApiLoader, MarkerF, DirectionsRenderer } from '@react-google-maps/api';
 import { mockOrders, mockDeliveryPartners } from '@/lib/mockData'; // Using mock data
 import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderAddress } from '@/lib/types'; // Adjusted import for OrderType
@@ -99,7 +99,7 @@ export default function TrackOrderPage() {
   }, [orderId, router]);
 
   useEffect(() => {
-    if (!isLoaded || !agentLocation || !customerLocation) return;
+    if (!isLoaded || !agentLocation || !customerLocation || loadError) return;
 
     const directionsService = new google.maps.DirectionsService();
     directionsService.route(
@@ -123,11 +123,11 @@ export default function TrackOrderPage() {
         }
       }
     );
-  }, [isLoaded, agentLocation, customerLocation]);
+  }, [isLoaded, agentLocation, customerLocation, loadError]);
 
   // Simulate agent movement and ETA update
   useEffect(() => {
-    if (!order || order.status === 'Delivered' || order.status === 'Cancelled' || order.status === 'Failed') {
+    if (!order || order.status === 'Delivered' || order.status === 'Cancelled' || order.status === 'Failed' || loadError) {
       if (order && order.status === 'Delivered' && customerLocation) {
          setAgentLocation(customerLocation); // Agent at customer location if delivered
       }
@@ -153,7 +153,7 @@ export default function TrackOrderPage() {
     }, 5000); // Update every 5 seconds
 
     return () => clearInterval(interval);
-  }, [order, customerLocation]);
+  }, [order, customerLocation, loadError]);
 
 
   const orderStatusSteps = useMemo(() => order ? getOrderStatusSteps(order.status) : [], [order]);
@@ -198,22 +198,26 @@ export default function TrackOrderPage() {
               <CardTitle className="flex items-center"><MapPin className="mr-2 h-5 w-5 text-accent"/>Delivery Map</CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoaded ? (
+              {loadError && (
+                <div className="p-4 rounded-md bg-destructive text-destructive-foreground text-center">
+                  <AlertTriangle className="mx-auto h-10 w-10 mb-2" />
+                  <p className="font-semibold">Error loading Google Maps.</p>
+                  <p className="text-sm mt-1">Please ensure your Google Maps API key is correctly configured, has the necessary APIs enabled (Maps JavaScript API, Directions API), and that there are no billing issues or referrer restrictions blocking access.</p>
+                  <p className="text-xs mt-2">({loadError.message})</p>
+                </div>
+              )}
+              {!loadError && isLoaded && (
                 <GoogleMap
                   mapContainerStyle={containerStyle}
                   center={mapCenter}
                   zoom={12}
                 >
-                  {customerLocation && <MarkerF position={customerLocation} label={{ text: "You", fontWeight: "bold" }} icon={{url: '/_next/static/media/home-icon.svg', scaledSize: new google.maps.Size(30,30)}} />}
-                  {agentLocation && <MarkerF position={agentLocation} label={{ text: deliveryPartner?.name || "Rider", fontWeight: "bold"}} icon={{url: '/_next/static/media/truck-icon.svg', scaledSize: new google.maps.Size(35,35)}} />}
+                  {customerLocation && <MarkerF position={customerLocation} label={{ text: "You", fontWeight: "bold" }} icon={{url: '/home-icon.svg', scaledSize: new google.maps.Size(30,30)}} />}
+                  {agentLocation && <MarkerF position={agentLocation} label={{ text: deliveryPartner?.name || "Rider", fontWeight: "bold"}} icon={{url: '/truck-icon.svg', scaledSize: new google.maps.Size(35,35)}} />}
                   {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true, polylineOptions: { strokeColor: '#4F63AC', strokeWeight: 5 } }} />}
                 </GoogleMap>
-              ) : loadError ? (
-                <div className="text-destructive-foreground bg-destructive p-4 rounded-md">
-                    Error loading maps. Please ensure your API key is correctly configured and has the Maps JavaScript API & Directions API enabled.
-                    <p className="text-xs mt-1">({loadError.message})</p>
-                </div>
-              ) : (
+              )}
+              {!loadError && !isLoaded && (
                 <Skeleton className="w-full h-[400px] rounded-md" />
               )}
             </CardContent>
@@ -316,21 +320,3 @@ export default function TrackOrderPage() {
     </div>
   );
 }
-
-// Helper icons for map markers (as base64 SVGs to avoid external file dependencies for simplicity here)
-// These will be referenced in MarkerF component's icon prop.
-// Since public folder access in Next.js is straightforward, let's assume these SVGs are placed there.
-// For example: public/truck-icon.svg and public/home-icon.svg
-// If direct SVG content is preferred, that's also an option for MarkerF's icon prop.
-// For now, using example URLs that can be replaced by actual SVGs in the public folder.
-// Example: If you have public/truck-icon.svg
-// const truckIconUrl = '/truck-icon.svg';
-// const homeIconUrl = '/home-icon.svg';
-// For this prototype, I'll use slightly different icons for the Markers via their URL string.
-// This is a simplified version for prototyping. For production, use actual icon files.
-// Note: The actual rendering of these as custom icons is complex with MarkerF.
-// Using default markers or simple character labels is easier for a quick setup.
-// The above code uses label and default marker. To use custom SVG icons,
-// you would set MarkerF's `icon` prop to something like:
-// icon={{ url: '/truck-icon.svg', scaledSize: new google.maps.Size(40, 40) }}
-// I'll create placeholder SVG files.
