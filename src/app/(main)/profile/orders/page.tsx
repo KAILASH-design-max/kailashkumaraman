@@ -27,14 +27,14 @@ interface FirestoreOrderAddress {
     city: string;
     postalCode: string;
     country: string;
-    phoneNumber: string; // Changed from phone
+    phoneNumber: string;
 }
 
 interface FirestoreOrder extends DocumentData {
   id: string; // Firestore document ID
   userId: string;
   name: string; // Recipient's name
-  phoneNumber: string; // Changed from phone
+  phoneNumber: string;
   address: FirestoreOrderAddress; // Full address object
   items: FirestoreOrderItem[];
   total: number; // totalAmount
@@ -81,9 +81,18 @@ export default function OrdersPage() {
         });
         setOrders(fetchedOrders);
         setIsLoading(false);
-      }, (err) => {
-        console.error("Error fetching orders: ", err);
-        setError("Failed to fetch orders. Please try again later.");
+      }, (firestoreError) => { // Changed variable name for clarity
+        console.error("Firestore onSnapshot error fetching orders: ", firestoreError);
+        let detailedMessage = "Failed to fetch orders. Please try again later.";
+        // Check for specific Firestore error codes
+        if (firestoreError.code === 'permission-denied') {
+          detailedMessage = "Permission denied. Please check your Firestore security rules to ensure you have read access to your orders.";
+        } else if (firestoreError.code === 'failed-precondition' && firestoreError.message.includes('index')) {
+            detailedMessage = `Query requires an index that is missing or incorrect. Please check Firestore indexes. Details: ${firestoreError.message}`;
+        } else if (firestoreError.message) {
+          detailedMessage = `Failed to fetch orders: ${firestoreError.message}`;
+        }
+        setError(detailedMessage);
         setIsLoading(false);
       });
 
@@ -145,7 +154,9 @@ export default function OrdersPage() {
   if (error) {
      return (
       <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center text-destructive">
-        <p>{error}</p>
+        <p className="font-semibold">Error Loading Orders:</p>
+        <p className="text-sm">{error}</p>
+         <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">Retry</Button>
       </div>
     );
   }
