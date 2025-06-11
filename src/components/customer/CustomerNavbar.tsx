@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown, UserCircle } from 'lucide-react';
+import { ShoppingCartIcon, Menu, LogOut, User, Settings, ListOrdered, Search as SearchIcon, ChevronDown, UserCircle, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
 import { usePathname, useRouter } from 'next/navigation';
@@ -30,7 +30,7 @@ const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType
 ];
 
 
-const useAuthHook = () => { // Renamed to avoid conflict if a global useAuth is added later
+const useAuthHook = () => { 
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
@@ -48,7 +48,7 @@ const useAuthHook = () => { // Renamed to avoid conflict if a global useAuth is 
     try {
       await signOut(auth);
       toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/'); // Redirect to home page after logout
+      router.push('/'); 
     } catch (error) {
       console.error("Error signing out: ", error);
       toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
@@ -79,7 +79,7 @@ export function CustomerNavbar() {
     setDeliveryTime(calculateDeliveryTime());
     const deliveryIntervalId = setInterval(() => {
       setDeliveryTime(calculateDeliveryTime());
-    }, 1000);
+    }, 1000); // This interval seems too frequent (every 1 second) for a display text. Consider increasing.
 
     if (mockProducts && mockProducts.length > 0) {
       const placeholderIntervalId = setInterval(() => {
@@ -128,177 +128,220 @@ export function CustomerNavbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between">
-        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-          <SheetTrigger asChild className="md:hidden mr-2">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Toggle Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-[300px] sm:w-[400px] flex flex-col">
-            <SheetClose asChild>
-                <Logo icon={ShoppingCartIcon} textSize="text-xl" className="mb-4 p-2 border-b"/>
-            </SheetClose>
-            <nav className="flex flex-col gap-2 mt-4 flex-grow">
-              {mainSheetNavItems.map((link) => (
-                <SheetClose asChild key={link.label}>
-                  <Button asChild variant={pathname === link.href ? 'secondary' : 'ghost'} className="w-full justify-start text-md py-3">
-                    <Link href={link.href}>
-                      {link.icon && <link.icon className="mr-2 h-5 w-5" />}
-                      {link.label}
-                    </Link>
-                  </Button>
-                </SheetClose>
-              ))}
-            </nav>
-            <div className="mt-auto border-t pt-4">
-              {!authIsLoading && (
-                isLoggedIn ? (
-                  <>
-                    <SheetClose asChild>
-                      <Button asChild variant='ghost' className="w-full justify-start text-md py-3">
-                        <Link href="/profile">
-                            <User className="mr-2 h-5 w-5" />
-                            {currentUser?.displayName || 'My Profile'}
-                        </Link>
-                      </Button>
-                    </SheetClose>
-                    <Button variant='outline' className="w-full justify-start text-md py-3" onClick={handleLogout}>
-                        <LogOut className="mr-2 h-5 w-5" />
-                        Logout
+    <>
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container flex h-16 items-center justify-between">
+          <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+            <SheetTrigger asChild className="md:hidden mr-2">
+              <Button variant="ghost" size="icon">
+                <Menu className="h-6 w-6" />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-[300px] sm:w-[400px] flex flex-col">
+              <SheetClose asChild>
+                  <Logo icon={ShoppingCartIcon} textSize="text-xl" className="mb-4 p-2 border-b"/>
+              </SheetClose>
+              <nav className="flex flex-col gap-2 mt-4 flex-grow">
+                {mainSheetNavItems.map((link) => (
+                  <SheetClose asChild key={link.label}>
+                    <Button asChild variant={pathname === link.href ? 'secondary' : 'ghost'} className="w-full justify-start text-md py-3">
+                      <Link href={link.href}>
+                        {link.icon && <link.icon className="mr-2 h-5 w-5" />}
+                        {link.label}
+                      </Link>
                     </Button>
-                  </>
-                ) : (
-                  <SheetClose asChild>
-                     <Button asChild variant='default' className="w-full justify-start text-md py-3">
-                        <Link href="/login">
-                            <User className="mr-2 h-5 w-5" />
-                            Login / Sign Up
-                        </Link>
-                      </Button>
                   </SheetClose>
-                )
-              )}
-            </div>
-          </SheetContent>
-        </Sheet>
+                ))}
+              </nav>
+              <div className="mt-auto border-t pt-4">
+                {!authIsLoading && (
+                  isLoggedIn ? (
+                    <>
+                      <SheetClose asChild>
+                        <Button asChild variant='ghost' className="w-full justify-start text-md py-3">
+                          <Link href="/profile">
+                              <User className="mr-2 h-5 w-5" />
+                              {currentUser?.displayName || 'My Profile'}
+                          </Link>
+                        </Button>
+                      </SheetClose>
+                      <Button variant='outline' className="w-full justify-start text-md py-3" onClick={handleLogout}>
+                          <LogOut className="mr-2 h-5 w-5" />
+                          Logout
+                      </Button>
+                    </>
+                  ) : (
+                    <SheetClose asChild>
+                       <Button asChild variant='default' className="w-full justify-start text-md py-3">
+                          <Link href="/login">
+                              <User className="mr-2 h-5 w-5" />
+                              Login / Sign Up
+                          </Link>
+                        </Button>
+                    </SheetClose>
+                  )
+                )}
+              </div>
+            </SheetContent>
+          </Sheet>
 
-        <div className="hidden md:flex items-center space-x-6 flex-shrink-0">
-          <Logo icon={ShoppingCartIcon} textSize="text-3xl" iconSize={30} />
+          <div className="hidden md:flex items-center space-x-6 flex-shrink-0">
+            <Logo icon={ShoppingCartIcon} textSize="text-3xl" iconSize={30} />
 
-          <LocationDialog
-              open={isLocationDialogOpen}
-              onOpenChange={setIsLocationDialogOpen}
-              onLocationUpdate={handleLocationUpdate}
-          >
-              <div className="flex items-center cursor-pointer group">
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground whitespace-nowrap">
-                    {deliveryTime !== null ? `Delivery in ${deliveryTime} minutes` : 'Checking...'}
-                  </p>
-                  <div className="flex items-center">
-                    <p className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-[200px] md:max-w-[150px] lg:max-w-[200px]">
-                      {currentLocation}
+            <LocationDialog
+                open={isLocationDialogOpen}
+                onOpenChange={setIsLocationDialogOpen}
+                onLocationUpdate={handleLocationUpdate}
+            >
+                <div className="flex items-center cursor-pointer group">
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-foreground whitespace-nowrap">
+                      {deliveryTime !== null ? `Delivery in ${deliveryTime} minutes` : 'Checking...'}
                     </p>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 group-hover:text-primary transition-colors shrink-0" />
+                    <div className="flex items-center">
+                      <p className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-[200px] md:max-w-[150px] lg:max-w-[200px]">
+                        {currentLocation}
+                      </p>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 group-hover:text-primary transition-colors shrink-0" />
+                    </div>
                   </div>
                 </div>
-              </div>
-          </LocationDialog>
-        </div>
-
-         <div className="md:hidden flex-1">
-            <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
-        </div>
-
-        <div className="hidden md:flex flex-1 justify-center px-2">
-          <div className="relative w-full max-w-lg">
-            <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              className="h-11 w-full pl-10 pr-4 rounded-lg border-input focus:border-primary focus:ring-primary"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              aria-label="Search products"
-            />
+            </LocationDialog>
           </div>
-        </div>
 
-        <div className="hidden md:flex items-center space-x-3 flex-shrink-0"> {/* Reduced space-x from 4 to 3 */}
-           {!authIsLoading && (
-             isLoggedIn ? (
-               <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
-                 <Link href="/profile">
-                    {currentUser?.displayName || 'Profile'}
-                 </Link>
-               </Button>
-             ) : (
-              <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
-                <Link href="/login">
-                   Login
-                </Link>
-              </Button>
-             )
-           )}
+           <div className="md:hidden flex-1">
+              <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
+          </div>
 
-          <Button
-            onClick={() => router.push('/cart')}
-            className={cn(
-              "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 h-11 rounded-md text-sm",
-              cartItemCount === 0 ? 'cart-empty' : 'cart-active'
-            )}
-            aria-disabled={cartItemCount === 0}
-          >
-            <ShoppingCartIcon className="mr-2 h-5 w-5" />
-            <div className="flex flex-col items-start -my-1">
-              <span className="text-xs leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</span>
-              <span className="font-semibold leading-tight">₹{cartTotalAmount.toFixed(2)}</span>
+          <div className="hidden md:flex flex-1 justify-center px-2">
+            <div className="relative w-full max-w-lg">
+              <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={searchPlaceholder}
+                className="h-11 w-full pl-10 pr-4 rounded-lg border-input focus:border-primary focus:ring-primary"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                aria-label="Search products"
+              />
             </div>
-          </Button>
-        </div>
+          </div>
 
-        <div className="md:hidden ml-auto">
-             <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                className={cn(
-                  "relative",
-                  cartItemCount === 0 ? 'cart-empty' : 'cart-active'
-                )}
-                aria-disabled={cartItemCount === 0}
-              >
-                <Link href="/cart" aria-label="Shopping Cart">
-                <ShoppingCartIcon className="h-5 w-5" />
-                {cartItemCount > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                    {cartItemCount}
-                    </span>
-                )}
-                <span className="sr-only">Cart</span>
-                </Link>
+          <div className="hidden md:flex items-center space-x-3 flex-shrink-0">
+             {!authIsLoading && (
+               isLoggedIn ? (
+                 <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
+                   <Link href="/profile">
+                      {currentUser?.displayName || 'Profile'}
+                   </Link>
+                 </Button>
+               ) : (
+                <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
+                  <Link href="/login">
+                     Login
+                  </Link>
+                </Button>
+               )
+             )}
+
+            <Button
+              onClick={() => router.push('/cart')}
+              className={cn(
+                "bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 h-11 rounded-md text-sm",
+                cartItemCount === 0 ? 'cart-empty' : 'cart-active'
+              )}
+              aria-disabled={cartItemCount === 0}
+            >
+              <ShoppingCartIcon className="mr-2 h-5 w-5" />
+              <div className="flex flex-col items-start -my-1">
+                <span className="text-xs leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</span>
+                <span className="font-semibold leading-tight">₹{cartTotalAmount.toFixed(2)}</span>
+              </div>
             </Button>
-        </div>
+          </div>
 
-      </div>
-       <div className="md:hidden px-4 pb-3 pt-1 border-t">
-          <div className="relative w-full">
-            <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder={searchPlaceholder}
-              className="h-10 w-full pl-9 pr-4 rounded-md text-sm border-input"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              aria-label="Search products mobile"
-            />
+          <div className="md:hidden ml-auto">
+               <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className={cn(
+                    "relative",
+                    cartItemCount === 0 ? 'cart-empty' : 'cart-active'
+                  )}
+                  aria-disabled={cartItemCount === 0}
+                >
+                  <Link href="/cart" aria-label="Shopping Cart">
+                  <ShoppingCartIcon className="h-5 w-5" />
+                  {cartItemCount > 0 && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                      {cartItemCount}
+                      </span>
+                  )}
+                  <span className="sr-only">Cart</span>
+                  </Link>
+              </Button>
           </div>
         </div>
-    </header>
+
+        {/* Mobile Location Display */}
+        <div className="md:hidden container mx-auto px-4 pt-2 pb-2 text-center border-b border-t">
+            <LocationDialog
+                open={isLocationDialogOpen}
+                onOpenChange={setIsLocationDialogOpen}
+                onLocationUpdate={handleLocationUpdate}
+            >
+                <div className="inline-flex items-center cursor-pointer group p-1 hover:bg-muted rounded-md transition-colors">
+                  <div className="text-left">
+                    <p className="text-xs font-medium text-foreground whitespace-nowrap">
+                      {deliveryTime !== null ? `Delivery in ${deliveryTime} min` : 'Checking...'}
+                    </p>
+                    <div className="flex items-center">
+                      <p className="text-[11px] text-muted-foreground truncate max-w-[200px] xs:max-w-[240px]">
+                        {currentLocation}
+                      </p>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 group-hover:text-primary transition-colors shrink-0" />
+                    </div>
+                  </div>
+                </div>
+            </LocationDialog>
+        </div>
+        
+        {/* Mobile Search Bar */}
+         <div className="md:hidden px-4 pb-3 pt-2"> {/* Removed border-t as mobile location above has border-b */}
+            <div className="relative w-full">
+              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder={searchPlaceholder}
+                className="h-10 w-full pl-9 pr-4 rounded-md text-sm border-input"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                aria-label="Search products mobile"
+              />
+            </div>
+          </div>
+      </header>
+
+      {/* Mobile Fixed Cart Summary Box */}
+      {cartItemCount > 0 && (
+        <Link href="/cart" passHref legacyBehavior>
+          <a className="md:hidden fixed bottom-4 left-4 z-50 bg-green-600 text-white p-3 pr-4 rounded-lg shadow-xl flex items-center space-x-3 cursor-pointer hover:bg-green-700 active:bg-green-800 transition-all transform hover:scale-105 active:scale-100">
+            <ShoppingCartIcon className="h-5 w-5" />
+            <div className="flex-grow">
+              <p className="text-sm font-semibold leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</p>
+              <p className="text-xs leading-tight">₹{cartTotalAmount.toFixed(2)}</p>
+            </div>
+            <div className="text-sm font-medium flex items-center">
+              View Cart
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </div>
+          </a>
+        </Link>
+      )}
+    </>
   );
 }
