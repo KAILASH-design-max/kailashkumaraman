@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, ListOrdered, Filter, Repeat, RotateCcw, PackageSearch, ShoppingBag, Loader2, Phone } from 'lucide-react';
+import { ChevronLeft, ListOrdered, Filter, Repeat, RotateCcw, PackageSearch, ShoppingBag, Loader2, Phone, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
@@ -81,14 +81,13 @@ export default function OrdersPage() {
         });
         setOrders(fetchedOrders);
         setIsLoading(false);
-      }, (firestoreError) => { // Changed variable name for clarity
+      }, (firestoreError) => { 
         console.error("Firestore onSnapshot error fetching orders: ", firestoreError);
         let detailedMessage = "Failed to fetch orders. Please try again later.";
-        // Check for specific Firestore error codes
         if (firestoreError.code === 'permission-denied') {
           detailedMessage = "Permission denied. Please check your Firestore security rules to ensure you have read access to your orders.";
         } else if (firestoreError.code === 'failed-precondition' && firestoreError.message.includes('index')) {
-            detailedMessage = `Query requires an index that is missing or incorrect. Please check Firestore indexes. Details: ${firestoreError.message}`;
+            detailedMessage = `Query requires an index that is missing or incorrect. Please ensure your index has 'userId' (Ascending) and 'orderDate' (Descending). Details: ${firestoreError.message}`;
         } else if (firestoreError.message) {
           detailedMessage = `Failed to fetch orders: ${firestoreError.message}`;
         }
@@ -236,8 +235,10 @@ export default function OrdersPage() {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-2 mt-4">
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => alert(`Tracking order ${order.id}... (placeholder)`)}>
-                    <PackageSearch className="mr-2 h-4 w-4" /> View Details / Track
+                  <Button variant="outline" size="sm" className="flex-1" asChild>
+                    <Link href={`/profile/orders/${order.id}/track`}>
+                      <Truck className="mr-2 h-4 w-4" /> View Details / Track
+                    </Link>
                   </Button>
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => alert(`Reordering items from order ${order.id}... (placeholder)`)}>
                     <Repeat className="mr-2 h-4 w-4" /> Reorder
