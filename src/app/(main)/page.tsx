@@ -74,7 +74,7 @@ export default function HomePage() {
       {/* Category Display Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 text-left">Shop by Category</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"> {/* Adjusted grid columns for larger images */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
               <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col h-full bg-transparent border-transparent border-0 shadow-none">
@@ -83,7 +83,7 @@ export default function HomePage() {
                     src={category.imageUrl}
                     alt={category.name}
                     fill
-                    sizes="(max-width: 639px) 48vw, (max-width: 767px) 30vw, (max-width: 1023px) 22vw, 18vw" // Adjusted sizes
+                    sizes="(max-width: 639px) 48vw, (max-width: 767px) 30vw, (max-width: 1023px) 22vw, (max-width: 1279px) 15vw, 12vw"
                     className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-lg"
                     data-ai-hint={category.dataAiHint || 'category image'}
                   />
