@@ -328,18 +328,19 @@ export function CustomerNavbar() {
 
       {/* Mobile Fixed Cart Summary Box */}
       {cartItemCount > 0 && (
-        <Link href="/cart" passHref legacyBehavior>
-          <a className="md:hidden fixed bottom-4 left-4 z-50 bg-green-600 text-white p-3 pr-4 rounded-lg shadow-xl flex items-center space-x-3 cursor-pointer hover:bg-green-700 active:bg-green-800 transition-all transform hover:scale-105 active:scale-100">
-            <ShoppingCartIcon className="h-5 w-5" />
-            <div className="flex-grow">
-              <p className="text-sm font-semibold leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</p>
-              <p className="text-xs leading-tight">₹{cartTotalAmount.toFixed(2)}</p>
-            </div>
-            <div className="text-sm font-medium flex items-center">
-              View Cart
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </div>
-          </a>
+        <Link
+          href="/cart"
+          className="md:hidden fixed bottom-4 left-4 z-50 bg-green-600 text-white p-3 pr-4 rounded-lg shadow-xl flex items-center space-x-3 cursor-pointer hover:bg-green-700 active:bg-green-800 transition-all transform hover:scale-105 active:scale-100"
+        >
+          <ShoppingCartIcon className="h-5 w-5" />
+          <div className="flex-grow">
+            <p className="text-sm font-semibold leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</p>
+            <p className="text-xs leading-tight">₹{cartTotalAmount.toFixed(2)}</p>
+          </div>
+          <div className="text-sm font-medium flex items-center">
+            View Cart
+            <ChevronRight className="h-4 w-4 ml-1" />
+          </div>
         </Link>
       )}
     </>
