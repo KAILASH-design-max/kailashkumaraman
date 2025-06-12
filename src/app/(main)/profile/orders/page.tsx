@@ -11,6 +11,10 @@ import { auth, db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, Timestamp, type DocumentData } from 'firebase/firestore';
 import type { User as FirebaseUser } from 'firebase/auth';
 import Image from 'next/image'; // For displaying item images
+import { useCart } from '@/hooks/useCart';
+import { mockProducts } from '@/lib/mockData';
+import type { Product } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 // Define a more specific type for Firestore order data
 interface FirestoreOrderItem {
@@ -55,6 +59,8 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<FirestoreOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -125,6 +131,42 @@ export default function OrdersPage() {
       case 'failed':
         return 'bg-red-100 text-red-700';
       default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const handleReorder = (orderId: string) => {
+    const orderToReorder = orders.find(order => order.id === orderId);
+    if (!orderToReorder) {
+      toast({
+        title: "Reorder Failed",
+        description: "Could not find the order details.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    let itemsAddedCount = 0;
+    orderToReorder.items.forEach(item => {
+      const productDetails = mockProducts.find(p => p.id === item.productId);
+      if (productDetails) {
+        addToCart(productDetails, item.quantity);
+        itemsAddedCount++;
+      } else {
+        console.warn(`Product with ID ${item.productId} not found in mockProducts for reorder.`);
+      }
+    });
+
+    if (itemsAddedCount > 0) {
+      toast({
+        title: "Items Reordered",
+        description: `${itemsAddedCount} item(s) from order ${orderId.substring(0,6)}... have been added to your cart.`,
+      });
+    } else {
+       toast({
+        title: "Reorder Information",
+        description: "No items could be added to the cart. Product details might be unavailable.",
+        variant: "default",
+      });
     }
   };
 
@@ -240,7 +282,7 @@ export default function OrdersPage() {
                       <Truck className="mr-2 h-4 w-4" /> View Details / Track
                     </Link>
                   </Button>
-                  <Button variant="outline" size="sm" className="flex-1" onClick={() => alert(`Reordering items from order ${order.id}... (placeholder)`)}>
+                  <Button variant="outline" size="sm" className="flex-1" onClick={() => handleReorder(order.id)}>
                     <Repeat className="mr-2 h-4 w-4" /> Reorder
                   </Button>
                   {(order.orderStatus.toLowerCase() === 'delivered') && (

@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone, AlertTriangle } from 'lucide-react';
 // import { GoogleMap, useJsApiLoader, MarkerF, DirectionsRenderer } from '@react-google-maps/api'; // Temporarily commented out
 import { mockOrders, mockDeliveryPartners } from '@/lib/mockData'; 
-import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderAddress } from '@/lib/types'; 
+import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderAddress, OrderStatus } from '@/lib/types'; 
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -43,14 +43,14 @@ const getOrderStatusSteps = (status: string) => {
   if (statusLower.includes('delivered')) completedIndex = 4;
   else if (statusLower.includes('out for delivery') || statusLower.includes('shipped')) completedIndex = 3;
   else if (statusLower.includes('processing')) completedIndex = 2;
-  else if (statusLower.includes('confirmed') || statusLower.includes('placed')) completedIndex = 1;
+  else if (statusLower.includes('confirmed')) completedIndex = 1; // Changed from || placed
   else if (statusLower.includes('placed')) completedIndex = 0;
 
 
   return steps.map((step, index) => ({
     ...step,
     completed: index <= completedIndex,
-    current: index === completedIndex
+    current: index === completedIndex && index !==4 // Don't mark 'Delivered' as current in the same way
   }));
 };
 
@@ -61,19 +61,9 @@ export default function TrackOrderPage() {
 
   const [order, setOrder] = useState<OrderType | null>(null);
   const [deliveryPartner, setDeliveryPartner] = useState<DeliveryPartnerType | null>(null);
-  // const [customerLocation, setCustomerLocation] = useState<{ lat: number; lng: number } | null>(null); // Still kept, but not used by iframe
-  // const [agentLocation, setAgentLocation] = useState<{ lat: number; lng: number } | null>(null); // Temporarily commented out
   const [eta, setEta] = useState<number>(15); 
   const [distance, setDistance] = useState<number>(5.2); 
-  // const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null); // Temporarily commented out
   const [isLoading, setIsLoading] = useState(true);
-
-  // const { isLoaded, loadError } = useJsApiLoader({ // Temporarily commented out
-  //   googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-  //   libraries: ['places', 'directions'],
-  // });
-  const isLoaded = true; // Assume loaded for iframe
-  const loadError = null; // Assume no error for iframe
 
   useEffect(() => {
     if (orderId) {
@@ -84,69 +74,57 @@ export default function TrackOrderPage() {
         const partner = mockDeliveryPartners.find(dp => dp.id === foundOrder.deliveryPartnerId);
         setDeliveryPartner(partner || mockDeliveryPartners[0]); 
 
-        // const mockCustLoc = MOCK_CUSTOMER_LOCATIONS[orderId] || MOCK_CUSTOMER_LOCATIONS['default']; // Customer location not used by iframe
-        // setCustomerLocation(mockCustLoc);
+        // Initialize ETA and distance based on order or defaults
+        // This is a rough estimation for mock purposes
+        const orderDate = new Date(foundOrder.orderDate);
+        const estimatedDelivery = foundOrder.estimatedDeliveryTime ? new Date(foundOrder.estimatedDeliveryTime) : new Date(orderDate.getTime() + 30 * 60000); // Default 30 mins
+        const now = new Date();
+        const remainingMinutes = Math.max(0, Math.round((estimatedDelivery.getTime() - now.getTime()) / 60000));
         
-        // setAgentLocation({ lat: mockCustLoc.lat + 0.05, lng: mockCustLoc.lng + 0.05 }); // Agent location not used by iframe
+        if (foundOrder.status.toLowerCase() === 'delivered') {
+            setEta(0);
+            setDistance(0);
+        } else if (foundOrder.status.toLowerCase() === 'cancelled' || foundOrder.status.toLowerCase() === 'failed') {
+            setEta(0); // Or some indicator of no ETA
+            setDistance(0);
+        }
+        else if (remainingMinutes > 0) {
+            setEta(remainingMinutes);
+            // Mock distance based on ETA (e.g., 1 min ~ 0.3-0.5 km for city delivery)
+            setDistance(parseFloat(Math.max(0.1, remainingMinutes * 0.35).toFixed(1)));
+        } else {
+            // If estimated time has passed but not delivered, show a small ETA or "Arriving Soon"
+            setEta(foundOrder.status.toLowerCase().includes('out for delivery') ? 5 : 10); 
+            setDistance(foundOrder.status.toLowerCase().includes('out for delivery') ? 1.5 : 3.0);
+        }
+
       } else {
-        router.push('/profile/orders');
+        // Order not found, redirect or show error
+        router.push('/profile/orders'); // Or a dedicated 404 page
       }
       setIsLoading(false);
     }
   }, [orderId, router]);
 
-  // useEffect(() => { // Temporarily commented out - Directions logic
-  //   if (!isLoaded || !agentLocation || !customerLocation || loadError) return;
+  useEffect(() => {
+    if (!order || ['Delivered', 'Cancelled', 'Failed'].includes(order.status as string)) {
+      return; // Stop simulation if order is completed or failed
+    }
 
-  //   const directionsService = new google.maps.DirectionsService();
-  //   directionsService.route(
-  //     {
-  //       origin: agentLocation,
-  //       destination: customerLocation,
-  //       travelMode: google.maps.TravelMode.DRIVING,
-  //     },
-  //     (result, status) => {
-  //       if (status === google.maps.DirectionsStatus.OK && result) {
-  //         setDirections(result);
-  //         const route = result.routes[0];
-  //         if (route && route.legs[0]) {
-  //           const leg = route.legs[0];
-  //           setEta(Math.round((leg.duration?.value || 900) / 60)); 
-  //           setDistance(parseFloat(((leg.distance?.value || 5200) / 1000).toFixed(1)));
-  //         }
-  //       } else {
-  //         console.error(`Directions request failed due to ${status}`);
-  //       }
-  //     }
-  //   );
-  // }, [isLoaded, agentLocation, customerLocation, loadError]);
+    const simulationInterval = setInterval(() => {
+      setEta(prevEta => {
+        const newEta = Math.max(0, prevEta - 1);
+        if (newEta === 0 && order.status !== 'Delivered') {
+          // Simulate arrival
+          setOrder(o => o ? ({ ...o, status: 'Delivered' as OrderStatus }) : null);
+        }
+        return newEta;
+      });
+      setDistance(prevDistance => parseFloat(Math.max(0, prevDistance - 0.35).toFixed(1)));
+    }, 5000); // Simulate update every 5 seconds
 
-  // useEffect(() => { // Temporarily commented out - Agent movement simulation
-  //   if (!order || order.status === 'Delivered' || order.status === 'Cancelled' || order.status === 'Failed' || loadError) {
-  //     if (order && order.status === 'Delivered' && customerLocation) {
-  //        setAgentLocation(customerLocation);
-  //     }
-  //     return;
-  //   }
-
-  //   const interval = setInterval(() => {
-  //     setAgentLocation(prev => {
-  //       if (!prev || !customerLocation) return prev;
-  //       const newLat = prev.lat - (prev.lat - customerLocation.lat) * 0.1;
-  //       const newLng = prev.lng - (prev.lng - customerLocation.lng) * 0.1;
-  //       if (Math.abs(newLat - customerLocation.lat) < 0.0001 && Math.abs(newLng - customerLocation.lng) < 0.0001) {
-  //         clearInterval(interval);
-  //         setOrder(o => o ? ({...o, status: 'Delivered'}) : null);
-  //         return customerLocation;
-  //       }
-  //       return { lat: newLat, lng: newLng };
-  //     });
-  //     setEta(prev => Math.max(1, prev - 1)); 
-  //     setDistance(prev => Math.max(0.1, parseFloat((prev - 0.5).toFixed(1)))); 
-  //   }, 5000); 
-
-  //   return () => clearInterval(interval);
-  // }, [order, customerLocation, loadError]);
+    return () => clearInterval(simulationInterval);
+  }, [order]);
 
 
   const orderStatusSteps = useMemo(() => order ? getOrderStatusSteps(order.status) : [], [order]);
@@ -164,7 +142,6 @@ export default function TrackOrderPage() {
     );
   }
   
-  // const mapCenter = customerLocation || MOCK_CUSTOMER_LOCATIONS.default; // Not used by iframe
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -191,28 +168,6 @@ export default function TrackOrderPage() {
               <CardTitle className="flex items-center"><MapPin className="mr-2 h-5 w-5 text-accent"/>Delivery Map</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* {loadError && ( // Error for API key is less relevant with iframe
-                <div className="p-4 rounded-md bg-destructive text-destructive-foreground text-center">
-                  <AlertTriangle className="mx-auto h-10 w-10 mb-2" />
-                  <p className="font-semibold">Error loading Google Maps.</p>
-                  <p className="text-sm mt-1">Please ensure your Google Maps API key is correctly configured, has the necessary APIs enabled (Maps JavaScript API, Directions API), and that there are no billing issues or referrer restrictions blocking access.</p>
-                  <p className="text-xs mt-2">({(loadError as Error).message})</p>
-                </div>
-              )} */}
-              {/* {!loadError && isLoaded && ( // Temporarily commented out - Dynamic Map
-                <GoogleMap
-                  mapContainerStyle={containerStyle}
-                  center={mapCenter}
-                  zoom={12}
-                >
-                  {customerLocation && <MarkerF position={customerLocation} label={{ text: "You", fontWeight: "bold" }} icon={{url: '/home-icon.svg', scaledSize: new google.maps.Size(30,30)}} />}
-                  {agentLocation && <MarkerF position={agentLocation} label={{ text: deliveryPartner?.name || "Rider", fontWeight: "bold"}} icon={{url: '/truck-icon.svg', scaledSize: new google.maps.Size(35,35)}} />}
-                  {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true, polylineOptions: { strokeColor: '#4F63AC', strokeWeight: 5 } }} />}
-                </GoogleMap>
-              )} */}
-              {/* {!loadError && !isLoaded && ( // Temporarily commented out - Skeleton
-                <Skeleton className="w-full h-[400px] rounded-md" />
-              )} */}
               <div style={{ width: '100%', height: '450px', borderRadius: '0.5rem', overflow: 'hidden' }}>
                 <iframe 
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d57302.63291536073!2d85.86197830599366!3d26.15062508977816!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39edb835434acdb1%3A0x70ec31d04822699e!2sDarbhanga%2C%20Bihar!5e0!3m2!1sen!2sin!4v1749675032868!5m2!1sen!2sin" 
@@ -235,11 +190,11 @@ export default function TrackOrderPage() {
                 <ul className="space-y-3">
                     {order.items.map((item, index) => (
                         <li key={index} className="flex items-center gap-3 p-2 border-b last:border-b-0">
-                            {item.imageUrl && (
+                            {/* Assuming item might not have imageUrl; using placeholder logic */}
+                            {item.imageUrl ? (
                                 <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="rounded object-cover aspect-square border" data-ai-hint="order item track" />
-                            )}
-                            {!item.imageUrl && (
-                                <div className="w-[50px] h-[50px] bg-muted rounded flex items-center justify-center">
+                            ) : (
+                                 <div className="w-[50px] h-[50px] bg-muted rounded flex items-center justify-center">
                                     <Package className="h-6 w-6 text-muted-foreground" />
                                 </div>
                             )}
@@ -256,7 +211,7 @@ export default function TrackOrderPage() {
                     <p className="text-sm text-muted-foreground">Subtotal: ₹{order.items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</p>
                     { (order.deliveryCharge ?? 0) > 0 && <p className="text-xs text-muted-foreground">Delivery: ₹{order.deliveryCharge?.toFixed(2)}</p> }
                     { (order.discountAmount ?? 0) > 0 && <p className="text-xs text-green-600">Discount: -₹{order.discountAmount?.toFixed(2)}</p> }
-                    <p className="text-lg font-bold">Total: ₹{order.total.toFixed(2)}</p>
+                    <p className="text-lg font-bold">Total: ₹{order.totalAmount.toFixed(2)}</p>
                 </div>
             </CardContent>
           </Card>
@@ -270,17 +225,21 @@ export default function TrackOrderPage() {
             <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center text-lg font-semibold text-primary">
-                        <Clock className="mr-2 h-5 w-5"/> ETA: ~{eta} min
+                        <Clock className="mr-2 h-5 w-5"/> 
+                        ETA: {eta > 0 ? `~${eta} min` : (order.status === 'Delivered' ? 'Delivered' : 'Arriving Soon')}
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
-                        <Navigation className="mr-1 h-4 w-4"/> {distance} km
+                        <Navigation className="mr-1 h-4 w-4"/> {distance > 0 ? `${distance} km` : '-'}
                     </div>
                 </div>
-                <Progress value={(15-eta)/15 * 100} aria-label={`${eta} minutes remaining`} className="w-full h-2" />
+                <Progress 
+                    value={order.status === 'Delivered' ? 100 : (orderStatusSteps.filter(s => s.completed).length / (orderStatusSteps.length -1)) * 100} 
+                    aria-label={`Order status: ${order.status}, ${eta} minutes remaining`} 
+                    className="w-full h-2" />
                 
                 <div className="space-y-3 mt-3 pt-3 border-t">
                     {orderStatusSteps.map((step, index) => (
-                        <div key={index} className={`flex items-center ${step.completed ? 'text-green-600' : 'text-muted-foreground'} ${step.current ? 'font-semibold text-primary' : ''}`}>
+                        <div key={index} className={`flex items-center ${step.completed ? 'text-green-600' : 'text-muted-foreground'} ${step.current ? 'font-semibold text-primary animate-pulse' : ''}`}>
                             {step.completed ? <Home className="h-4 w-4 mr-2"/> : <Home className="h-4 w-4 mr-2 opacity-50"/>}
                             <span>{step.name}</span>
                         </div>
@@ -324,3 +283,4 @@ export default function TrackOrderPage() {
     </div>
   );
 }
+
