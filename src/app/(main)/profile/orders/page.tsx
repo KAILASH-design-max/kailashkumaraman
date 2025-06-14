@@ -87,13 +87,21 @@ export default function OrdersPage() {
         });
         setOrders(fetchedOrders);
         setIsLoading(false);
-      }, (firestoreError) => { 
+      }, (firestoreError: any) => { 
         console.error("Firestore onSnapshot error fetching orders: ", firestoreError);
         let detailedMessage = "Failed to fetch orders. Please try again later.";
         if (firestoreError.code === 'permission-denied') {
           detailedMessage = "Permission denied. Please check your Firestore security rules to ensure you have read access to your orders.";
         } else if (firestoreError.code === 'failed-precondition' && firestoreError.message.includes('index')) {
-            detailedMessage = `Query requires an index that is missing or incorrect. Please ensure your index has 'userId' (Ascending) and 'orderDate' (Descending). Details: ${firestoreError.message}`;
+            const match = firestoreError.message.match(/(https:\/\/console\.firebase\.google\.com\/.*?)(?:\.$|\s|$)/);
+            const indexCreationLink = match ? match[1] : null;
+
+            detailedMessage = `Your orders query needs a specific index in Firestore which is missing. Please create it for fields: 'userId' (Ascending) and 'orderDate' (Descending).`;
+            if (indexCreationLink) {
+                detailedMessage += ` You can create this index by visiting this URL: ${indexCreationLink} (You may need to copy and paste this link into your browser if it's not clickable here).`;
+            } else {
+                detailedMessage += ` Firebase error details: ${firestoreError.message}`;
+            }
         } else if (firestoreError.message) {
           detailedMessage = `Failed to fetch orders: ${firestoreError.message}`;
         }
@@ -196,7 +204,7 @@ export default function OrdersPage() {
      return (
       <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center text-destructive">
         <p className="font-semibold">Error Loading Orders:</p>
-        <p className="text-sm">{error}</p>
+        <p className="text-sm whitespace-pre-wrap">{error}</p>
          <Button variant="outline" onClick={() => window.location.reload()} className="mt-4">Retry</Button>
       </div>
     );
