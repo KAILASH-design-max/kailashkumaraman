@@ -9,25 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone, AlertTriangle, Info } from 'lucide-react';
-// import { GoogleMap, useJsApiLoader, MarkerF, DirectionsRenderer } from '@react-google-maps/api'; // Temporarily commented out
-import { mockOrders, mockDeliveryPartners } from '@/lib/mockData'; 
-import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderAddress, OrderStatus } from '@/lib/types'; 
+import { mockDeliveryPartners } from '@/lib/mockData'; 
+import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderStatus, OrderItem as OrderItemType } from '@/lib/types'; 
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-
-// const containerStyle = { // Temporarily commented out
-//   width: '100%',
-//   height: '400px',
-//   borderRadius: '0.5rem',
-// };
-
-const MOCK_CUSTOMER_LOCATIONS: { [key: string]: { lat: number; lng: number } } = {
-  'order001': { lat: 19.0760, lng: 72.8777 }, // Mumbai
-  'order002': { lat: 28.7041, lng: 77.1025 }, // Delhi
-  'order003': { lat: 12.9716, lng: 77.5946 }, // Bangalore
-  'default': { lat: 20.5937, lng: 78.9629 } 
-};
+import { db } from '@/lib/firebase';
+import { doc, getDoc, Timestamp } from 'firebase/firestore';
 
 const getOrderStatusSteps = (status: string) => {
   const steps = [
@@ -47,7 +35,6 @@ const getOrderStatusSteps = (status: string) => {
   else if (statusLower.includes('confirmed')) completedIndex = 1; 
   else if (statusLower.includes('placed')) completedIndex = 0;
 
-
   return steps.map((step, index) => ({
     ...step,
     completed: index <= completedIndex,
@@ -65,74 +52,105 @@ export default function TrackOrderPage() {
   const [eta, setEta] = useState<number>(15); 
   const [distance, setDistance] = useState<number>(5.2); 
   const [isLoading, setIsLoading] = useState(true);
+  const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
-    console.log("TrackOrderPage: Received orderId from params:", orderId);
-    if (orderId) {
-      setIsLoading(true);
-      // Simulate fetching order details. In a real app, this would be an API call.
-      const foundOrder = mockOrders.find(o => o.id === orderId);
-      if (foundOrder) {
-        setOrder(foundOrder);
-        const partner = mockDeliveryPartners.find(dp => dp.id === foundOrder.deliveryPartnerId);
-        setDeliveryPartner(partner || mockDeliveryPartners[0]); 
-
-        const orderDate = new Date(foundOrder.orderDate);
-        const estimatedDelivery = foundOrder.estimatedDeliveryTime ? new Date(foundOrder.estimatedDeliveryTime) : new Date(orderDate.getTime() + 30 * 60000);
-        const now = new Date();
-        const remainingMinutes = Math.max(0, Math.round((estimatedDelivery.getTime() - now.getTime()) / 60000));
-        
-        if (foundOrder.status.toLowerCase() === 'delivered') {
-            setEta(0);
-            setDistance(0);
-        } else if (['cancelled', 'failed'].includes(foundOrder.status.toLowerCase())) {
-            setEta(0);
-            setDistance(0);
-        } else if (remainingMinutes > 0) {
-            setEta(remainingMinutes);
-            setDistance(parseFloat(Math.max(0.1, remainingMinutes * 0.35).toFixed(1)));
-        } else {
-            setEta(foundOrder.status.toLowerCase().includes('out for delivery') ? 5 : 10); 
-            setDistance(foundOrder.status.toLowerCase().includes('out for delivery') ? 1.5 : 3.0);
-        }
-      } else {
-        setOrder(null); 
-        setDeliveryPartner(mockDeliveryPartners[0]); 
-        setEta(30); 
-        setDistance(5.0);
-        console.warn(`Order with ID ${orderId} not found in mock data. Displaying generic tracking page.`);
+    async function fetchOrder() {
+      if (!orderId) {
+        console.error("TrackOrderPage: orderId is undefined or null from URL parameters.");
+        setPageError("Order ID is missing in the URL.");
+        setIsLoading(false);
+        return;
       }
-      setIsLoading(false);
-    } else {
-      // Handle case where orderId is not present in the URL params
-      console.error("TrackOrderPage: orderId is undefined or null from URL parameters.");
-      setOrder(null);
-      setDeliveryPartner(mockDeliveryPartners[0]);
-      setEta(0);
-      setDistance(0);
-      setIsLoading(false); // Ensure loading is finished
+
+      console.log("TrackOrderPage: Received orderId from params:", orderId);
+      setIsLoading(true);
+      setPageError(null);
+
+      try {
+        const orderRef = doc(db, "orders", orderId);
+        const orderSnap = await getDoc(orderRef);
+
+        if (orderSnap.exists()) {
+          const data = orderSnap.data();
+          const fetchedOrder: OrderType = {
+            id: orderSnap.id,
+            userId: data.userId,
+            items: data.items as OrderItemType[], // Assuming items structure matches OrderItemType
+            totalAmount: data.totalAmount || data.total, // Firestore might use 'total'
+            status: data.orderStatus as OrderStatus,
+            deliveryAddress: data.address, // Assuming Firestore 'address' matches OrderAddress
+            orderDate: (data.orderDate as Timestamp).toDate().toISOString(),
+            estimatedDeliveryTime: data.estimatedDeliveryTime ? ((data.estimatedDeliveryTime as Timestamp).toDate().toISOString()) : undefined,
+            deliveryPartnerId: data.deliveryPartnerId,
+            // Include other fields from Firestore if necessary
+            deliveryCharge: data.deliveryCharge,
+            discountAmount: data.discountAmount,
+          };
+          setOrder(fetchedOrder);
+
+          const partner = mockDeliveryPartners.find(dp => dp.id === fetchedOrder.deliveryPartnerId) || mockDeliveryPartners[0];
+          setDeliveryPartner(partner);
+
+          const orderDateObj = new Date(fetchedOrder.orderDate);
+          const estimatedDelivery = fetchedOrder.estimatedDeliveryTime ? new Date(fetchedOrder.estimatedDeliveryTime) : new Date(orderDateObj.getTime() + 30 * 60000);
+          const now = new Date();
+          const remainingMinutes = Math.max(0, Math.round((estimatedDelivery.getTime() - now.getTime()) / 60000));
+          
+          if (fetchedOrder.status.toLowerCase() === 'delivered') {
+              setEta(0);
+              setDistance(0);
+          } else if (['cancelled', 'failed'].includes(fetchedOrder.status.toLowerCase())) {
+              setEta(0);
+              setDistance(0);
+          } else if (remainingMinutes > 0) {
+              setEta(remainingMinutes);
+              setDistance(parseFloat(Math.max(0.1, remainingMinutes * 0.35).toFixed(1)));
+          } else {
+              setEta(fetchedOrder.status.toLowerCase().includes('out for delivery') ? 5 : 10); 
+              setDistance(fetchedOrder.status.toLowerCase().includes('out for delivery') ? 1.5 : 3.0);
+          }
+
+        } else {
+          console.warn(`Order with ID ${orderId} not found in Firestore.`);
+          setOrder(null);
+          setPageError(`Order with ID ${orderId} not found.`);
+          // Fallback to generic partner/ETA for UI structure if needed, or hide sections
+          setDeliveryPartner(mockDeliveryPartners[0]);
+          setEta(30);
+          setDistance(5.0);
+        }
+      } catch (error) {
+        console.error("Error fetching order from Firestore:", error);
+        setPageError("Failed to fetch order details. Please try again.");
+        setOrder(null);
+      } finally {
+        setIsLoading(false);
+      }
     }
+
+    fetchOrder();
   }, [orderId]);
 
   useEffect(() => {
-    if (!order || ['Delivered', 'Cancelled', 'Failed'].includes(order.status as string)) {
+    if (!order || ['Delivered', 'Cancelled', 'Failed'].includes(order.status as string) || isLoading) {
       return; 
     }
 
     const simulationInterval = setInterval(() => {
       setEta(prevEta => {
         const newEta = Math.max(0, prevEta - 1);
-        if (newEta === 0 && order.status !== 'Delivered') {
+        if (newEta === 0 && order && order.status !== 'Delivered') {
+          // Simulate status update to Delivered
           setOrder(o => o ? ({ ...o, status: 'Delivered' as OrderStatus }) : null);
         }
         return newEta;
       });
       setDistance(prevDistance => parseFloat(Math.max(0, prevDistance - 0.35).toFixed(1)));
-    }, 5000); 
+    }, 5000); // Reduced interval for faster simulation for demo
 
     return () => clearInterval(simulationInterval);
-  }, [order]);
-
+  }, [order, isLoading]);
 
   const orderStatusSteps = useMemo(() => order ? getOrderStatusSteps(order.status) : getOrderStatusSteps('Placed'), [order]);
 
@@ -164,26 +182,23 @@ export default function TrackOrderPage() {
         <h1 className="text-3xl font-bold text-primary flex items-center">
           <Truck className="mr-3 h-8 w-8" /> Order Tracking
         </h1>
-        <p className="text-muted-foreground mt-1">Order ID: {order ? order.id.substring(0,10) : orderId?.substring(0,10) || 'N/A'}...</p>
+        <p className="text-muted-foreground mt-1">Order ID: {orderId?.substring(0,10) || 'N/A'}...</p>
       </header>
 
-      {!order && !orderId && ( // Show this only if orderId itself was missing
+      {pageError && (
         <Alert variant="destructive" className="mb-6">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Error: Order ID Missing</AlertTitle>
-          <AlertDescription>
-            No Order ID was provided in the URL. Cannot display tracking details.
-          </AlertDescription>
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{pageError}</AlertDescription>
         </Alert>
       )}
 
-      {!order && orderId && ( // Show this if orderId was present, but order not found in mockData
+      {!order && !isLoading && !pageError && ( // Order ID was present but order not found in DB
         <Alert variant="default" className="mb-6 border-primary/30 bg-primary/5">
           <Info className="h-4 w-4 text-primary" />
-          <AlertTitle className="text-primary">Order Details Partially Available</AlertTitle>
+          <AlertTitle className="text-primary">Order Not Found</AlertTitle>
           <AlertDescription>
-            Displaying generic tracking information as specific details for order ID <span className="font-semibold">{orderId}</span> were not found in our mock data. 
-            The map below is a placeholder. Real order data would be fetched from the database in a production app.
+            We could not find details for order ID <span className="font-semibold">{orderId}</span>. Please check the ID or contact support.
           </AlertDescription>
         </Alert>
       )}
@@ -214,7 +229,7 @@ export default function TrackOrderPage() {
                 <CardTitle className="flex items-center"><Package className="mr-2 h-5 w-5 text-accent"/>Order Items</CardTitle>
             </CardHeader>
             <CardContent>
-              {order && order.items.length > 0 ? (
+              {order && order.items && order.items.length > 0 ? (
                 <>
                   <ul className="space-y-3">
                       {order.items.map((item, index) => (
@@ -265,7 +280,7 @@ export default function TrackOrderPage() {
                     </div>
                 </div>
                 <Progress 
-                    value={order && order.status === 'Delivered' ? 100 : (orderStatusSteps.filter(s => s.completed).length / (orderStatusSteps.length -1)) * 100} 
+                    value={order && order.status === 'Delivered' ? 100 : (orderStatusSteps.findIndex(s=>s.current) / (orderStatusSteps.length -1)) * 100 || (orderStatusSteps.filter(s => s.completed).length / (orderStatusSteps.length -1)) * 100} 
                     aria-label={`Order status: ${order ? order.status : 'Unknown'}, ${eta} minutes remaining`} 
                     className="w-full h-2" />
                 
@@ -279,11 +294,11 @@ export default function TrackOrderPage() {
                 </div>
                 <Separator/>
                  <p className="text-sm">Current Status: <span className="font-semibold text-primary">{order ? order.status : 'Unknown'}</span></p>
-                 <p className="text-xs text-muted-foreground">Last updated: {new Date().toLocaleTimeString()}</p>
+                 <p className="text-xs text-muted-foreground">Last updated: {order ? new Date(order.orderDate).toLocaleTimeString() : new Date().toLocaleTimeString()}</p>
             </CardContent>
           </Card>
 
-          {deliveryPartner && (
+          {deliveryPartner && order && (
             <Card className="shadow-md">
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center"><Truck className="mr-2 h-5 w-5 text-accent"/>Delivery Partner</CardTitle>
@@ -314,3 +329,4 @@ export default function TrackOrderPage() {
     </div>
   );
 }
+
