@@ -8,12 +8,13 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone, AlertTriangle } from 'lucide-react';
+import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone, AlertTriangle, Info } from 'lucide-react';
 // import { GoogleMap, useJsApiLoader, MarkerF, DirectionsRenderer } from '@react-google-maps/api'; // Temporarily commented out
 import { mockOrders, mockDeliveryPartners } from '@/lib/mockData'; 
 import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderAddress, OrderStatus } from '@/lib/types'; 
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 // const containerStyle = { // Temporarily commented out
 //   width: '100%',
@@ -43,14 +44,14 @@ const getOrderStatusSteps = (status: string) => {
   if (statusLower.includes('delivered')) completedIndex = 4;
   else if (statusLower.includes('out for delivery') || statusLower.includes('shipped')) completedIndex = 3;
   else if (statusLower.includes('processing')) completedIndex = 2;
-  else if (statusLower.includes('confirmed')) completedIndex = 1; // Changed from || placed
+  else if (statusLower.includes('confirmed')) completedIndex = 1; 
   else if (statusLower.includes('placed')) completedIndex = 0;
 
 
   return steps.map((step, index) => ({
     ...step,
     completed: index <= completedIndex,
-    current: index === completedIndex && index !==4 // Don't mark 'Delivered' as current in the same way
+    current: index === completedIndex && index !==4 
   }));
 };
 
@@ -66,70 +67,76 @@ export default function TrackOrderPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    console.log("TrackOrderPage: Received orderId from params:", orderId);
     if (orderId) {
       setIsLoading(true);
+      // Simulate fetching order details. In a real app, this would be an API call.
       const foundOrder = mockOrders.find(o => o.id === orderId);
       if (foundOrder) {
         setOrder(foundOrder);
         const partner = mockDeliveryPartners.find(dp => dp.id === foundOrder.deliveryPartnerId);
         setDeliveryPartner(partner || mockDeliveryPartners[0]); 
 
-        // Initialize ETA and distance based on order or defaults
-        // This is a rough estimation for mock purposes
         const orderDate = new Date(foundOrder.orderDate);
-        const estimatedDelivery = foundOrder.estimatedDeliveryTime ? new Date(foundOrder.estimatedDeliveryTime) : new Date(orderDate.getTime() + 30 * 60000); // Default 30 mins
+        const estimatedDelivery = foundOrder.estimatedDeliveryTime ? new Date(foundOrder.estimatedDeliveryTime) : new Date(orderDate.getTime() + 30 * 60000);
         const now = new Date();
         const remainingMinutes = Math.max(0, Math.round((estimatedDelivery.getTime() - now.getTime()) / 60000));
         
         if (foundOrder.status.toLowerCase() === 'delivered') {
             setEta(0);
             setDistance(0);
-        } else if (foundOrder.status.toLowerCase() === 'cancelled' || foundOrder.status.toLowerCase() === 'failed') {
-            setEta(0); // Or some indicator of no ETA
+        } else if (['cancelled', 'failed'].includes(foundOrder.status.toLowerCase())) {
+            setEta(0);
             setDistance(0);
-        }
-        else if (remainingMinutes > 0) {
+        } else if (remainingMinutes > 0) {
             setEta(remainingMinutes);
-            // Mock distance based on ETA (e.g., 1 min ~ 0.3-0.5 km for city delivery)
             setDistance(parseFloat(Math.max(0.1, remainingMinutes * 0.35).toFixed(1)));
         } else {
-            // If estimated time has passed but not delivered, show a small ETA or "Arriving Soon"
             setEta(foundOrder.status.toLowerCase().includes('out for delivery') ? 5 : 10); 
             setDistance(foundOrder.status.toLowerCase().includes('out for delivery') ? 1.5 : 3.0);
         }
-
       } else {
-        // Order not found, redirect or show error
-        router.push('/profile/orders'); // Or a dedicated 404 page
+        setOrder(null); 
+        setDeliveryPartner(mockDeliveryPartners[0]); 
+        setEta(30); 
+        setDistance(5.0);
+        console.warn(`Order with ID ${orderId} not found in mock data. Displaying generic tracking page.`);
       }
       setIsLoading(false);
+    } else {
+      // Handle case where orderId is not present in the URL params
+      console.error("TrackOrderPage: orderId is undefined or null from URL parameters.");
+      setOrder(null);
+      setDeliveryPartner(mockDeliveryPartners[0]);
+      setEta(0);
+      setDistance(0);
+      setIsLoading(false); // Ensure loading is finished
     }
-  }, [orderId, router]);
+  }, [orderId]);
 
   useEffect(() => {
     if (!order || ['Delivered', 'Cancelled', 'Failed'].includes(order.status as string)) {
-      return; // Stop simulation if order is completed or failed
+      return; 
     }
 
     const simulationInterval = setInterval(() => {
       setEta(prevEta => {
         const newEta = Math.max(0, prevEta - 1);
         if (newEta === 0 && order.status !== 'Delivered') {
-          // Simulate arrival
           setOrder(o => o ? ({ ...o, status: 'Delivered' as OrderStatus }) : null);
         }
         return newEta;
       });
       setDistance(prevDistance => parseFloat(Math.max(0, prevDistance - 0.35).toFixed(1)));
-    }, 5000); // Simulate update every 5 seconds
+    }, 5000); 
 
     return () => clearInterval(simulationInterval);
   }, [order]);
 
 
-  const orderStatusSteps = useMemo(() => order ? getOrderStatusSteps(order.status) : [], [order]);
+  const orderStatusSteps = useMemo(() => order ? getOrderStatusSteps(order.status) : getOrderStatusSteps('Placed'), [order]);
 
-  if (isLoading || !order) {
+  if (isLoading) {
     return (
         <div className="container mx-auto py-10 px-4">
             <Skeleton className="h-8 w-1/4 mb-4" />
@@ -142,7 +149,6 @@ export default function TrackOrderPage() {
     );
   }
   
-
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6">
@@ -158,9 +164,30 @@ export default function TrackOrderPage() {
         <h1 className="text-3xl font-bold text-primary flex items-center">
           <Truck className="mr-3 h-8 w-8" /> Order Tracking
         </h1>
-        <p className="text-muted-foreground mt-1">Order ID: {order.id.substring(0,10)}...</p>
+        <p className="text-muted-foreground mt-1">Order ID: {order ? order.id.substring(0,10) : orderId?.substring(0,10) || 'N/A'}...</p>
       </header>
 
+      {!order && !orderId && ( // Show this only if orderId itself was missing
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Error: Order ID Missing</AlertTitle>
+          <AlertDescription>
+            No Order ID was provided in the URL. Cannot display tracking details.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {!order && orderId && ( // Show this if orderId was present, but order not found in mockData
+        <Alert variant="default" className="mb-6 border-primary/30 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertTitle className="text-primary">Order Details Partially Available</AlertTitle>
+          <AlertDescription>
+            Displaying generic tracking information as specific details for order ID <span className="font-semibold">{orderId}</span> were not found in our mock data. 
+            The map below is a placeholder. Real order data would be fetched from the database in a production app.
+          </AlertDescription>
+        </Alert>
+      )}
+            
       <div className="grid lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-lg">
@@ -187,32 +214,37 @@ export default function TrackOrderPage() {
                 <CardTitle className="flex items-center"><Package className="mr-2 h-5 w-5 text-accent"/>Order Items</CardTitle>
             </CardHeader>
             <CardContent>
-                <ul className="space-y-3">
-                    {order.items.map((item, index) => (
-                        <li key={index} className="flex items-center gap-3 p-2 border-b last:border-b-0">
-                            {/* Assuming item might not have imageUrl; using placeholder logic */}
-                            {item.imageUrl ? (
-                                <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="rounded object-cover aspect-square border" data-ai-hint="order item track" />
-                            ) : (
-                                 <div className="w-[50px] h-[50px] bg-muted rounded flex items-center justify-center">
-                                    <Package className="h-6 w-6 text-muted-foreground" />
-                                </div>
-                            )}
-                            <div className="flex-grow">
-                                <p className="text-sm font-medium">{item.name}</p>
-                                <p className="text-xs text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
-                            </div>
-                            <p className="text-sm font-semibold">₹{(item.quantity * item.price).toFixed(2)}</p>
-                        </li>
-                    ))}
-                </ul>
-                <Separator className="my-4" />
-                <div className="text-right">
-                    <p className="text-sm text-muted-foreground">Subtotal: ₹{order.items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</p>
-                    { (order.deliveryCharge ?? 0) > 0 && <p className="text-xs text-muted-foreground">Delivery: ₹{order.deliveryCharge?.toFixed(2)}</p> }
-                    { (order.discountAmount ?? 0) > 0 && <p className="text-xs text-green-600">Discount: -₹{order.discountAmount?.toFixed(2)}</p> }
-                    <p className="text-lg font-bold">Total: ₹{order.totalAmount.toFixed(2)}</p>
-                </div>
+              {order && order.items.length > 0 ? (
+                <>
+                  <ul className="space-y-3">
+                      {order.items.map((item, index) => (
+                          <li key={index} className="flex items-center gap-3 p-2 border-b last:border-b-0">
+                              {item.imageUrl ? (
+                                  <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="rounded object-cover aspect-square border" data-ai-hint="order item track" />
+                              ) : (
+                                   <div className="w-[50px] h-[50px] bg-muted rounded flex items-center justify-center">
+                                      <Package className="h-6 w-6 text-muted-foreground" />
+                                  </div>
+                              )}
+                              <div className="flex-grow">
+                                  <p className="text-sm font-medium">{item.name}</p>
+                                  <p className="text-xs text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
+                              </div>
+                              <p className="text-sm font-semibold">₹{(item.quantity * item.price).toFixed(2)}</p>
+                          </li>
+                      ))}
+                  </ul>
+                  <Separator className="my-4" />
+                  <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Subtotal: ₹{order.items.reduce((sum, item) => sum + item.price * item.quantity, 0).toFixed(2)}</p>
+                      { (order.deliveryCharge ?? 0) > 0 && <p className="text-xs text-muted-foreground">Delivery: ₹{order.deliveryCharge?.toFixed(2)}</p> }
+                      { (order.discountAmount ?? 0) > 0 && <p className="text-xs text-green-600">Discount: -₹{order.discountAmount?.toFixed(2)}</p> }
+                      <p className="text-lg font-bold">Total: ₹{order.totalAmount.toFixed(2)}</p>
+                  </div>
+                </>
+              ) : (
+                <p className="text-muted-foreground text-sm text-center py-4">No items to display for this order or order details not found.</p>
+              )}
             </CardContent>
           </Card>
         </div>
@@ -226,15 +258,15 @@ export default function TrackOrderPage() {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center text-lg font-semibold text-primary">
                         <Clock className="mr-2 h-5 w-5"/> 
-                        ETA: {eta > 0 ? `~${eta} min` : (order.status === 'Delivered' ? 'Delivered' : 'Arriving Soon')}
+                        ETA: {eta > 0 ? `~${eta} min` : (order && order.status === 'Delivered' ? 'Delivered' : 'Arriving Soon')}
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Navigation className="mr-1 h-4 w-4"/> {distance > 0 ? `${distance} km` : '-'}
                     </div>
                 </div>
                 <Progress 
-                    value={order.status === 'Delivered' ? 100 : (orderStatusSteps.filter(s => s.completed).length / (orderStatusSteps.length -1)) * 100} 
-                    aria-label={`Order status: ${order.status}, ${eta} minutes remaining`} 
+                    value={order && order.status === 'Delivered' ? 100 : (orderStatusSteps.filter(s => s.completed).length / (orderStatusSteps.length -1)) * 100} 
+                    aria-label={`Order status: ${order ? order.status : 'Unknown'}, ${eta} minutes remaining`} 
                     className="w-full h-2" />
                 
                 <div className="space-y-3 mt-3 pt-3 border-t">
@@ -246,9 +278,8 @@ export default function TrackOrderPage() {
                     ))}
                 </div>
                 <Separator/>
-                 <p className="text-sm">Current Status: <span className="font-semibold text-primary">{order.status}</span></p>
+                 <p className="text-sm">Current Status: <span className="font-semibold text-primary">{order ? order.status : 'Unknown'}</span></p>
                  <p className="text-xs text-muted-foreground">Last updated: {new Date().toLocaleTimeString()}</p>
-
             </CardContent>
           </Card>
 
@@ -283,4 +314,3 @@ export default function TrackOrderPage() {
     </div>
   );
 }
-
