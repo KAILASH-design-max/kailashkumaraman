@@ -30,6 +30,8 @@ export interface OrderAddress {
   city: string;
   postalCode: string;
   country: string;
+  name?: string; // Recipient name, made optional as it might be part of user profile
+  phoneNumber?: string; // Recipient phone, made optional
 }
 
 export interface OrderItem {
@@ -37,6 +39,7 @@ export interface OrderItem {
   name: string;
   quantity: number;
   price: number; // Price at the time of order
+  imageUrl?: string; // Optional: if stored with the order item
 }
 
 export type OrderStatus =
@@ -46,7 +49,8 @@ export type OrderStatus =
   | 'Out for Delivery'
   | 'Delivered'
   | 'Cancelled'
-  | 'Failed';
+  | 'Failed'
+  | 'Placed'; // Added 'Placed' as it's used in Firestore save
 
 export interface Order {
   id: string;
@@ -54,10 +58,20 @@ export interface Order {
   items: OrderItem[];
   totalAmount: number;
   status: OrderStatus;
-  deliveryAddress: OrderAddress;
+  deliveryAddress: OrderAddress; // Contains name and phone
   orderDate: string; // ISO string
   estimatedDeliveryTime?: string; // ISO string or descriptive like "8 minutes"
-  deliveryPartnerId?: string;
+  deliveryPartnerId?: string; // Made optional
+  // Fields from FirestoreOrder that might be directly on OrderType
+  name?: string; // Recipient's name (if not in deliveryAddress directly)
+  phoneNumber?: string; // Recipient's phone (if not in deliveryAddress directly)
+  shippingMethod?: string;
+  paymentMethod?: string;
+  promoCodeApplied?: string | null;
+  discountAmount?: number;
+  deliveryCharge?: number;
+  gstAmount?: number;
+  handlingCharge?: number;
 }
 
 export interface UserProfile {
