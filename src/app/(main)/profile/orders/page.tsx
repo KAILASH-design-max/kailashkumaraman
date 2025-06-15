@@ -96,12 +96,18 @@ export default function OrdersPage() {
             const match = firestoreError.message.match(/(https:\/\/console\.firebase\.google\.com\/.*?)(?:\.$|\s|$)/);
             const indexCreationLink = match ? match[1] : null;
 
-            detailedMessage = `Your orders query needs a specific index in Firestore. Key fields: 'userId' (Ascending) and 'orderDate' (Descending).`;
+            detailedMessage = `Your orders query needs a specific Firestore index.
+Required fields and order:
+1. 'userId' (Ascending)
+2. 'orderDate' (Descending)
+3. '__name__' (The Firebase console will specify Ascending or Descending for this field - ensure it matches exactly).
+
+Please use the link provided by Firebase to create this index. If the error persists, double-check that the collection name in your Firestore database ('orders') matches your query, and that *all* fields and their sort directions (Ascending/Descending), especially for '__name__', are exactly as recommended by Firebase in the error link.`;
+            
             if (indexCreationLink) {
-                detailedMessage += ` Please use this link to create it: ${indexCreationLink} (copy and paste if not clickable).`;
-                detailedMessage += `\n\nImportant: The Firebase-provided link often suggests an index including '__name__ ASC' as a third field. If you've created an index and still see this error, ensure your index in the Firebase console *exactly* matches all fields and their directions (Ascending/Descending) as specified in the link, including for the '__name__' field. A mismatch here, even if the primary fields seem correct, can cause this error.`;
+                detailedMessage += `\n\nFirebase Index Creation Link (copy and paste if not clickable):\n${indexCreationLink}`;
             } else {
-                detailedMessage += ` Firebase error details: ${firestoreError.message}`;
+                detailedMessage += `\n\nFirebase error details: ${firestoreError.message}`;
             }
         } else if (firestoreError.message) {
           detailedMessage = `Failed to fetch orders: ${firestoreError.message}`;
