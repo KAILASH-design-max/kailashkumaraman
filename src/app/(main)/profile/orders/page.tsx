@@ -96,9 +96,10 @@ export default function OrdersPage() {
             const match = firestoreError.message.match(/(https:\/\/console\.firebase\.google\.com\/.*?)(?:\.$|\s|$)/);
             const indexCreationLink = match ? match[1] : null;
 
-            detailedMessage = `Your orders query needs a specific index in Firestore which is missing. Please create it for fields: 'userId' (Ascending) and 'orderDate' (Descending).`;
+            detailedMessage = `Your orders query needs a specific index in Firestore. Key fields: 'userId' (Ascending) and 'orderDate' (Descending).`;
             if (indexCreationLink) {
-                detailedMessage += ` You can create this index by visiting this URL: ${indexCreationLink} (You may need to copy and paste this link into your browser if it's not clickable here).`;
+                detailedMessage += ` Please use this link to create it: ${indexCreationLink} (copy and paste if not clickable).`;
+                detailedMessage += `\n\nImportant: The Firebase-provided link often suggests an index including '__name__ ASC' as a third field. If you've created an index and still see this error, ensure your index in the Firebase console *exactly* matches all fields and their directions (Ascending/Descending) as specified in the link, including for the '__name__' field. A mismatch here, even if the primary fields seem correct, can cause this error.`;
             } else {
                 detailedMessage += ` Firebase error details: ${firestoreError.message}`;
             }
