@@ -10,10 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
 import type { CartItem as CartItemType } from '@/lib/types';
-import { ChevronLeft, ShoppingBag, AlertCircle, Package, MapPin, CreditCard, Loader2, CheckCircle, Phone } from 'lucide-react';
+import { ChevronLeft, ShoppingBag, AlertCircle, Package, MapPin, CreditCard, Loader2, CheckCircle, Phone, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { auth, db } from '@/lib/firebase'; // Import db
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"; // Import Firestore functions
+import { auth, db } from '@/lib/firebase';
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 interface AddressInfo {
   name: string;
@@ -21,22 +21,22 @@ interface AddressInfo {
   city: string;
   postalCode: string;
   country: string;
-  phoneNumber: string; // Changed from phone
+  phoneNumber: string;
 }
 interface FinalOrderData {
   address: AddressInfo;
-  method: string; 
+  method: string;
   promoCode: { code: string; discountAmount: number; description: string } | null;
   summary: { subtotal: number; discount: number; deliveryCharge: number; gstAmount: number; handlingCharge: number; totalAmount: number };
   cartItems: CartItemType[];
   paymentDetails: {
-    method: string; 
-    details: any; 
+    method: string;
+    details: any;
   };
 }
 
 export default function FinalReviewPage() {
-  const { cartItems: contextCartItems, clearCart } = useCart(); 
+  const { cartItems: contextCartItems, clearCart } = useCart();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -45,7 +45,7 @@ export default function FinalReviewPage() {
   const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (contextCartItems.length === 0 && !localStorage.getItem('finalOrderData')) { 
+    if (contextCartItems.length === 0 && !localStorage.getItem('finalOrderData')) {
       router.push('/cart');
       return;
     }
@@ -58,9 +58,9 @@ export default function FinalReviewPage() {
             } catch (e) {
                 console.error("Error parsing final order data from localStorage", e);
                 setPageError("Could not load order details. Please go back and try again.");
-                router.push('/checkout/payment-details'); 
+                router.push('/checkout/payment-details');
             }
-        } else if (contextCartItems.length > 0) { 
+        } else if (contextCartItems.length > 0) {
             setPageError("Order details are incomplete. Please proceed through checkout again.");
         }
     }
@@ -86,9 +86,9 @@ export default function FinalReviewPage() {
 
     const orderDataToSave = {
         userId: auth.currentUser.uid,
-        name: finalOrderData.address.name, // Recipient's name
-        phoneNumber: finalOrderData.address.phoneNumber, // Changed from phone
-        address: finalOrderData.address, // Address object itself will now contain phoneNumber
+        name: finalOrderData.address.name,
+        phoneNumber: finalOrderData.address.phoneNumber,
+        address: finalOrderData.address,
         items: finalOrderData.cartItems.map(item => ({
             productId: item.id,
             name: item.name,
@@ -115,16 +115,16 @@ export default function FinalReviewPage() {
       clearCart();
       if (typeof window !== 'undefined') {
           localStorage.removeItem('finalOrderData');
-          localStorage.removeItem('checkoutShippingInfo'); 
+          localStorage.removeItem('checkoutShippingInfo');
       }
       
       toast({
         title: "Order Placed Successfully!",
         description: `Thank you for your purchase. Order ID: ${docRef.id.substring(0,6)}...`,
-        variant: "default", 
-        duration: 5000, 
+        variant: "default",
+        duration: 5000,
       });
-      router.push('/checkout/order-confirmation'); 
+      router.push('/checkout/order-confirmation');
     } catch (error) {
         console.error("Error placing order / saving to Firestore: ", error);
         setPageError("There was an issue placing your order. Please try again. If the problem persists, contact support.");
@@ -159,7 +159,7 @@ export default function FinalReviewPage() {
   }
   
   const { address, method: shippingMethod, promoCode, summary, paymentDetails } = finalOrderData!;
-  const displayCartItems = finalOrderData!.cartItems; 
+  const displayCartItems = finalOrderData!.cartItems;
 
 
   return (
@@ -209,9 +209,17 @@ export default function FinalReviewPage() {
             </section>
             <Separator/>
              <section>
-                <h3 className="text-xl font-semibold mb-3 flex items-center"><CreditCard className="mr-3 h-6 w-6 text-primary"/>Payment Method</h3>
+                <h3 className="text-xl font-semibold mb-3 flex items-center">
+                    {paymentDetails.method === 'cod' ? <Coins className="mr-3 h-6 w-6 text-primary"/> : <CreditCard className="mr-3 h-6 w-6 text-primary"/>}
+                    Payment Method
+                </h3>
                 <Card className="p-4 border shadow-sm">
-                    <p>Method: <span className="font-medium text-foreground">{paymentDetails.method.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span></p>
+                    {paymentDetails.method === 'cod' && (
+                        <p className="font-medium text-foreground">Cash on Delivery</p>
+                    )}
+                    {paymentDetails.method !== 'cod' && (
+                      <p>Method: <span className="font-medium text-foreground">{paymentDetails.method.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span></p>
+                    )}
                     {paymentDetails.method === 'saved' && paymentDetails.details && (
                         <p>Details: {paymentDetails.details.displayName}</p>
                     )}
@@ -260,7 +268,7 @@ export default function FinalReviewPage() {
                     disabled={isPlacingOrder || displayCartItems.length === 0 || summary.totalAmount <= 0}
                 >
                 {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                {isPlacingOrder ? 'Placing Order...' : 'Place Order & Pay'}
+                {isPlacingOrder ? 'Placing Order...' : (paymentDetails.method === 'cod' ? 'Place Order (COD)' : 'Place Order & Pay')}
                 </Button>
             </CardFooter>
             </Card>
@@ -269,4 +277,4 @@ export default function FinalReviewPage() {
     </div>
   );
 }
-
+    

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import { CheckCircle, CreditCard, ChevronLeft, Tag, AlertCircle, ShoppingBag, Lock, Loader2 } from 'lucide-react';
+import { CheckCircle, CreditCard, ChevronLeft, Tag, AlertCircle, ShoppingBag, Lock, Loader2, Coins } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const GST_RATE = 0.18;
@@ -36,7 +36,7 @@ interface AddressInfo {
   city: string;
   postalCode: string;
   country: string;
-  phoneNumber: string; // Changed from phone
+  phoneNumber: string;
 }
 
 interface ShippingInfo {
@@ -93,6 +93,7 @@ export default function PaymentDetailsPage() {
              newCardDetails.name.trim() !== '';
     }
     if (paymentOption === 'upi') return newUpiId.trim() !== '';
+    if (paymentOption === 'cod') return true; // COD is always valid if selected
     return false;
   };
 
@@ -111,14 +112,15 @@ export default function PaymentDetailsPage() {
     if (paymentOption === 'saved') {
         const foundMethod = savedPaymentMethods.find(p => p.id === selectedPaymentId);
         if (foundMethod) {
-            // Omit the icon (React component), keep other serializable details
-            const { icon, ...serializableDetails } = foundMethod;
+            const { icon, ...serializableDetails } = foundMethod; // Omit icon
             finalPaymentDetailsForStorage = serializableDetails;
         }
     } else if (paymentOption === 'new_card') {
         finalPaymentDetailsForStorage = newCardDetails;
     } else if (paymentOption === 'upi') {
         finalPaymentDetailsForStorage = { upiId: newUpiId };
+    } else if (paymentOption === 'cod') {
+        finalPaymentDetailsForStorage = { type: 'cod' }; // Indicate COD, no further details needed
     }
 
     const paymentDetails = {
@@ -218,10 +220,18 @@ export default function PaymentDetailsPage() {
                     <p className="text-xs text-muted-foreground">You will be redirected to your UPI app to approve the payment.</p>
                 </Card>
               )}
+              <div>
+                <RadioGroupItem value="cod" id="codPayment" /><Label htmlFor="codPayment" className="ml-2 cursor-pointer flex items-center"><Coins className="mr-2 h-4 w-4 text-muted-foreground" />Cash on Delivery (COD)</Label>
+              </div>
+              {paymentOption === 'cod' && (
+                <Card className="p-4 border shadow-sm mt-2">
+                    <p className="text-sm text-muted-foreground">Pay with cash when your order is delivered. Please have the exact amount ready.</p>
+                </Card>
+              )}
             </RadioGroup>
             <Separator className="my-4"/>
              <p className="text-sm text-muted-foreground italic">
-                Clicking "Proceed to Final Review" will take you to the final order confirmation page. No real payment will be processed.
+                Clicking "Proceed to Final Review" will take you to the final order confirmation page. No real payment will be processed for this prototype.
             </p>
         </div>
 
@@ -267,4 +277,4 @@ export default function PaymentDetailsPage() {
     </div>
   );
 }
-
+    
