@@ -21,13 +21,13 @@ const HANDLING_CHARGE = 5;
 interface SavedPaymentMethod {
   id: string;
   type: 'card' | 'upi';
-  displayName: string; 
+  displayName: string;
   icon?: React.ElementType;
 }
 
 const savedPaymentMethods: SavedPaymentMethod[] = [
   { id: 'card1', type: 'card', displayName: 'Visa ending in 1234', icon: CreditCard },
-  { id: 'upi1', type: 'upi', displayName: 'upi@examplebank', icon: CreditCard }, 
+  { id: 'upi1', type: 'upi', displayName: 'upi@examplebank', icon: CreditCard },
 ];
 
 interface AddressInfo {
@@ -44,21 +44,21 @@ interface ShippingInfo {
   method: string;
   promoCode: { code: string; discountAmount: number; description: string } | null;
   summary: { subtotal: number; discount: number; deliveryCharge: number; gstAmount: number; handlingCharge: number; totalAmount: number };
-  cartItems: any[]; 
+  cartItems: any[];
 }
 
 
 export default function PaymentDetailsPage() {
-  const { cartItems } = useCart(); 
+  const { cartItems } = useCart();
   const router = useRouter();
 
   const [shippingInfo, setShippingInfo] = useState<ShippingInfo | null>(null);
-  const [paymentOption, setPaymentOption] = useState('saved'); 
+  const [paymentOption, setPaymentOption] = useState('saved');
   const [selectedPaymentId, setSelectedPaymentId] = useState(savedPaymentMethods[0]?.id || '');
   const [newCardDetails, setNewCardDetails] = useState({ number: '', expiry: '', cvc: '', name: '' });
   const [newUpiId, setNewUpiId] = useState('');
-  
-  const [isLoading, setIsLoading] = useState(false); 
+
+  const [isLoading, setIsLoading] = useState(false);
   const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function PaymentDetailsPage() {
             } catch (e) {
                 console.error("Error parsing shipping info from localStorage", e);
                 setPageError("Could not load shipping details. Please go back and try again.");
-                router.push('/checkout/shipping-details'); 
+                router.push('/checkout/shipping-details');
             }
         } else {
             setPageError("Shipping details not found. Please start checkout again.");
@@ -87,8 +87,8 @@ export default function PaymentDetailsPage() {
   const isPaymentDetailsValid = () => {
     if (paymentOption === 'saved') return !!selectedPaymentId;
     if (paymentOption === 'new_card') {
-      return newCardDetails.number.trim() !== '' && 
-             newCardDetails.expiry.trim() !== '' && 
+      return newCardDetails.number.trim() !== '' &&
+             newCardDetails.expiry.trim() !== '' &&
              newCardDetails.cvc.trim() !== '' &&
              newCardDetails.name.trim() !== '';
     }
@@ -106,17 +106,28 @@ export default function PaymentDetailsPage() {
         return;
     }
 
+    let finalPaymentDetailsForStorage: any = null;
+
+    if (paymentOption === 'saved') {
+        const foundMethod = savedPaymentMethods.find(p => p.id === selectedPaymentId);
+        if (foundMethod) {
+            // Omit the icon (React component), keep other serializable details
+            const { icon, ...serializableDetails } = foundMethod;
+            finalPaymentDetailsForStorage = serializableDetails;
+        }
+    } else if (paymentOption === 'new_card') {
+        finalPaymentDetailsForStorage = newCardDetails;
+    } else if (paymentOption === 'upi') {
+        finalPaymentDetailsForStorage = { upiId: newUpiId };
+    }
+
     const paymentDetails = {
         method: paymentOption,
-        details: paymentOption === 'saved' 
-                    ? savedPaymentMethods.find(p => p.id === selectedPaymentId) 
-                    : paymentOption === 'new_card' 
-                        ? newCardDetails 
-                        : { upiId: newUpiId }
+        details: finalPaymentDetailsForStorage
     };
-    
+
     const finalOrderData = {
-        ...shippingInfo, 
+        ...shippingInfo,
         paymentDetails,
     };
 
@@ -135,7 +146,7 @@ export default function PaymentDetailsPage() {
       </div>
     );
   }
-  
+
   if (pageError) {
      return (
       <div className="container mx-auto py-12 px-4 text-center">
@@ -222,7 +233,7 @@ export default function PaymentDetailsPage() {
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between"><span>Subtotal:</span><span>₹{shippingInfo.summary.subtotal.toFixed(2)}</span></div>
-                
+
                 {shippingInfo.promoCode && (
                 <div className="flex justify-between text-green-600">
                     <span>Discount ({shippingInfo.promoCode.code}):</span>
@@ -240,10 +251,10 @@ export default function PaymentDetailsPage() {
                 <div className="flex justify-between font-bold text-base"><span>Total Amount:</span><span>₹{shippingInfo.summary.totalAmount.toFixed(2)}</span></div>
             </CardContent>
             <CardFooter>
-                <Button 
-                    size="lg" 
-                    className="w-full" 
-                    onClick={handleProceedToFinalReview} 
+                <Button
+                    size="lg"
+                    className="w-full"
+                    onClick={handleProceedToFinalReview}
                     disabled={isLoading || cartItems.length === 0 || shippingInfo.summary.totalAmount <= 0 || !isPaymentDetailsValid()}
                 >
                 Proceed to Final Review
