@@ -270,13 +270,13 @@ export default function FinalReviewPage() {
                 {promoCode && (
                 <div className="flex justify-between text-green-600">
                     <span>Discount ({promoCode.code}):</span>
-                    <span>-₹{(promoCode.discountAmount || 0).toFixed(2)}</span>
+                    <span>-₹{(summary?.discount || 0).toFixed(2)}</span>
                 </div>
                 )}
-                {(summary?.deliveryCharge || 0) > 0 && ((summary?.subtotal || 0) - (promoCode?.discountAmount || 0)) > 0 && <div className="flex justify-between text-muted-foreground"><span>Delivery Charge:</span><span>₹{(summary?.deliveryCharge || 0).toFixed(2)}</span></div>}
-                {((summary?.subtotal || 0) - (promoCode?.discountAmount || 0)) > 0 && (
+                {(summary?.deliveryCharge || 0) > 0 && <div className="flex justify-between text-muted-foreground"><span>Delivery Charge:</span><span>₹{(summary?.deliveryCharge || 0).toFixed(2)}</span></div>}
+                {(summary?.subtotal || 0) > 0 && (
                     <>
-                        <div className="flex justify-between text-muted-foreground"><span>GST (18%):</span><span>₹{(summary?.gstAmount || 0).toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground"><span>GST (18% on ₹{(summary?.subtotal || 0).toFixed(2)}):</span><span>₹{(summary?.gstAmount || 0).toFixed(2)}</span></div>
                         <div className="flex justify-between text-muted-foreground"><span>Handling Charge:</span><span>₹{(summary?.handlingCharge || 0).toFixed(2)}</span></div>
                     </>
                 )}

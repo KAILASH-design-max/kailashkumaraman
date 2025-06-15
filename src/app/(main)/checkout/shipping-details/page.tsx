@@ -71,13 +71,16 @@ export default function ShippingDetailsPage() {
     return appliedPromoCode.discountAmount;
   }, [appliedPromoCode]);
   
-  const discountedSubtotal = subtotal - calculatedDiscount;
+  // This is the subtotal after discount, useful for some checks but not for GST base.
+  // const discountedSubtotal = subtotal - calculatedDiscount;
 
   const deliveryCharge = useMemo(() => {
-    if (shippingMethod === 'pickup' || discountedSubtotal <= 0) return 0;
+    if (shippingMethod === 'pickup' || subtotal <= 0) return 0;
 
-    let baseDeliveryCharge = (discountedSubtotal < DELIVERY_CHARGE_THRESHOLD && discountedSubtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
+    // Calculate base delivery charge on original subtotal
+    let baseDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
     
+    // Apply FREEDEL promo if applicable
     if (appliedPromoCode?.code === 'FREEDEL' && baseDeliveryCharge > 0) {
         baseDeliveryCharge = Math.max(0, baseDeliveryCharge - appliedPromoCode.discountAmount);
     }
@@ -86,10 +89,19 @@ export default function ShippingDetailsPage() {
       return baseDeliveryCharge + DELIVERY_CHARGE_EXPRESS_EXTRA;
     }
     return baseDeliveryCharge;
-  }, [discountedSubtotal, shippingMethod, appliedPromoCode]);
+  }, [subtotal, shippingMethod, appliedPromoCode]); // Depends on original subtotal
   
-  const gstAmount = discountedSubtotal > 0 ? discountedSubtotal * GST_RATE : 0;
-  const totalAmount = discountedSubtotal > 0 ? discountedSubtotal + deliveryCharge + gstAmount + HANDLING_CHARGE : 0;
+  // GST is calculated on the original subtotal
+  const gstAmount = useMemo(() => {
+    return subtotal > 0 ? subtotal * GST_RATE : 0;
+  }, [subtotal]);
+  
+  // Total amount calculation
+  const totalAmount = useMemo(() => {
+    const preliminaryTotal = subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE - calculatedDiscount;
+    return Math.max(0, preliminaryTotal); // Ensure total doesn't go below 0
+  }, [subtotal, gstAmount, deliveryCharge, HANDLING_CHARGE, calculatedDiscount]);
+
 
   const handleApplyPromoCode = () => {
     if (!promoCodeInput.trim()) {
@@ -101,6 +113,7 @@ export default function ShippingDetailsPage() {
 
     if (codeToApply) {
       let discount = 0;
+      // Standard delivery charge calculated based on original subtotal for FREEDEL comparison
       const currentStandardDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
 
       if (codeToApply.type === 'percentage') {
@@ -113,7 +126,7 @@ export default function ShippingDetailsPage() {
         }
       }
       
-      discount = Math.min(discount, subtotal); // Discount cannot exceed subtotal
+      discount = Math.min(discount, subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE); // Discount cannot make total negative in practical terms for this logic, this caps it against the sum *before* discount
 
       if (discount <= 0 && !(codeToApply.code === 'FREEDEL' && currentStandardDeliveryCharge > 0) ) {
          setPromoMessage({ type: 'info', text: `Promo code "${codeToApply.code}" cannot be applied or provides no discount for your current cart.` });
@@ -156,7 +169,14 @@ export default function ShippingDetailsPage() {
         address: currentAddress, // This will now have phoneNumber
         method: shippingMethod,
         promoCode: appliedPromoCode,
-        summary: { subtotal, discount: calculatedDiscount, deliveryCharge, gstAmount, handlingCharge: HANDLING_CHARGE, totalAmount }
+        summary: { 
+            subtotal, 
+            discount: calculatedDiscount, 
+            deliveryCharge, 
+            gstAmount, 
+            handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0, // Only apply handling if subtotal > 0
+            totalAmount 
+        }
     };
     if (typeof window !== 'undefined') {
         localStorage.setItem('checkoutShippingInfo', JSON.stringify(shippingInfo));
@@ -286,13 +306,13 @@ export default function ShippingDetailsPage() {
                 {appliedPromoCode && (
                 <div className="flex justify-between text-green-600">
                     <span>Discount ({appliedPromoCode.code}):</span>
-                    <span>-₹{appliedPromoCode.discountAmount.toFixed(2)}</span>
+                    <span>-₹{calculatedDiscount.toFixed(2)}</span>
                 </div>
                 )}
-                {deliveryCharge > 0 && discountedSubtotal > 0 && <div className="flex justify-between text-muted-foreground"><span>Delivery Charge:</span><span>₹{deliveryCharge.toFixed(2)}</span></div>}
-                {discountedSubtotal > 0 && (
+                {(deliveryCharge || 0) > 0 && <div className="flex justify-between text-muted-foreground"><span>Delivery Charge:</span><span>₹{deliveryCharge.toFixed(2)}</span></div>}
+                {subtotal > 0 && (
                     <>
-                        <div className="flex justify-between text-muted-foreground"><span>GST (18% on ₹{discountedSubtotal.toFixed(2)}):</span><span>₹{gstAmount.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground"><span>GST (18% on ₹{subtotal.toFixed(2)}):</span><span>₹{gstAmount.toFixed(2)}</span></div>
                         <div className="flex justify-between text-muted-foreground"><span>Handling Charge:</span><span>₹{HANDLING_CHARGE.toFixed(2)}</span></div>
                     </>
                 )}
