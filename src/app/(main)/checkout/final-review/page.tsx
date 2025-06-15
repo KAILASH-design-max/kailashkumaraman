@@ -25,7 +25,7 @@ interface AddressInfo {
 }
 interface FinalOrderData {
   address: AddressInfo;
-  method: string;
+  method: string; // shipping method
   promoCode: { code: string; discountAmount: number; description: string } | null;
   summary: { subtotal: number; discount: number; deliveryCharge: number; gstAmount: number; handlingCharge: number; totalAmount: number };
   cartItems: CartItemType[];
@@ -61,14 +61,17 @@ export default function FinalReviewPage() {
                 router.push('/checkout/payment-details');
             }
         } else if (contextCartItems.length > 0) {
+            // This case implies user might have cart items but no finalOrderData from previous steps
             setPageError("Order details are incomplete. Please proceed through checkout again.");
+             // Potentially redirect to an earlier checkout step if finalOrderData is crucial and missing
+            // router.push('/checkout/shipping-details'); 
         }
     }
   }, [contextCartItems, router]);
 
   const handlePlaceOrder = async () => {
     if (!finalOrderData) {
-        setPageError("Cannot place order, data is missing.");
+        setPageError("Cannot place order, data is missing. Please go back through checkout.");
         return;
     }
     if (!auth.currentUser) {
@@ -84,28 +87,36 @@ export default function FinalReviewPage() {
     setIsPlacingOrder(true);
     setPageError(null);
 
+    // Defensive construction of orderDataToSave
     const orderDataToSave = {
-        userId: auth.currentUser.uid,
-        name: finalOrderData.address.name,
-        phoneNumber: finalOrderData.address.phoneNumber,
-        address: finalOrderData.address,
-        items: finalOrderData.cartItems.map(item => ({
-            productId: item.id,
-            name: item.name,
-            quantity: item.quantity,
-            price: item.price,
-            imageUrl: item.imageUrls?.[0]?.url || 'https://placehold.co/60x60.png'
+        userId: String(auth.currentUser.uid),
+        name: String(finalOrderData.address?.name || "N/A"),
+        phoneNumber: String(finalOrderData.address?.phoneNumber || "N/A"),
+        address: {
+            street: String(finalOrderData.address?.street || ""),
+            city: String(finalOrderData.address?.city || ""),
+            postalCode: String(finalOrderData.address?.postalCode || ""),
+            country: String(finalOrderData.address?.country || ""),
+            name: String(finalOrderData.address?.name || "N/A"), // Included for consistency with FirestoreOrderAddress
+            phoneNumber: String(finalOrderData.address?.phoneNumber || "N/A"), // Included for consistency
+        },
+        items: (finalOrderData.cartItems || []).map(item => ({
+            productId: String(item.id),
+            name: String(item.name),
+            quantity: Number(item.quantity) || 1,
+            price: Number(item.price) || 0,
+            imageUrl: String(item.imageUrls?.[0]?.url || 'https://placehold.co/60x60.png')
         })),
-        total: finalOrderData.summary.totalAmount,
+        total: Number(finalOrderData.summary?.totalAmount) || 0,
         orderStatus: 'Placed',
         orderDate: serverTimestamp(),
-        shippingMethod: finalOrderData.method,
-        paymentMethod: finalOrderData.paymentDetails.method,
-        promoCodeApplied: finalOrderData.promoCode ? finalOrderData.promoCode.code : null,
-        discountAmount: finalOrderData.summary.discount,
-        deliveryCharge: finalOrderData.summary.deliveryCharge,
-        gstAmount: finalOrderData.summary.gstAmount,
-        handlingCharge: finalOrderData.summary.handlingCharge
+        shippingMethod: String(finalOrderData.method || "standard"),
+        paymentMethod: String(finalOrderData.paymentDetails?.method || "unknown"),
+        promoCodeApplied: finalOrderData.promoCode?.code ? String(finalOrderData.promoCode.code) : null,
+        discountAmount: Number(finalOrderData.summary?.discount) || 0,
+        deliveryCharge: Number(finalOrderData.summary?.deliveryCharge) || 0,
+        gstAmount: Number(finalOrderData.summary?.gstAmount) || 0,
+        handlingCharge: Number(finalOrderData.summary?.handlingCharge) || 0,
     };
 
     try {
@@ -138,7 +149,7 @@ export default function FinalReviewPage() {
     }
   };
 
-  if (!finalOrderData && !pageError) {
+  if (!finalOrderData && !pageError && contextCartItems.length > 0) { // Added contextCartItems.length > 0 to avoid flicker on initial load
     return (
       <div className="container mx-auto py-12 px-4 text-center">
         <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
@@ -147,7 +158,7 @@ export default function FinalReviewPage() {
     );
   }
   
-  if (pageError && !isPlacingOrder) {
+  if (pageError && !isPlacingOrder) { // Show error if pageError is set and not in the process of placing order
      return (
       <div className="container mx-auto py-12 px-4 text-center">
         <AlertCircle className="mx-auto h-24 w-24 text-destructive mb-6" />
@@ -158,8 +169,23 @@ export default function FinalReviewPage() {
     );
   }
   
-  const { address, method: shippingMethod, promoCode, summary, paymentDetails } = finalOrderData!;
-  const displayCartItems = finalOrderData!.cartItems;
+  // Ensure finalOrderData is not null before trying to destructure or use its properties for rendering
+  if (!finalOrderData) {
+     // This can happen if localStorage is empty and cart is also empty, leading to early return in useEffect
+     // Or if pageError was set and then cleared without finalOrderData being loaded.
+     // A more robust loading or error state might be needed if this path is hit unexpectedly.
+     return (
+      <div className="container mx-auto py-12 px-4 text-center">
+        <AlertCircle className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
+        <h1 className="text-3xl font-semibold mb-4">Missing Order Data</h1>
+        <p className="text-muted-foreground mb-8">Could not load complete order details. Please start checkout again.</p>
+        <Button onClick={() => router.push('/checkout')}>Start Checkout</Button>
+      </div>
+    );
+  }
+
+  const { address, method: shippingMethod, promoCode, summary, paymentDetails } = finalOrderData;
+  const displayCartItems = finalOrderData.cartItems || [];
 
 
   return (
@@ -200,34 +226,34 @@ export default function FinalReviewPage() {
             <section>
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><MapPin className="mr-3 h-6 w-6 text-primary"/>Shipping Details</h3>
                 <Card className="p-4 border shadow-sm">
-                    <p><strong>{address.name}</strong></p>
-                    <p>{address.street}</p>
-                    <p>{address.city}, {address.postalCode}, {address.country}</p>
-                    <p className="flex items-center mt-1"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/> {address.phoneNumber}</p>
-                    <p className="mt-2 text-sm text-muted-foreground">Shipping Method: <span className="font-medium text-foreground">{shippingMethod.charAt(0).toUpperCase() + shippingMethod.slice(1)}</span></p>
+                    <p><strong>{address?.name || 'N/A'}</strong></p>
+                    <p>{address?.street || 'N/A'}</p>
+                    <p>{address?.city || 'N/A'}, {address?.postalCode || 'N/A'}, {address?.country || 'N/A'}</p>
+                    <p className="flex items-center mt-1"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/> {address?.phoneNumber || 'N/A'}</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Shipping Method: <span className="font-medium text-foreground">{(shippingMethod || 'N/A').charAt(0).toUpperCase() + (shippingMethod || 'N/A').slice(1)}</span></p>
                 </Card>
             </section>
             <Separator/>
              <section>
                 <h3 className="text-xl font-semibold mb-3 flex items-center">
-                    {paymentDetails.method === 'cod' ? <Coins className="mr-3 h-6 w-6 text-primary"/> : <CreditCard className="mr-3 h-6 w-6 text-primary"/>}
+                    {paymentDetails?.method === 'cod' ? <Coins className="mr-3 h-6 w-6 text-primary"/> : <CreditCard className="mr-3 h-6 w-6 text-primary"/>}
                     Payment Method
                 </h3>
                 <Card className="p-4 border shadow-sm">
-                    {paymentDetails.method === 'cod' && (
+                    {paymentDetails?.method === 'cod' && (
                         <p className="font-medium text-foreground">Cash on Delivery</p>
                     )}
-                    {paymentDetails.method !== 'cod' && (
-                      <p>Method: <span className="font-medium text-foreground">{paymentDetails.method.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span></p>
+                    {paymentDetails?.method !== 'cod' && (
+                      <p>Method: <span className="font-medium text-foreground">{(paymentDetails?.method || 'unknown').replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</span></p>
                     )}
-                    {paymentDetails.method === 'saved' && paymentDetails.details && (
+                    {paymentDetails?.method === 'saved' && paymentDetails?.details && (
                         <p>Details: {paymentDetails.details.displayName}</p>
                     )}
-                    {paymentDetails.method === 'new_card' && paymentDetails.details && (
-                        <p>Card: **** **** **** {paymentDetails.details.number.slice(-4)} ({paymentDetails.details.name})</p>
+                    {paymentDetails?.method === 'new_card' && paymentDetails?.details && (
+                        <p>Card: **** **** **** {String(paymentDetails.details.number || '').slice(-4)} ({String(paymentDetails.details.name || '')})</p>
                     )}
-                    {paymentDetails.method === 'upi' && paymentDetails.details && (
-                        <p>UPI ID: {paymentDetails.details.upiId}</p>
+                    {paymentDetails?.method === 'upi' && paymentDetails?.details && (
+                        <p>UPI ID: {String(paymentDetails.details.upiId || '')}</p>
                     )}
                 </Card>
             </section>
@@ -239,23 +265,23 @@ export default function FinalReviewPage() {
                 <CardTitle className="text-xl">Order Summary</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-sm">
-                <div className="flex justify-between"><span>Subtotal:</span><span>₹{summary.subtotal.toFixed(2)}</span></div>
+                <div className="flex justify-between"><span>Subtotal:</span><span>₹{(summary?.subtotal || 0).toFixed(2)}</span></div>
                 
                 {promoCode && (
                 <div className="flex justify-between text-green-600">
                     <span>Discount ({promoCode.code}):</span>
-                    <span>-₹{promoCode.discountAmount.toFixed(2)}</span>
+                    <span>-₹{(promoCode.discountAmount || 0).toFixed(2)}</span>
                 </div>
                 )}
-                {summary.deliveryCharge > 0 && (summary.subtotal - (promoCode?.discountAmount || 0)) > 0 && <div className="flex justify-between text-muted-foreground"><span>Delivery Charge:</span><span>₹{summary.deliveryCharge.toFixed(2)}</span></div>}
-                {(summary.subtotal - (promoCode?.discountAmount || 0)) > 0 && (
+                {(summary?.deliveryCharge || 0) > 0 && ((summary?.subtotal || 0) - (promoCode?.discountAmount || 0)) > 0 && <div className="flex justify-between text-muted-foreground"><span>Delivery Charge:</span><span>₹{(summary?.deliveryCharge || 0).toFixed(2)}</span></div>}
+                {((summary?.subtotal || 0) - (promoCode?.discountAmount || 0)) > 0 && (
                     <>
-                        <div className="flex justify-between text-muted-foreground"><span>GST (18%):</span><span>₹{summary.gstAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between text-muted-foreground"><span>Handling Charge:</span><span>₹{summary.handlingCharge.toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground"><span>GST (18%):</span><span>₹{(summary?.gstAmount || 0).toFixed(2)}</span></div>
+                        <div className="flex justify-between text-muted-foreground"><span>Handling Charge:</span><span>₹{(summary?.handlingCharge || 0).toFixed(2)}</span></div>
                     </>
                 )}
                 <Separator className="my-2"/>
-                <div className="flex justify-between font-bold text-base"><span>Total Amount:</span><span>₹{summary.totalAmount.toFixed(2)}</span></div>
+                <div className="flex justify-between font-bold text-base"><span>Total Amount:</span><span>₹{(summary?.totalAmount || 0).toFixed(2)}</span></div>
                  {pageError && isPlacingOrder && ( 
                     <p className="text-destructive text-xs mt-2">{pageError}</p>
                  )}
@@ -265,10 +291,10 @@ export default function FinalReviewPage() {
                     size="lg" 
                     className="w-full" 
                     onClick={handlePlaceOrder} 
-                    disabled={isPlacingOrder || displayCartItems.length === 0 || summary.totalAmount <= 0}
+                    disabled={isPlacingOrder || displayCartItems.length === 0 || (summary?.totalAmount || 0) <= 0}
                 >
                 {isPlacingOrder ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                {isPlacingOrder ? 'Placing Order...' : (paymentDetails.method === 'cod' ? 'Place Order (COD)' : 'Place Order & Pay')}
+                {isPlacingOrder ? 'Placing Order...' : (paymentDetails?.method === 'cod' ? 'Place Order (COD)' : 'Place Order & Pay')}
                 </Button>
             </CardFooter>
             </Card>
