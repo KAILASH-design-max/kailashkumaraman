@@ -377,7 +377,7 @@ export const mockProducts: Product[] = [
         { url: 'https://placehold.co/600x450/FFCFAD/000000.png', dataAiHint: 'mccain fry closeup' }
     ],
     dataAiHint: 'french fries', rating: 4.7, reviewsCount: 180, stock: 90 },
-  { id: 'prod45', slug: 'coca-cola', name: 'Coca-Cola (750 ml)', description: 'Classic Coca-Cola soft drink.', price: 40, category: 'cat4',
+  { id: 'prod45', slug: 'coca-cola-750ml', name: 'Coca-Cola (750 ml)', description: 'Classic Coca-Cola soft drink.', price: 43, category: 'cat4', // Updated price
     imageUrls: [
         { url: 'https://placehold.co/600x450/C00000/ffffff.png', dataAiHint: 'cocacola bottle front' },
         { url: 'https://placehold.co/600x450/B00000/ffffff.png', dataAiHint: 'cocacola bottle side' },
@@ -385,7 +385,7 @@ export const mockProducts: Product[] = [
         { url: 'https://placehold.co/600x450/900000/ffffff.png', dataAiHint: 'cocacola bubbles closeup' }
     ],
     dataAiHint: 'cola soda', rating: 4.8, reviewsCount: 500, stock: 150 },
-  { id: 'prod46', slug: 'pepsi', name: 'Pepsi', description: 'Refreshing Pepsi cola soft drink.', price: 1.15, category: 'cat4',
+  { id: 'prod46', slug: 'pepsi-750ml', name: 'Pepsi (750ml)', description: 'Refreshing Pepsi cola soft drink.', price: 40, category: 'cat4', // Updated name and price
     imageUrls: [
         { url: 'https://placehold.co/600x450/0047AB/ffffff.png', dataAiHint: 'pepsi can front' },
         { url: 'https://placehold.co/600x450/003DA5/ffffff.png', dataAiHint: 'pepsi can side' },
@@ -393,7 +393,7 @@ export const mockProducts: Product[] = [
         { url: 'https://placehold.co/600x450/00298C/ffffff.png', dataAiHint: 'pepsi bubbles closeup' }
     ],
     dataAiHint: 'pepsi soda', rating: 4.7, reviewsCount: 450, stock: 140 },
-  { id: 'prod47', slug: 'sprite', name: 'Sprite Lime (750 ml)', description: 'Crisp lemon-lime flavored Sprite.', price: 40, category: 'cat4',
+  { id: 'prod47', slug: 'sprite-lime-750ml', name: 'Sprite Lime (750 ml)', description: 'Crisp lemon-lime flavored Sprite.', price: 43, category: 'cat4', // Updated price
     imageUrls: [
         { url: 'https://placehold.co/600x450/00A86B/ffffff.png', dataAiHint: 'sprite bottle front' },
         { url: 'https://placehold.co/600x450/009A5B/ffffff.png', dataAiHint: 'sprite bottle side' },
@@ -401,7 +401,7 @@ export const mockProducts: Product[] = [
         { url: 'https://placehold.co/600x450/007E3B/ffffff.png', dataAiHint: 'sprite bubbles closeup' }
     ],
     dataAiHint: 'sprite soda', rating: 4.6, reviewsCount: 400, stock: 130 },
-  { id: 'prod48', slug: 'fanta', name: 'Fanta', description: 'Bubbly orange flavored Fanta.', price: 1.10, category: 'cat4',
+  { id: 'prod48', slug: 'fanta-orange-750ml', name: 'Fanta Orange (750ml)', description: 'Bubbly orange flavored Fanta.', price: 43, category: 'cat4', // Updated name and price
     imageUrls: [
         { url: 'https://placehold.co/600x450/FF8C00/ffffff.png', dataAiHint: 'fanta bottle front' },
         { url: 'https://placehold.co/600x450/FF7C00/ffffff.png', dataAiHint: 'fanta bottle side' },
@@ -409,22 +409,22 @@ export const mockProducts: Product[] = [
         { url: 'https://placehold.co/600x450/FF5C00/ffffff.png', dataAiHint: 'fanta bubbles closeup' }
     ],
     dataAiHint: 'fanta orange', rating: 4.5, reviewsCount: 380, stock: 120 },
-  { id: 'prod49', slug: 'thums-up', name: 'Thums Up', description: 'Strong and fizzy Thums Up cola.', price: 1.25, category: 'cat4',
+  { id: 'prod49', slug: 'thums-up-2-25l', name: 'Thums Up (2.25L)', description: 'Strong and fizzy Thums Up cola, 2.25L pack.', price: 100, category: 'cat4', // Updated name and price
     imageUrls: [
         { url: 'https://placehold.co/600x450/36454F/ffffff.png', dataAiHint: 'thumsup bottle front' },
         { url: 'https://placehold.co/600x450/2F3E47/ffffff.png', dataAiHint: 'thumsup bottle side' },
         { url: 'https://placehold.co/600x450/28373F/ffffff.png', dataAiHint: 'thumsup glass ice' },
         { url: 'https://placehold.co/600x450/213037/ffffff.png', dataAiHint: 'thumsup bubbles closeup' }
     ],
-    dataAiHint: 'thumsup cola', rating: 4.7, reviewsCount: 420, stock: 100 },
-  { id: 'prod50', slug: 'real-fruit-juice', name: 'Real Fruit Juice', description: 'Refreshing mixed fruit juice.', price: 2.20, category: 'cat4',
+    dataAiHint: 'thumsup cola large', rating: 4.7, reviewsCount: 420, stock: 100 },
+  { id: 'prod50', slug: 'real-fruit-power-cranberry-1l', name: 'Real Fruit Power Cranberry (1L)', description: 'Refreshing cranberry fruit juice from Real Fruit Power.', price: 119, category: 'cat4', // Updated name, desc, price
     imageUrls: [
-        { url: 'https://placehold.co/600x450/FF6347/ffffff.png', dataAiHint: 'real juice pack front' },
-        { url: 'https://placehold.co/600x450/FF5337/ffffff.png', dataAiHint: 'real juice pack side' },
-        { url: 'https://placehold.co/600x450/FF4327/ffffff.png', dataAiHint: 'real juice glass' },
-        { url: 'https://placehold.co/600x450/FF3317/ffffff.png', dataAiHint: 'real juice liquid' }
+        { url: 'https://placehold.co/600x450/DC143C/ffffff.png', dataAiHint: 'cranberry juice pack front' },
+        { url: 'https://placehold.co/600x450/C21030/ffffff.png', dataAiHint: 'cranberry juice pack side' },
+        { url: 'https://placehold.co/600x450/A80C28/ffffff.png', dataAiHint: 'cranberry juice glass' },
+        { url: 'https://placehold.co/600x450/8E0820/ffffff.png', dataAiHint: 'cranberry juice liquid' }
     ],
-    dataAiHint: 'fruit juice', rating: 4.6, reviewsCount: 300, stock: 80 },
+    dataAiHint: 'cranberry juice', rating: 4.6, reviewsCount: 180, stock: 80 },
   { id: 'prod51', slug: 'tropicana-juice', name: 'Tropicana', description: 'Delicious Tropicana orange juice.', price: 2.50, category: 'cat4',
     imageUrls: [
         { url: 'https://placehold.co/600x450/FFA500/ffffff.png', dataAiHint: 'tropicana carton front' },
@@ -756,6 +756,186 @@ export const mockProducts: Product[] = [
     rating: 4.6,
     reviewsCount: 95,
     stock: 28
+  },
+  {
+    id: 'prod70', slug: 'coca-cola-300ml-can', name: 'Coca-Cola (300ml can)',
+    description: 'Classic Coca-Cola in a convenient 300ml can.',
+    price: 40, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/C10000/ffffff.png', dataAiHint: 'cola can front' },
+        { url: 'https://placehold.co/600x450/B00000/ffffff.png', dataAiHint: 'cola can side' },
+        { url: 'https://placehold.co/600x450/A00000/ffffff.png', dataAiHint: 'cola can display' },
+        { url: 'https://placehold.co/600x450/900000/ffffff.png', dataAiHint: 'cola can group' }
+    ],
+    dataAiHint: 'coca cola can', rating: 4.8, reviewsCount: 180, stock: 100
+  },
+  {
+    id: 'prod71', slug: 'coca-cola-2-25l-party-pack', name: 'Coca-Cola (2.25L Party Pack)',
+    description: 'Large 2.25L party pack of Coca-Cola.',
+    price: 97, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/C20000/ffffff.png', dataAiHint: 'cola bottle large front' },
+        { url: 'https://placehold.co/600x450/B10000/ffffff.png', dataAiHint: 'cola bottle large side' },
+        { url: 'https://placehold.co/600x450/A10000/ffffff.png', dataAiHint: 'cola party pack' },
+        { url: 'https://placehold.co/600x450/910000/ffffff.png', dataAiHint: 'cola pouring large' }
+    ],
+    dataAiHint: 'coca cola large', rating: 4.7, reviewsCount: 150, stock: 80
+  },
+  {
+    id: 'prod72', slug: 'thums-up-750ml-x-2', name: 'Thums Up (750ml x 2)',
+    description: 'Pack of two 750ml Thums Up bottles.',
+    price: 85, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/404D57/ffffff.png', dataAiHint: 'thumsup twin front' },
+        { url: 'https://placehold.co/600x450/3A464F/ffffff.png', dataAiHint: 'thumsup twin side' },
+        { url: 'https://placehold.co/600x450/343F47/ffffff.png', dataAiHint: 'thumsup bottles group' },
+        { url: 'https://placehold.co/600x450/2E383F/ffffff.png', dataAiHint: 'thumsup multipack' }
+    ],
+    dataAiHint: 'thumsup multipack', rating: 4.6, reviewsCount: 100, stock: 60
+  },
+  {
+    id: 'prod73', slug: 'mountain-dew-750ml', name: 'Mountain Dew (750ml)',
+    description: 'Refreshing Mountain Dew, 750ml bottle.',
+    price: 40, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/3EB489/000000.png', dataAiHint: 'mountaindew bottle front' },
+        { url: 'https://placehold.co/600x450/38A37A/000000.png', dataAiHint: 'mountaindew bottle side' },
+        { url: 'https://placehold.co/600x450/32926B/000000.png', dataAiHint: 'mountaindew glass' },
+        { url: 'https://placehold.co/600x450/2C815C/000000.png', dataAiHint: 'mountaindew liquid' }
+    ],
+    dataAiHint: 'mountain dew', rating: 4.5, reviewsCount: 120, stock: 70
+  },
+  {
+    id: 'prod74', slug: 'coca-cola-zero-300ml-can', name: 'Coca-Cola Zero (300ml can)',
+    description: 'Zero sugar Coca-Cola in a 300ml can.',
+    price: 40, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/2C2C2C/ffffff.png', dataAiHint: 'cola zero can front' },
+        { url: 'https://placehold.co/600x450/222222/ffffff.png', dataAiHint: 'cola zero can side' },
+        { url: 'https://placehold.co/600x450/1C1C1C/ffffff.png', dataAiHint: 'cola zero display' },
+        { url: 'https://placehold.co/600x450/161616/ffffff.png', dataAiHint: 'cola zero group' }
+    ],
+    dataAiHint: 'coke zero', rating: 4.7, reviewsCount: 140, stock: 90
+  },
+  {
+    id: 'prod75', slug: 'diet-coke-300ml-can', name: 'Diet Coke (300ml can)',
+    description: 'Light taste Diet Coke in a 300ml can.',
+    price: 40, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/D3D3D3/000000.png', dataAiHint: 'diet coke can front' },
+        { url: 'https://placehold.co/600x450/C8C8C8/000000.png', dataAiHint: 'diet coke can side' },
+        { url: 'https://placehold.co/600x450/BCBCBC/000000.png', dataAiHint: 'diet coke display' },
+        { url: 'https://placehold.co/600x450/B0B0B0/000000.png', dataAiHint: 'diet coke group' }
+    ],
+    dataAiHint: 'diet coke', rating: 4.6, reviewsCount: 130, stock: 85
+  },
+  {
+    id: 'prod76', slug: 'appy-fizz-600ml', name: 'Appy Fizz (600ml)',
+    description: 'Sparkling apple drink, Appy Fizz 600ml.',
+    price: 36, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/E21329/ffffff.png', dataAiHint: 'appy fizz bottle front' },
+        { url: 'https://placehold.co/600x450/D01020/ffffff.png', dataAiHint: 'appy fizz bottle side' },
+        { url: 'https://placehold.co/600x450/C00D1A/ffffff.png', dataAiHint: 'appy fizz glass' },
+        { url: 'https://placehold.co/600x450/B00A14/ffffff.png', dataAiHint: 'appy fizz bubbles' }
+    ],
+    dataAiHint: 'appy fizz', rating: 4.7, reviewsCount: 160, stock: 95
+  },
+  {
+    id: 'prod77', slug: 'maaza-mango-600ml', name: 'Maaza Mango (600ml)',
+    description: 'Rich and pulpy Maaza Mango drink, 600ml.',
+    price: 42, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/FFC300/000000.png', dataAiHint: 'maaza bottle front' },
+        { url: 'https://placehold.co/600x450/FFB800/000000.png', dataAiHint: 'maaza bottle side' },
+        { url: 'https://placehold.co/600x450/FFAE00/000000.png', dataAiHint: 'maaza mango glass' },
+        { url: 'https://placehold.co/600x450/FFA300/000000.png', dataAiHint: 'maaza liquid' }
+    ],
+    dataAiHint: 'maaza mango', rating: 4.8, reviewsCount: 200, stock: 110
+  },
+  {
+    id: 'prod78', slug: 'b-natural-mixed-fruit-1l', name: 'B Natural Mixed Fruit (1L)',
+    description: 'Delicious mixed fruit juice from B Natural, 1L pack.',
+    price: 70, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/FF7F50/ffffff.png', dataAiHint: 'bnatural mixed front' },
+        { url: 'https://placehold.co/600x450/FF7040/ffffff.png', dataAiHint: 'bnatural mixed side' },
+        { url: 'https://placehold.co/600x450/FF6030/ffffff.png', dataAiHint: 'bnatural mixed glass' },
+        { url: 'https://placehold.co/600x450/FF5020/ffffff.png', dataAiHint: 'bnatural mixed liquid' }
+    ],
+    dataAiHint: 'b natural mixedfruit', rating: 4.5, reviewsCount: 90, stock: 60
+  },
+  {
+    id: 'prod79', slug: 'b-natural-guava-1l', name: 'B Natural Guava (1L)',
+    description: 'Refreshing guava juice from B Natural, 1L pack.',
+    price: 70, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/FED8B1/000000.png', dataAiHint: 'bnatural guava front' },
+        { url: 'https://placehold.co/600x450/FECDA1/000000.png', dataAiHint: 'bnatural guava side' },
+        { url: 'https://placehold.co/600x450/FEBF91/000000.png', dataAiHint: 'bnatural guava glass' },
+        { url: 'https://placehold.co/600x450/FDB481/000000.png', dataAiHint: 'bnatural guava liquid' }
+    ],
+    dataAiHint: 'b natural guava', rating: 4.6, reviewsCount: 80, stock: 55
+  },
+  {
+    id: 'prod80', slug: 'paper-boat-pomegranate-600ml', name: 'Paper Boat Pomegranate (600ml)',
+    description: 'Authentic pomegranate juice by Paper Boat, 600ml.',
+    price: 45, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/C25A7C/ffffff.png', dataAiHint: 'paperboat pomegranate front' },
+        { url: 'https://placehold.co/600x450/B24A6C/ffffff.png', dataAiHint: 'paperboat pomegranate side' },
+        { url: 'https://placehold.co/600x450/A23A5C/ffffff.png', dataAiHint: 'paperboat pomegranate pouch' },
+        { url: 'https://placehold.co/600x450/922A4C/ffffff.png', dataAiHint: 'paperboat pomegranate juice' }
+    ],
+    dataAiHint: 'paper boat pomegranate', rating: 4.7, reviewsCount: 110, stock: 75
+  },
+  {
+    id: 'prod81', slug: 'schweppes-ginger-ale-300ml-can', name: 'Schweppes Ginger Ale (300ml can)',
+    description: 'Classic Schweppes Ginger Ale in a 300ml can.',
+    price: 60, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/DAA520/ffffff.png', dataAiHint: 'gingerale can front' },
+        { url: 'https://placehold.co/600x450/C99510/ffffff.png', dataAiHint: 'gingerale can side' },
+        { url: 'https://placehold.co/600x450/B88500/ffffff.png', dataAiHint: 'gingerale display' },
+        { url: 'https://placehold.co/600x450/A77500/ffffff.png', dataAiHint: 'gingerale group' }
+    ],
+    dataAiHint: 'schweppes gingerale', rating: 4.8, reviewsCount: 90, stock: 50
+  },
+  {
+    id: 'prod82', slug: 'schweppes-tonic-water-300ml-can', name: 'Schweppes Tonic Water (300ml can)',
+    description: 'Crisp Schweppes Tonic Water in a 300ml can.',
+    price: 60, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/ADD8E6/000000.png', dataAiHint: 'tonicwater can front' },
+        { url: 'https://placehold.co/600x450/9DCBE0/000000.png', dataAiHint: 'tonicwater can side' },
+        { url: 'https://placehold.co/600x450/8DBEDA/000000.png', dataAiHint: 'tonicwater display' },
+        { url: 'https://placehold.co/600x450/7DAFD4/000000.png', dataAiHint: 'tonicwater group' }
+    ],
+    dataAiHint: 'schweppes tonic', rating: 4.7, reviewsCount: 85, stock: 45
+  },
+  {
+    id: 'prod83', slug: 'bisleri-club-soda-750ml', name: 'Bisleri Club Soda (750ml)',
+    description: 'Classic Bisleri Club Soda, 750ml bottle.',
+    price: 20, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/F0F8FF/000000.png', dataAiHint: 'clubsoda bottle front' },
+        { url: 'https://placehold.co/600x450/E0E8EF/000000.png', dataAiHint: 'clubsoda bottle side' },
+        { url: 'https://placehold.co/600x450/D0D8DF/000000.png', dataAiHint: 'clubsoda glass' },
+        { url: 'https://placehold.co/600x450/C0C8CF/000000.png', dataAiHint: 'clubsoda bubbles' }
+    ],
+    dataAiHint: 'bisleri soda', rating: 4.6, reviewsCount: 150, stock: 120
+  },
+  {
+    id: 'prod84', slug: 'bisleri-mineral-water-5l', name: 'Bisleri Mineral Water (5L)',
+    description: 'Large 5L jar of Bisleri Mineral Water.',
+    price: 75, category: 'cat4',
+    imageUrls: [
+        { url: 'https://placehold.co/600x450/B0E0E6/000000.png', dataAiHint: 'water jar front' },
+        { url: 'https://placehold.co/600x450/A0D0D6/000000.png', dataAiHint: 'water jar side' },
+        { url: 'https://placehold.co/600x450/90C0C6/000000.png', dataAiHint: 'water jar large' },
+        { url: 'https://placehold.co/600x450/80B0B6/000000.png', dataAiHint: 'water pouring glass' }
+    ],
+    dataAiHint: 'bisleri water large', rating: 4.9, reviewsCount: 250, stock: 90
   }
 ];
 
@@ -818,6 +998,5 @@ export const mockOrders: Order[] = [
     estimatedDeliveryTime: new Date(Date.now() + 15 * 60 * 1000).toISOString(), // Approx 15 mins
   }
 ];
-
 
     
