@@ -100,7 +100,7 @@ export default function OrdersPage() {
 Required fields and order:
 1. 'userId' (Ascending)
 2. 'orderDate' (Descending)
-3. '__name__' (The Firebase console will specify Ascending or Descending for this field - ensure it matches exactly).
+3. '__name__' (Ensure its direction - Ascending/Descending - in your Firebase console *exactly* matches the Firebase recommendation in the error link).
 
 Please use the link provided by Firebase to create this index. If the error persists, double-check that the collection name in your Firestore database ('orders') matches your query, and that *all* fields and their sort directions (Ascending/Descending), especially for '__name__', are exactly as recommended by Firebase in the error link.`;
             
@@ -141,10 +141,15 @@ Please use the link provided by Firebase to create this index. If the error pers
       case 'processing':
       case 'confirmed':
       case 'placed':
+      case 'return requested': // Added for return status
         return 'bg-yellow-100 text-yellow-700';
       case 'cancelled':
       case 'failed':
+      case 'return rejected': // Added for return status
         return 'bg-red-100 text-red-700';
+      case 'return approved': // Added for return status
+      case 'refunded': // Added for return status
+         return 'bg-purple-100 text-purple-700'; // Or another distinct color
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -183,6 +188,14 @@ Please use the link provided by Firebase to create this index. If the error pers
         variant: "default",
       });
     }
+  };
+
+  const canInitiateReturnForOrder = (orderStatus: string) => {
+    // Define which statuses allow for return initiation
+    // Example: only 'Delivered' orders or 'Shipped' within a certain timeframe
+    const allowedStatuses = ['Delivered', 'Shipped', 'Out for Delivery', 'Return Rejected']; // Added 'Return Rejected' if they can try again
+    return allowedStatuses.includes(orderStatus);
+    // You might add date checks here too, e.g., within 30 days of delivery
   };
 
 
@@ -300,9 +313,11 @@ Please use the link provided by Firebase to create this index. If the error pers
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => handleReorder(order.id)}>
                     <Repeat className="mr-2 h-4 w-4" /> Reorder
                   </Button>
-                  {(order.orderStatus.toLowerCase() === 'delivered') && (
-                    <Button variant="destructive" size="sm" className="flex-1" onClick={() => alert(`Initiating return for order ${order.id}... (placeholder)`)}>
-                      <RotateCcw className="mr-2 h-4 w-4" /> Initiate Return
+                  {canInitiateReturnForOrder(order.orderStatus) && (
+                    <Button variant="destructive" size="sm" className="flex-1" asChild>
+                      <Link href={`/profile/orders/${order.id}/initiate-return`}>
+                        <RotateCcw className="mr-2 h-4 w-4" /> Initiate Return
+                      </Link>
                     </Button>
                   )}
                 </div>
