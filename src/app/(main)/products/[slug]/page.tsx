@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { mockProducts, mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle, ChevronRight } from 'lucide-react';
+import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/accordion";
 import { useCart } from '@/hooks/useCart';
 import { useEffect, useState, use } from 'react';
-import { cn } from '@/lib/utils';
 
 async function getProductBySlug(slug: string): Promise<Product | undefined> {
   return mockProducts.find(p => p.slug === slug);
@@ -31,7 +30,6 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null); // Stores URL string
   const { addToCart } = useCart();
 
   useEffect(() => {
@@ -44,19 +42,10 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
       setLoading(true);
       const fetchedProduct = await getProductBySlug(slug);
       setProduct(fetchedProduct || null);
-      if (fetchedProduct && fetchedProduct.imageUrls && fetchedProduct.imageUrls.length > 0) {
-        setSelectedImageUrl(fetchedProduct.imageUrls[0].url);
-      } else {
-        setSelectedImageUrl('https://placehold.co/600x450.png'); // Default fallback
-      }
       setLoading(false);
     }
     loadProduct();
   }, [slug]);
-
-  // This useEffect was potentially problematic and has been removed.
-  // Initial selected image is set when product loads (above).
-  // Subsequent changes are handled by handleThumbnailClick.
 
   if (loading) {
     return (
@@ -86,21 +75,8 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
   const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
   const categoryName = mockCategories.find(c => c.id === product.category)?.name;
 
-  const handleThumbnailClick = (imageUrl: string) => {
-    setSelectedImageUrl(imageUrl);
-  };
-
-  const mainImageSrc = selectedImageUrl || 
-                       (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0].url : 'https://placehold.co/600x450.png');
-  
-  let mainImageDataAiHint = product.dataAiHint || 'product details main';
-  if (selectedImageUrl && product && product.imageUrls) {
-    const currentImageObject = product.imageUrls.find(img => img.url === selectedImageUrl);
-    if (currentImageObject && currentImageObject.dataAiHint) {
-      mainImageDataAiHint = currentImageObject.dataAiHint;
-    }
-  }
-
+  const mainImageSrc = product.imageUrl || 'https://placehold.co/600x450.png';
+  const mainImageDataAiHint = product.dataAiHint || 'product details main';
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -125,31 +101,7 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
               priority // Prioritize loading for LCP
             />
           </div>
-
-          {/* Thumbnails Display */}
-          {product.imageUrls && product.imageUrls.length > 1 && (
-            <div className="flex space-x-2 overflow-x-auto pb-2">
-              {product.imageUrls.map((imgObj, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleThumbnailClick(imgObj.url)}
-                  className={cn(
-                    "focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-md overflow-hidden border-2",
-                    selectedImageUrl === imgObj.url ? "border-primary" : "border-transparent hover:border-muted"
-                  )}
-                >
-                  <Image
-                    src={imgObj.url}
-                    alt={`${product.name} thumbnail ${index + 1}`}
-                    width={100}
-                    height={75}
-                    className="object-cover aspect-[4/3] w-24 h-[calc(0.75*6rem)] sm:w-28 sm:h-[calc(0.75*7rem)]"
-                    data-ai-hint={imgObj.dataAiHint || product.dataAiHint || `product thumbnail ${index + 1}`}
-                  />
-                </button>
-              ))}
-            </div>
-          )}
+          {/* Thumbnail display removed as product has single imageUrl now */}
         </div>
 
         <div className="space-y-6">
@@ -164,8 +116,8 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
                 <span className="text-sm text-muted-foreground">({product.reviewsCount || 0} reviews)</span>
               </div>
             )}
-             {product.reviewsCount && product.reviewsCount > 0 && <Separator orientation="vertical" className="h-5"/>}
-            {product.reviewsCount && product.reviewsCount > 0 && (
+             {(product.reviewsCount && product.reviewsCount > 0) && <Separator orientation="vertical" className="h-5"/>}
+            {(product.reviewsCount && product.reviewsCount > 0) && (
               <a href="#reviews" className="text-sm text-primary hover:underline flex items-center">
                 <MessageSquare className="mr-1 h-4 w-4"/> See Reviews
               </a>
@@ -176,10 +128,10 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
 
           <p className="text-muted-foreground text-base leading-relaxed">{product.description}</p>
 
-          {product.stock && product.stock > 0 ? (
+          {(product.inStock && product.stockCount > 0) ? (
             <div className="flex items-center space-x-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
-              <span>In Stock ({product.stock} available)</span>
+              <span>In Stock ({product.stockCount} available)</span>
             </div>
           ) : (
             <div className="flex items-center space-x-2 text-destructive">
@@ -189,7 +141,7 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
           )}
 
           <div className="flex items-center space-x-4">
-            {product.stock && product.stock > 0 ? (
+            {(product.inStock && product.stockCount > 0) ? (
               <Button size="lg" className="w-full md:w-auto flex-grow" onClick={handleAddToCart}>
                 <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
               </Button>
@@ -206,17 +158,27 @@ export default function ProductDetailPage({ params: paramsFromProps }: { params:
               <AccordionContent>
                 <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
                     <li>Category: {categoryName || 'N/A'}</li>
-                    <li>Weight/Volume: Approx. 500g / 1L (example)</li>
-                    <li>Origin: Local Farms (example)</li>
+                    <li>Weight/Volume: {product.weightVolume || 'N/A'}</li>
+                    <li>Origin: {product.origin || 'N/A'}</li>
                 </ul>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="item-2">
               <AccordionTrigger>Delivery Information</AccordionTrigger>
               <AccordionContent>
-                SpeedyShop Proto offers delivery in as fast as 10 minutes in select areas. Standard delivery times are 15-30 minutes. Check availability at checkout.
+                {product.deliveryInfo || 'Standard delivery times apply. Check availability at checkout.'}
               </AccordionContent>
             </AccordionItem>
+             {product.promoCodes && product.promoCodes.length > 0 && (
+              <AccordionItem value="item-3">
+                <AccordionTrigger>Applicable Promotions</AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
+                    {product.promoCodes.map(promo => <li key={promo}>{promo}</li>)}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            )}
           </Accordion>
         </div>
       </div>

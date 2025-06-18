@@ -20,7 +20,6 @@ export default function VerifyItemsPage() {
 
   useEffect(() => {
     if (cartItems.length === 0) {
-        // Redirect to cart page if cart is empty, cart page itself handles further redirection to products if needed
         router.push('/cart');
     }
   }, [cartItems, router]);
@@ -31,7 +30,6 @@ export default function VerifyItemsPage() {
         <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
         <h1 className="text-3xl font-semibold mb-4">Your Cart is Empty</h1>
         <p className="text-muted-foreground mb-8">Redirecting you to your cart...</p>
-        {/* Spinner or loading indicator could be added here */}
       </div>
     );
   }
@@ -55,11 +53,12 @@ export default function VerifyItemsPage() {
             </CardHeader>
             <CardContent className="px-1 space-y-4">
             {cartItems.map((item: CartItem) => {
-                const primaryImage = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : { url: 'https://placehold.co/60x60.png', dataAiHint: 'checkout item' };
+                const imageUrl = item.imageUrl || 'https://placehold.co/60x60.png';
+                const imageHint = item.dataAiHint || 'checkout item';
                 return (
                 <Card key={item.id} className="flex items-center p-3 gap-3 shadow-sm border">
                     <div className="relative w-16 h-16 rounded-md overflow-hidden shrink-0">
-                        <Image src={primaryImage.url} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={primaryImage.dataAiHint || item.dataAiHint || 'checkout item'} />
+                        <Image src={imageUrl} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={imageHint} />
                     </div>
                     <div className="flex-grow">
                     <h3 className="font-medium text-sm sm:text-base">{item.name}</h3>

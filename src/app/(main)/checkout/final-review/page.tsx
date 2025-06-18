@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import type { CartItem as CartItemType } from '@/lib/types';
+import type { CartItem as CartItemType } from '@/lib/types'; // Ensure CartItemType uses single imageUrl
 import { ChevronLeft, ShoppingBag, AlertCircle, Package, MapPin, CreditCard, Loader2, CheckCircle, Phone, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
@@ -25,7 +25,7 @@ interface AddressInfo {
 }
 interface FinalOrderData {
   address: AddressInfo;
-  method: string; // shipping method
+  method: string; 
   promoCode: { code: string; discountAmount: number; description: string } | null;
   summary: { subtotal: number; discount: number; deliveryCharge: number; gstAmount: number; handlingCharge: number; totalAmount: number };
   cartItems: CartItemType[];
@@ -54,17 +54,21 @@ export default function FinalReviewPage() {
         if (storedData) {
             try {
                 const parsedData = JSON.parse(storedData) as FinalOrderData;
-                setFinalOrderData({ ...parsedData, cartItems: contextCartItems });
+                // Ensure cartItems in parsedData use single imageUrl from Product type
+                const updatedCartItems = parsedData.cartItems.map(item => ({
+                    ...item,
+                    // imageUrl: item.imageUrl || (item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0].url : 'https://placehold.co/60x60.png')
+                    // No need to map imageUrls if CartItemType already reflects single imageUrl
+                }));
+                setFinalOrderData({ ...parsedData, cartItems: contextCartItems.length > 0 ? contextCartItems : updatedCartItems });
+
             } catch (e) {
                 console.error("Error parsing final order data from localStorage", e);
                 setPageError("Could not load order details. Please go back and try again.");
                 router.push('/checkout/payment-details');
             }
         } else if (contextCartItems.length > 0) {
-            // This case implies user might have cart items but no finalOrderData from previous steps
             setPageError("Order details are incomplete. Please proceed through checkout again.");
-             // Potentially redirect to an earlier checkout step if finalOrderData is crucial and missing
-            // router.push('/checkout/shipping-details'); 
         }
     }
   }, [contextCartItems, router]);
@@ -87,7 +91,6 @@ export default function FinalReviewPage() {
     setIsPlacingOrder(true);
     setPageError(null);
 
-    // Defensive construction of orderDataToSave
     const orderDataToSave = {
         userId: String(auth.currentUser.uid),
         name: String(finalOrderData.address?.name || "N/A"),
@@ -97,15 +100,15 @@ export default function FinalReviewPage() {
             city: String(finalOrderData.address?.city || ""),
             postalCode: String(finalOrderData.address?.postalCode || ""),
             country: String(finalOrderData.address?.country || ""),
-            name: String(finalOrderData.address?.name || "N/A"), // Included for consistency with FirestoreOrderAddress
-            phoneNumber: String(finalOrderData.address?.phoneNumber || "N/A"), // Included for consistency
+            name: String(finalOrderData.address?.name || "N/A"), 
+            phoneNumber: String(finalOrderData.address?.phoneNumber || "N/A"), 
         },
         items: (finalOrderData.cartItems || []).map(item => ({
             productId: String(item.id),
             name: String(item.name),
             quantity: Number(item.quantity) || 1,
             price: Number(item.price) || 0,
-            imageUrl: String(item.imageUrls?.[0]?.url || 'https://placehold.co/60x60.png')
+            imageUrl: String(item.imageUrl || 'https://placehold.co/60x60.png') // Uses single imageUrl
         })),
         total: Number(finalOrderData.summary?.totalAmount) || 0,
         orderStatus: 'Placed',
@@ -149,7 +152,7 @@ export default function FinalReviewPage() {
     }
   };
 
-  if (!finalOrderData && !pageError && contextCartItems.length > 0) { // Added contextCartItems.length > 0 to avoid flicker on initial load
+  if (!finalOrderData && !pageError && contextCartItems.length > 0) { 
     return (
       <div className="container mx-auto py-12 px-4 text-center">
         <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
@@ -158,7 +161,7 @@ export default function FinalReviewPage() {
     );
   }
   
-  if (pageError && !isPlacingOrder) { // Show error if pageError is set and not in the process of placing order
+  if (pageError && !isPlacingOrder) { 
      return (
       <div className="container mx-auto py-12 px-4 text-center">
         <AlertCircle className="mx-auto h-24 w-24 text-destructive mb-6" />
@@ -169,11 +172,7 @@ export default function FinalReviewPage() {
     );
   }
   
-  // Ensure finalOrderData is not null before trying to destructure or use its properties for rendering
   if (!finalOrderData) {
-     // This can happen if localStorage is empty and cart is also empty, leading to early return in useEffect
-     // Or if pageError was set and then cleared without finalOrderData being loaded.
-     // A more robust loading or error state might be needed if this path is hit unexpectedly.
      return (
       <div className="container mx-auto py-12 px-4 text-center">
         <AlertCircle className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
@@ -206,11 +205,12 @@ export default function FinalReviewPage() {
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Package className="mr-3 h-6 w-6 text-primary"/>Items in Your Order</h3>
                 <div className="space-y-3">
                 {displayCartItems.map((item: CartItemType) => {
-                    const primaryImage = item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0] : { url: 'https://placehold.co/60x60.png', dataAiHint: 'review item' };
+                    const imageUrl = item.imageUrl || 'https://placehold.co/60x60.png';
+                    const imageHint = item.dataAiHint || 'review item';
                     return (
                     <Card key={item.id} className="flex items-center p-3 gap-3 shadow-sm border">
                         <div className="relative w-16 h-16 rounded-md overflow-hidden shrink-0">
-                            <Image src={primaryImage.url} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={primaryImage.dataAiHint || item.dataAiHint || 'review item'} />
+                            <Image src={imageUrl} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={imageHint} />
                         </div>
                         <div className="flex-grow">
                         <h4 className="font-medium text-sm sm:text-base">{item.name}</h4>
@@ -303,4 +303,3 @@ export default function FinalReviewPage() {
     </div>
   );
 }
-    

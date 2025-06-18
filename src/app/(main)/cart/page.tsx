@@ -88,19 +88,18 @@ export default function CartPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           {cartItems.map((item) => {
-            const primaryImage = item.imageUrls && item.imageUrls.length > 0
-              ? item.imageUrls[0]
-              : { url: 'https://placehold.co/112x112.png', dataAiHint: 'product item' };
+            const imageUrl = item.imageUrl || 'https://placehold.co/112x112.png';
+            const imageHint = item.dataAiHint || 'product item';
             return (
               <Card key={item.id} className="flex flex-col sm:flex-row items-center p-4 gap-4 shadow-md">
                 <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-md overflow-hidden shrink-0">
                   <Image
-                    src={primaryImage.url}
+                    src={imageUrl}
                     alt={item.name}
                     fill
                     sizes="(max-width: 640px) 100vw, 25vw"
                     className="object-cover"
-                    data-ai-hint={primaryImage.dataAiHint || item.dataAiHint || 'product item'}
+                    data-ai-hint={imageHint}
                   />
                 </div>
                 <div className="flex-grow text-center sm:text-left">

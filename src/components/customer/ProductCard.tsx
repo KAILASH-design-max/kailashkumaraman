@@ -20,23 +20,22 @@ export function ProductCard({ product }: ProductCardProps) {
     addToCart(product, 1);
   };
 
-  const primaryImage = product.imageUrls && product.imageUrls.length > 0
-    ? product.imageUrls[0]
-    : { url: 'https://placehold.co/400x300.png', dataAiHint: 'product image' }; // Fallback image object
+  const imageUrl = product.imageUrl || 'https://placehold.co/400x300.png';
+  const imageHint = product.dataAiHint || 'product image';
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl flex flex-col h-full group">
       <Link href={`/products/${product.slug}`} aria-label={product.name} className="block">
         <CardHeader className="p-0 relative">
           <Image
-            src={primaryImage.url}
+            src={imageUrl}
             alt={product.name}
             width={400}
             height={300}
             className="aspect-[4/3] w-full object-cover group-hover:scale-105 transition-transform duration-300"
-            data-ai-hint={primaryImage.dataAiHint || product.dataAiHint || 'product image'}
+            data-ai-hint={imageHint}
           />
-           {product.stock === 0 && (
+           {(!product.inStock || product.stockCount === 0) && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="text-white font-semibold px-3 py-1 bg-destructive rounded">OUT OF STOCK</span>
             </div>
@@ -61,7 +60,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </CardContent>
       <CardFooter className="p-3 pt-0">
-        {product.stock && product.stock > 0 ? (
+        {(product.inStock && product.stockCount > 0) ? (
            <Button className="w-full" size="sm" onClick={handleAddToCart}>
              <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
            </Button>

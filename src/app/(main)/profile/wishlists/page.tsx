@@ -9,7 +9,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
 import { mockProducts } from '@/lib/mockData';
-import type { Product } from '@/lib/types';
+import type { Product } from '@/lib/types'; // Product type uses single imageUrl
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,7 +18,7 @@ interface WishlistItem {
   productId: string;
   name: string;
   price: number;
-  imageUrl: string;
+  imageUrl: string; // Already single imageUrl
   dataAiHint?: string;
 }
 
@@ -28,18 +28,29 @@ interface Wishlist {
   items: WishlistItem[];
 }
 
+// Helper to get a product's image URL, falling back if needed
+const getProductImageUrl = (productId: string): string => {
+  const product = mockProducts.find(p => p.id === productId);
+  return product?.imageUrl || 'https://placehold.co/60x60.png';
+};
+const getProductDataAiHint = (productId: string): string | undefined => {
+    const product = mockProducts.find(p => p.id === productId);
+    return product?.dataAiHint;
+}
+
+
 export default function WishlistsPage() {
   const [wishlists, setWishlists] = useState<Wishlist[]>([
     { 
       id: 'wl1', 
       name: 'Birthday Ideas 🎂', 
       items: [
-        { id: 'wli1', productId: mockProducts[5].id, name: mockProducts[5].name, price: mockProducts[5].price, imageUrl: mockProducts[5].imageUrls[0].url, dataAiHint: mockProducts[5].imageUrls[0].dataAiHint },
-        { id: 'wli2', productId: mockProducts[6].id, name: mockProducts[6].name, price: mockProducts[6].price, imageUrl: mockProducts[6].imageUrls[0].url, dataAiHint: mockProducts[6].imageUrls[0].dataAiHint },
+        { id: 'wli1', productId: mockProducts[5].id, name: mockProducts[5].name, price: mockProducts[5].price, imageUrl: getProductImageUrl(mockProducts[5].id), dataAiHint: getProductDataAiHint(mockProducts[5].id) },
+        { id: 'wli2', productId: mockProducts[6].id, name: mockProducts[6].name, price: mockProducts[6].price, imageUrl: getProductImageUrl(mockProducts[6].id), dataAiHint: getProductDataAiHint(mockProducts[6].id) },
       ] 
     },
     { id: 'wl2', name: 'Kitchen Essentials 🍳', items: [
-        { id: 'wli3', productId: mockProducts[7].id, name: mockProducts[7].name, price: mockProducts[7].price, imageUrl: mockProducts[7].imageUrls[0].url, dataAiHint: mockProducts[7].imageUrls[0].dataAiHint },
+        { id: 'wli3', productId: mockProducts[7].id, name: mockProducts[7].name, price: mockProducts[7].price, imageUrl: getProductImageUrl(mockProducts[7].id), dataAiHint: getProductDataAiHint(mockProducts[7].id) },
     ] },
   ]);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -58,7 +69,6 @@ export default function WishlistsPage() {
     setNewWishlistName('');
     setShowCreateForm(false);
     toast({ title: "Wishlist Created", description: `"${newWishlistName}" has been created.` });
-    // API call to create wishlist
   };
   
   const handleDeleteWishlist = (id: string) => {
@@ -67,13 +77,12 @@ export default function WishlistsPage() {
     if (wishlistToDelete) {
         toast({ title: "Wishlist Deleted", description: `"${wishlistToDelete.name}" has been deleted.`, variant: "destructive" });
     }
-    // API call to delete wishlist
   };
 
   const handleShareWishlist = (id: string) => {
     const wishlist = wishlists.find(wl => wl.id === id);
     if (wishlist) {
-        const shareUrl = `${window.location.origin}/wishlist/${id}`; // Example share URL
+        const shareUrl = `${window.location.origin}/wishlist/${id}`; 
         navigator.clipboard.writeText(shareUrl).then(() => {
             toast({ title: "Link Copied!", description: `Share link for "${wishlist.name}" copied to clipboard.` });
         }).catch(err => {
@@ -91,9 +100,8 @@ export default function WishlistsPage() {
 
     const productDetails = mockProducts.find(p => p.id === itemToMove.productId);
     if (productDetails) {
-      addToCart(productDetails, 1); // addToCart already shows a toast
-      // Remove item from wishlist
-      handleDeleteItemFromWishlist(wishlistId, itemId, false); // false to suppress individual delete toast
+      addToCart(productDetails, 1); 
+      handleDeleteItemFromWishlist(wishlistId, itemId, false); 
       toast({ title: "Moved to Cart", description: `"${itemToMove.name}" moved to your cart.`});
     } else {
       toast({ title: "Error", description: "Could not find product details to add to cart.", variant: "destructive"});
@@ -114,7 +122,6 @@ export default function WishlistsPage() {
     if (showToast && itemName) {
          toast({ title: "Item Removed", description: `"${itemName}" removed from wishlist.`, variant: "destructive" });
     }
-    // API call to remove item
   };
 
   return (
