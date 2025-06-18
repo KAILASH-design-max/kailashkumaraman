@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,11 +17,14 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 const supportFormSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   email: z.string().email({ message: 'Please enter a valid email address.' }),
-  phone: z.string().optional(),
+  phone: z.string().min(10, { message: 'Please enter a valid 10-digit phone number.' }).max(15, { message: 'Phone number too long.' }),
+  role: z.enum(['user', 'admin', 'deliveryBoy'], { required_error: "Please select your role."}),
   message: z.string().min(10, { message: 'Message must be at least 10 characters long.' }),
 });
 
@@ -30,35 +33,75 @@ type SupportFormValues = z.infer<typeof supportFormSchema>;
 export default function SupportPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      // Reset form with current user's details if they log in/out while on the page
+      form.reset({
+        name: user?.displayName || '',
+        email: user?.email || '',
+        phone: '', // Phone is not typically stored in auth.currentUser directly
+        role: 'user', // Default role
+        message: '',
+      });
+    });
+    return () => unsubscribe();
+  }, []);
+
+
   const form = useForm<SupportFormValues>({
     resolver: zodResolver(supportFormSchema),
     defaultValues: {
-      name: auth.currentUser?.displayName || '',
-      email: auth.currentUser?.email || '',
+      name: currentUser?.displayName || '',
+      email: currentUser?.email || '',
       phone: '',
+      role: 'user',
       message: '',
     },
   });
+  
+  // Effect to update form defaults when currentUser changes (e.g., after initial load)
+  useEffect(() => {
+    if (currentUser) {
+      form.reset({
+        name: currentUser.displayName || '',
+        email: currentUser.email || '',
+        phone: form.getValues('phone'), // Preserve phone if already entered
+        role: form.getValues('role') || 'user', // Preserve role or default
+        message: form.getValues('message'), // Preserve message
+      });
+    } else {
+       form.reset({ name: '', email: '', phone: '', role: 'user', message: '' });
+    }
+  }, [currentUser, form]);
+
 
   async function onSubmit(values: SupportFormValues) {
     setIsSubmitting(true);
     try {
       await addDoc(collection(db, 'supportMessages'), {
-        ...values,
-        userId: auth.currentUser?.uid || null, // Store userId if available
+        uid: currentUser?.uid || null,
+        name: values.name,
+        email: values.email,
+        phoneNumber: values.phone, // Matching Firestore field name
+        role: values.role,
+        message: values.message,
+        status: "open", // Default status
         createdAt: serverTimestamp(),
       });
       toast({
-        title: 'Message Sent!',
-        description: "Our support team will get back to you shortly.",
+        title: <div className="flex items-center"><CheckCircle className="mr-2 h-5 w-5 text-green-500" /> Your message has been sent to support.</div>,
+        description: "We'll get back to you shortly!",
         variant: 'default',
       });
-      form.reset({ // Reset form to initial/empty values or values from auth
-          name: auth.currentUser?.displayName || '',
-          email: auth.currentUser?.email || '',
-          phone: '',
-          message: '',
+      form.reset({
+        name: currentUser?.displayName || '',
+        email: currentUser?.email || '',
+        phone: '',
+        role: 'user',
+        message: '',
       });
     } catch (error) {
       console.error("Error sending support message:", error);
@@ -147,7 +190,7 @@ export default function SupportPage() {
                   render={({ field }) => (
                     <FormItem>
                       <Label htmlFor="name" className="font-medium">Your Name</Label>
-                      <Input id="name" placeholder="e.g., Kailash Kumar" {...field} className="text-base"/>
+                      <Input id="name" placeholder="e.g., Priya Sharma" {...field} className="text-base"/>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -158,7 +201,7 @@ export default function SupportPage() {
                   render={({ field }) => (
                     <FormItem>
                       <Label htmlFor="email" className="font-medium">Your Email</Label>
-                      <Input id="email" type="email" placeholder="e.g., kailash@example.com" {...field} className="text-base"/>
+                      <Input id="email" type="email" placeholder="e.g., priya@example.com" {...field} className="text-base"/>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -168,8 +211,30 @@ export default function SupportPage() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <Label htmlFor="phone" className="font-medium">Phone Number (Optional)</Label>
+                      <Label htmlFor="phone" className="font-medium">Phone Number</Label>
                       <Input id="phone" type="tel" placeholder="e.g., +91-9876543210" {...field} className="text-base"/>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label htmlFor="role" className="font-medium">Your Role</Label>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger id="role" className="text-base">
+                            <SelectValue placeholder="Select your role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="user">Customer / User</SelectItem>
+                          <SelectItem value="deliveryBoy">Delivery Partner</SelectItem>
+                          <SelectItem value="admin">Admin / Staff</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
