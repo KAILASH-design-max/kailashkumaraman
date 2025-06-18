@@ -191,11 +191,8 @@ Please use the link provided by Firebase to create this index. If the error pers
   };
 
   const canInitiateReturnForOrder = (orderStatus: string) => {
-    // Define which statuses allow for return initiation
-    // Example: only 'Delivered' orders or 'Shipped' within a certain timeframe
-    const allowedStatuses = ['Delivered', 'Shipped', 'Out for Delivery', 'Return Rejected']; // Added 'Return Rejected' if they can try again
-    return allowedStatuses.includes(orderStatus);
-    // You might add date checks here too, e.g., within 30 days of delivery
+    // Show "Initiate Return" button only if the order status is 'Delivered'.
+    return orderStatus === 'Delivered';
   };
 
 
