@@ -103,7 +103,7 @@ export default function CartPage() {
                   />
                 </div>
                 <div className="flex-grow text-center sm:text-left">
-                  <Link href={`/products/${item.slug}`} passHref>
+                  <Link href={`/products/${item.id}`} passHref>
                     <h2 className="text-lg font-semibold hover:text-primary transition-colors">{item.name}</h2>
                   </Link>
                   <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)} each</p>

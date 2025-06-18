@@ -20,10 +20,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { PromoCode } from '@/lib/types'; // Using the global PromoCode type
+import { mockPromoCodesData } from '@/lib/mockData'; // Using the new mock promo codes
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
 const DELIVERY_CHARGE_STANDARD = 50;
-const DELIVERY_CHARGE_EXPRESS_EXTRA = 50; // Extra cost for express shipping
+const DELIVERY_CHARGE_EXPRESS_EXTRA = 50; 
 const GST_RATE = 0.18;
 const HANDLING_CHARGE = 5;
 
@@ -32,18 +34,9 @@ const savedAddresses = [
   { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India', phoneNumber: '9876543211' },
 ];
 
-interface MockPromoCode {
-  code: string;
-  type: 'percentage' | 'fixed';
-  value: number;
-  description: string;
-}
+// Using the new mockPromoCodesData aligned with the global PromoCode type
+const availablePromoCodes: PromoCode[] = mockPromoCodesData.filter(pc => pc.isActive && new Date(pc.expiresAt) > new Date());
 
-const mockPromoCodes: MockPromoCode[] = [
-  { code: 'SAVE10', type: 'percentage', value: 0.10, description: '10% off your order' },
-  { code: 'FLAT50', type: 'fixed', value: 50, description: 'Flat ₹50 off' },
-  { code: 'FREEDEL', type: 'fixed', value: DELIVERY_CHARGE_STANDARD, description: `Free Delivery (up to ₹${DELIVERY_CHARGE_STANDARD})` },
-];
 
 export default function ShippingDetailsPage() {
   const { cartItems, getCartTotal } = useCart();
@@ -52,7 +45,7 @@ export default function ShippingDetailsPage() {
   const [shippingOption, setShippingOption] = useState('saved');
   const [selectedAddressId, setSelectedAddressId] = useState(savedAddresses[0]?.id || '');
   const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
-  const [shippingMethod, setShippingMethod] = useState('standard'); // 'standard', 'express', 'pickup'
+  const [shippingMethod, setShippingMethod] = useState('standard'); 
 
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedPromoCode, setAppliedPromoCode] = useState<{ code: string; discountAmount: number; description: string } | null>(null);
@@ -71,35 +64,23 @@ export default function ShippingDetailsPage() {
     return appliedPromoCode.discountAmount;
   }, [appliedPromoCode]);
   
-  // This is the subtotal after discount, useful for some checks but not for GST base.
-  // const discountedSubtotal = subtotal - calculatedDiscount;
-
   const deliveryCharge = useMemo(() => {
     if (shippingMethod === 'pickup' || subtotal <= 0) return 0;
-
-    // Calculate base delivery charge on original subtotal
     let baseDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
-    
-    // Apply FREEDEL promo if applicable
     if (appliedPromoCode?.code === 'FREEDEL' && baseDeliveryCharge > 0) {
         baseDeliveryCharge = Math.max(0, baseDeliveryCharge - appliedPromoCode.discountAmount);
     }
-
     if (shippingMethod === 'express') {
       return baseDeliveryCharge + DELIVERY_CHARGE_EXPRESS_EXTRA;
     }
     return baseDeliveryCharge;
-  }, [subtotal, shippingMethod, appliedPromoCode]); // Depends on original subtotal
+  }, [subtotal, shippingMethod, appliedPromoCode]);
   
-  // GST is calculated on the original subtotal
-  const gstAmount = useMemo(() => {
-    return subtotal > 0 ? subtotal * GST_RATE : 0;
-  }, [subtotal]);
+  const gstAmount = useMemo(() => subtotal > 0 ? subtotal * GST_RATE : 0, [subtotal]);
   
-  // Total amount calculation
   const totalAmount = useMemo(() => {
     const preliminaryTotal = subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE - calculatedDiscount;
-    return Math.max(0, preliminaryTotal); // Ensure total doesn't go below 0
+    return Math.max(0, preliminaryTotal);
   }, [subtotal, gstAmount, deliveryCharge, HANDLING_CHARGE, calculatedDiscount]);
 
 
@@ -109,34 +90,39 @@ export default function ShippingDetailsPage() {
       setAppliedPromoCode(null);
       return;
     }
-    const codeToApply = mockPromoCodes.find(pc => pc.code.toUpperCase() === promoCodeInput.trim().toUpperCase());
+    const codeToApply = availablePromoCodes.find(pc => pc.code.toUpperCase() === promoCodeInput.trim().toUpperCase());
 
     if (codeToApply) {
+      if (codeToApply.minOrderValue && subtotal < codeToApply.minOrderValue) {
+        setPromoMessage({ type: 'error', text: `Order subtotal must be at least ₹${codeToApply.minOrderValue} to use ${codeToApply.code}.`});
+        setAppliedPromoCode(null);
+        return;
+      }
+
       let discount = 0;
-      // Standard delivery charge calculated based on original subtotal for FREEDEL comparison
       const currentStandardDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
 
-      if (codeToApply.type === 'percentage') {
-        discount = subtotal * codeToApply.value;
-      } else if (codeToApply.type === 'fixed') {
+      if (codeToApply.discountType === 'percentage') {
+        discount = subtotal * (codeToApply.discountValue / 100);
+      } else if (codeToApply.discountType === 'fixed') {
         if (codeToApply.code === 'FREEDEL') {
-            discount = Math.min(codeToApply.value, currentStandardDeliveryCharge);
+            discount = Math.min(codeToApply.discountValue, currentStandardDeliveryCharge);
         } else {
-            discount = codeToApply.value;
+            discount = codeToApply.discountValue;
         }
       }
       
-      discount = Math.min(discount, subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE); // Discount cannot make total negative in practical terms for this logic, this caps it against the sum *before* discount
+      discount = Math.min(discount, subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE); 
 
       if (discount <= 0 && !(codeToApply.code === 'FREEDEL' && currentStandardDeliveryCharge > 0) ) {
          setPromoMessage({ type: 'info', text: `Promo code "${codeToApply.code}" cannot be applied or provides no discount for your current cart.` });
          setAppliedPromoCode(null);
       } else {
-        setAppliedPromoCode({ code: codeToApply.code, discountAmount: discount, description: codeToApply.description });
+        setAppliedPromoCode({ code: codeToApply.code, discountAmount: discount, description: codeToApply.description || 'Discount applied' });
         setPromoMessage({ type: 'success', text: `Promo code "${codeToApply.code}" applied! You saved ₹${discount.toFixed(2)}.` });
       }
     } else {
-      setPromoMessage({ type: 'error', text: 'Invalid promo code. Please try again.' });
+      setPromoMessage({ type: 'error', text: 'Invalid or expired promo code. Please try again.' });
       setAppliedPromoCode(null);
     }
   };
@@ -166,7 +152,7 @@ export default function ShippingDetailsPage() {
     }
 
     const shippingInfo = {
-        address: currentAddress, // This will now have phoneNumber
+        address: currentAddress, 
         method: shippingMethod,
         promoCode: appliedPromoCode,
         summary: { 
@@ -174,14 +160,13 @@ export default function ShippingDetailsPage() {
             discount: calculatedDiscount, 
             deliveryCharge, 
             gstAmount, 
-            handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0, // Only apply handling if subtotal > 0
+            handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0,
             totalAmount 
         }
     };
     if (typeof window !== 'undefined') {
         localStorage.setItem('checkoutShippingInfo', JSON.stringify(shippingInfo));
     }
-    console.log("Proceeding to payment with shipping:", shippingInfo);
     router.push('/checkout/payment-details');
   };
 
@@ -270,15 +255,15 @@ export default function ShippingDetailsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {mockPromoCodes.map((promo) => (
+                      {availablePromoCodes.map((promo) => (
                         <DropdownMenuItem
-                          key={promo.code}
+                          key={promo.id}
                           onClick={() => {
                             setPromoCodeInput(promo.code);
                             setPromoMessage(null); 
                           }}
                         >
-                          {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description}</span>
+                          {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description || `${promo.discountValue}${promo.discountType === 'percentage' ? '%' : '₹'} off`}</span>
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
@@ -335,4 +320,3 @@ export default function ShippingDetailsPage() {
     </div>
   );
 }
-

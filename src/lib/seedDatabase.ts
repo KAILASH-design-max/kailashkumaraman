@@ -1,15 +1,14 @@
+
 // src/lib/seedDatabase.ts
 import { db } from './firebase';
 import { mockProducts } from './mockData';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore'; // Added Timestamp
 import type { Product } from './types';
 
 /**
  * Seeds the Firestore 'products' collection with data from mockProducts.
- * This script will upload all product details, including imageUrl and price.
- * It uses the `createdAt` ISO string from mockData, which Firestore converts to a Timestamp.
- * If a truly server-generated timestamp is needed for the seed itself,
- * you would replace `product.createdAt` with `serverTimestamp()` for that specific field.
+ * It aligns with the new schema including 'stock', 'status', and 'weight'.
+ * It converts the 'createdAt' ISO string from mockData to a Firestore Timestamp.
  */
 export async function seedProducts() {
   console.log('Starting to seed products to Firestore...');
@@ -17,20 +16,44 @@ export async function seedProducts() {
   let successCount = 0;
   let errorCount = 0;
 
-  for (const product of mockProducts) {
+  for (const mockProduct of mockProducts) {
     try {
-      // The `id` field from mockProducts is not needed as Firestore auto-generates document IDs.
-      // We create a new object without the 'id' property.
-      const { id, ...productData } = product;
+      // The `id` field from mockProducts is used for client-side keying but
+      // Firestore will auto-generate its own document IDs.
+      // We destructure to exclude `id` and potentially other client-only fields if any.
+      const { id, dataAiHint, ...productDataToSeed } = mockProduct;
 
-      // The product.createdAt from mockData is already an ISO string.
-      // Firestore can automatically convert valid ISO 8601 date strings to Timestamp objects.
-      await addDoc(productsCollection, productData);
+      // Prepare the data ensuring `createdAt` is a Firestore Timestamp
+      const finalProductData: Omit<Product, 'id' | 'dataAiHint'> & { createdAt: Timestamp } = {
+        ...productDataToSeed,
+        createdAt: Timestamp.fromDate(new Date(productDataToSeed.createdAt)), // Convert ISO string to Timestamp
+      };
+      
+      // Ensure all fields from Product type (matching schema) are present
+      // and undefined optional fields are handled correctly by Firestore.
+      const dataForFirestore = {
+        name: finalProductData.name,
+        category: finalProductData.category,
+        description: finalProductData.description,
+        price: finalProductData.price,
+        imageUrl: finalProductData.imageUrl,
+        rating: finalProductData.rating,
+        reviewsCount: finalProductData.reviewsCount,
+        stock: finalProductData.stock,
+        weight: finalProductData.weight,
+        status: finalProductData.status,
+        origin: finalProductData.origin,
+        createdAt: finalProductData.createdAt,
+        // Explicitly set optional fields to null if undefined, or omit them.
+        // Firestore handles omitted fields fine.
+      };
+
+      await addDoc(productsCollection, dataForFirestore);
       successCount++;
-      console.log(`Successfully added product: ${product.name}`);
+      console.log(`Successfully added product: ${mockProduct.name}`);
     } catch (e) {
       errorCount++;
-      console.error(`Error adding product ${product.name}: `, e);
+      console.error(`Error adding product ${mockProduct.name}: `, e);
     }
   }
 
@@ -43,20 +66,16 @@ export async function seedProducts() {
 
 // Example of how to potentially run this script (e.g., using a tool like tsx):
 // npx tsx src/lib/seedDatabase.ts
-// To make it directly runnable, you might uncomment the following:
 /*
 if (typeof require !== 'undefined' && require.main === module) {
   seedProducts()
     .then(() => {
       console.log('Database seeding script completed successfully.');
-      // process.exit(0); // Typically needed for standalone scripts
+      process.exit(0); // Typically needed for standalone scripts
     })
     .catch((error) => {
       console.error('Database seeding script failed:', error);
-      // process.exit(1); // Typically needed for standalone scripts
+      process.exit(1); // Typically needed for standalone scripts
     });
 }
 */
-
-// Note: For a Next.js app, you might integrate this into an API route
-// or run it as a separate script during your deployment or setup process.

@@ -1,28 +1,27 @@
 
 export interface Product {
-  id: string;
-  slug: string;
+  id: string; // Document ID from Firestore
   name: string;
   description: string;
   price: number;
-  category: string; // Matches schema's string type; consider ID ref for more complex scenarios
-  imageUrl: string; // Changed from imageUrls array
+  category: string; // Category name or ID (string as per schema)
+  imageUrl: string;
   rating?: number;
   reviewsCount?: number;
-  inStock: boolean; // Added
-  stockCount: number; // Added, replaces optional stock
-  weightVolume?: string; // Added
-  origin?: string; // Added
-  deliveryInfo?: string; // Added
-  promoCodes?: string[]; // Added
-  createdAt: string; // Added (ISO string for client-side representation)
-  dataAiHint?: string; // Optional: Retained for general product hint if needed, though not in schema
+  stock: number; // Replaces inStock and stockCount
+  weight?: string; // Replaces weightVolume
+  status?: string; // e.g., "In Stock", "Out of Stock"
+  origin?: string;
+  // deliveryInfo?: string; // Removed as not in new schema
+  // promoCodes?: string[]; // Removed, handled by separate collection
+  createdAt: string; // ISO string for client-side, Firestore converts to Timestamp
+  dataAiHint?: string;
 }
 
 export interface Category {
   id: string;
-  slug: string;
-  name:string;
+  slug: string; // Retained for category filtering URLs
+  name: string;
   imageUrl: string;
   dataAiHint?: string;
 }
@@ -57,7 +56,7 @@ export type OrderStatus =
   | 'Cancelled'
   | 'Failed'
   | 'Placed'
-  | 'Return Requested' // Added for return flow
+  | 'Return Requested'
   | 'Return Approved'
   | 'Refunded';
 
@@ -103,13 +102,24 @@ export interface DeliveryPartner {
 }
 
 export interface Review {
-  id: string;
-  orderId: string;
-  productId?: string;
-  deliveryExperienceRating?: number;
-  productRating?: number; // Matches 'rating' in schema
-  reviewText?: string; // Matches 'reviewText' in schema
+  id: string; // Document ID from Firestore
   userId: string;
   userName: string;
-  date: string; // Matches 'createdAt' (as ISO string) in schema
+  rating: number;
+  comment?: string; // Changed from reviewText
+  reviewedAt: string; // Changed from date/createdAt (ISO string)
+  // orderId?: string; // Optional if reviews are only subcollection of product
+  // productId?: string; // Implicit from subcollection path
+}
+
+export interface PromoCode {
+  id: string; // Document ID from Firestore (e.g., "SAVE20")
+  code: string;
+  discountType: 'percentage' | 'fixed';
+  discountValue: number;
+  minOrderValue?: number;
+  expiresAt: string; // ISO string
+  isActive: boolean;
+  appliesTo?: Array<string>; // Array of product IDs or category IDs/slugs
+  description?: string; // Added for better display
 }

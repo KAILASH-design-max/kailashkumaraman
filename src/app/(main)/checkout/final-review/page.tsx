@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import type { CartItem as CartItemType } from '@/lib/types'; // Ensure CartItemType uses single imageUrl
+import type { CartItem as CartItemType } from '@/lib/types';
 import { ChevronLeft, ShoppingBag, AlertCircle, Package, MapPin, CreditCard, Loader2, CheckCircle, Phone, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
@@ -54,13 +54,7 @@ export default function FinalReviewPage() {
         if (storedData) {
             try {
                 const parsedData = JSON.parse(storedData) as FinalOrderData;
-                // Ensure cartItems in parsedData use single imageUrl from Product type
-                const updatedCartItems = parsedData.cartItems.map(item => ({
-                    ...item,
-                    // imageUrl: item.imageUrl || (item.imageUrls && item.imageUrls.length > 0 ? item.imageUrls[0].url : 'https://placehold.co/60x60.png')
-                    // No need to map imageUrls if CartItemType already reflects single imageUrl
-                }));
-                setFinalOrderData({ ...parsedData, cartItems: contextCartItems.length > 0 ? contextCartItems : updatedCartItems });
+                setFinalOrderData({ ...parsedData, cartItems: contextCartItems.length > 0 ? contextCartItems : parsedData.cartItems });
 
             } catch (e) {
                 console.error("Error parsing final order data from localStorage", e);
@@ -108,7 +102,7 @@ export default function FinalReviewPage() {
             name: String(item.name),
             quantity: Number(item.quantity) || 1,
             price: Number(item.price) || 0,
-            imageUrl: String(item.imageUrl || 'https://placehold.co/60x60.png') // Uses single imageUrl
+            imageUrl: String(item.imageUrl || 'https://placehold.co/60x60.png')
         })),
         total: Number(finalOrderData.summary?.totalAmount) || 0,
         orderStatus: 'Placed',

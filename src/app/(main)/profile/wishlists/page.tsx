@@ -9,16 +9,16 @@ import Link from 'next/link';
 import { useState } from 'react';
 import Image from 'next/image';
 import { mockProducts } from '@/lib/mockData';
-import type { Product } from '@/lib/types'; // Product type uses single imageUrl
+import type { Product } from '@/lib/types';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 
 interface WishlistItem {
-  id: string;
-  productId: string;
+  id: string; // Wishlist Item ID
+  productId: string; // Product ID from mockProducts
   name: string;
   price: number;
-  imageUrl: string; // Already single imageUrl
+  imageUrl: string;
   dataAiHint?: string;
 }
 
@@ -28,15 +28,9 @@ interface Wishlist {
   items: WishlistItem[];
 }
 
-// Helper to get a product's image URL, falling back if needed
-const getProductImageUrl = (productId: string): string => {
-  const product = mockProducts.find(p => p.id === productId);
-  return product?.imageUrl || 'https://placehold.co/60x60.png';
+const getProductDetails = (productId: string): Product | undefined => {
+  return mockProducts.find(p => p.id === productId);
 };
-const getProductDataAiHint = (productId: string): string | undefined => {
-    const product = mockProducts.find(p => p.id === productId);
-    return product?.dataAiHint;
-}
 
 
 export default function WishlistsPage() {
@@ -45,12 +39,12 @@ export default function WishlistsPage() {
       id: 'wl1', 
       name: 'Birthday Ideas 🎂', 
       items: [
-        { id: 'wli1', productId: mockProducts[5].id, name: mockProducts[5].name, price: mockProducts[5].price, imageUrl: getProductImageUrl(mockProducts[5].id), dataAiHint: getProductDataAiHint(mockProducts[5].id) },
-        { id: 'wli2', productId: mockProducts[6].id, name: mockProducts[6].name, price: mockProducts[6].price, imageUrl: getProductImageUrl(mockProducts[6].id), dataAiHint: getProductDataAiHint(mockProducts[6].id) },
+        { id: 'wli1', productId: mockProducts[5].id, name: mockProducts[5].name, price: mockProducts[5].price, imageUrl: mockProducts[5].imageUrl, dataAiHint: mockProducts[5].dataAiHint },
+        { id: 'wli2', productId: mockProducts[6].id, name: mockProducts[6].name, price: mockProducts[6].price, imageUrl: mockProducts[6].imageUrl, dataAiHint: mockProducts[6].dataAiHint },
       ] 
     },
     { id: 'wl2', name: 'Kitchen Essentials 🍳', items: [
-        { id: 'wli3', productId: mockProducts[7].id, name: mockProducts[7].name, price: mockProducts[7].price, imageUrl: getProductImageUrl(mockProducts[7].id), dataAiHint: getProductDataAiHint(mockProducts[7].id) },
+        { id: 'wli3', productId: mockProducts[7].id, name: mockProducts[7].name, price: mockProducts[7].price, imageUrl: mockProducts[7].imageUrl, dataAiHint: mockProducts[7].dataAiHint },
     ] },
   ]);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -98,7 +92,7 @@ export default function WishlistsPage() {
     const itemToMove = wishlist.items.find(item => item.id === itemId);
     if (!itemToMove) return;
 
-    const productDetails = mockProducts.find(p => p.id === itemToMove.productId);
+    const productDetails = getProductDetails(itemToMove.productId);
     if (productDetails) {
       addToCart(productDetails, 1); 
       handleDeleteItemFromWishlist(wishlistId, itemId, false); 
@@ -203,9 +197,9 @@ export default function WishlistsPage() {
                     {wishlist.items.map(item => (
                       <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg shadow-sm bg-secondary/30 hover:shadow-md transition-shadow">
                         <div className="flex items-center gap-4">
-                          <Image src={item.imageUrl} alt={item.name} width={50} height={50} className="rounded-md object-cover aspect-square border" data-ai-hint={item.dataAiHint || 'wishlist item'} />
+                          <Image src={item.imageUrl || 'https://placehold.co/60x60.png'} alt={item.name} width={50} height={50} className="rounded-md object-cover aspect-square border" data-ai-hint={item.dataAiHint || 'wishlist item'} />
                           <div>
-                            <Link href={`/products/${mockProducts.find(p => p.id === item.productId)?.slug || ''}`} passHref>
+                            <Link href={`/products/${item.productId}`} passHref>
                                 <p className="font-medium text-base hover:text-primary transition-colors">{item.name}</p>
                             </Link>
                             <p className="text-sm text-primary font-semibold">₹{item.price.toFixed(2)}</p>

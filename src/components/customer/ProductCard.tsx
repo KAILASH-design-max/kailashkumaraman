@@ -22,10 +22,11 @@ export function ProductCard({ product }: ProductCardProps) {
 
   const imageUrl = product.imageUrl || 'https://placehold.co/400x300.png';
   const imageHint = product.dataAiHint || 'product image';
+  const isAvailable = product.status === 'In Stock' && product.stock > 0;
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl flex flex-col h-full group">
-      <Link href={`/products/${product.slug}`} aria-label={product.name} className="block">
+      <Link href={`/products/${product.id}`} aria-label={product.name} className="block">
         <CardHeader className="p-0 relative">
           <Image
             src={imageUrl}
@@ -35,15 +36,15 @@ export function ProductCard({ product }: ProductCardProps) {
             className="aspect-[4/3] w-full object-cover group-hover:scale-105 transition-transform duration-300"
             data-ai-hint={imageHint}
           />
-           {(!product.inStock || product.stockCount === 0) && (
+           {!isAvailable && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="text-white font-semibold px-3 py-1 bg-destructive rounded">OUT OF STOCK</span>
+              <span className="text-white font-semibold px-3 py-1 bg-destructive rounded">{product.status || 'OUT OF STOCK'}</span>
             </div>
           )}
         </CardHeader>
       </Link>
       <CardContent className="p-3 space-y-1.5 flex-grow">
-        <Link href={`/products/${product.slug}`} className="block">
+        <Link href={`/products/${product.id}`} className="block">
           <CardTitle className="text-base font-semibold group-hover:text-primary transition-colors line-clamp-2 h-[2.8em]">
             {product.name}
           </CardTitle>
@@ -60,12 +61,12 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
       </CardContent>
       <CardFooter className="p-3 pt-0">
-        {(product.inStock && product.stockCount > 0) ? (
+        {isAvailable ? (
            <Button className="w-full" size="sm" onClick={handleAddToCart}>
              <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
            </Button>
         ) : (
-          <Button className="w-full" size="sm" disabled variant="outline">Out of Stock</Button>
+          <Button className="w-full" size="sm" disabled variant="outline">{product.status || 'Out of Stock'}</Button>
         )}
       </CardFooter>
     </Card>
