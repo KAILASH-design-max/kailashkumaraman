@@ -191,8 +191,8 @@ Please use the link provided by Firebase to create this index. If the error pers
   };
 
   const canInitiateReturnForOrder = (orderStatus: string) => {
-    // Show "Initiate Return" button only if the order status is 'Delivered'.
-    return orderStatus === 'Delivered';
+    // Show "Initiate Return" button only if the order status is 'Delivered' (case-insensitive).
+    return orderStatus.toLowerCase() === 'delivered';
   };
 
 
