@@ -9,13 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ChevronLeft, MapPin, Package, Clock, Truck, Navigation, Home, Route, HelpCircle, Phone, AlertTriangle, Info, UserCheck } from 'lucide-react';
-import { mockDeliveryPartners } from '@/lib/mockData'; 
-import type { Order as OrderType, DeliveryPartner as DeliveryPartnerType, OrderStatus, OrderItem as OrderItemType, OrderAddress } from '@/lib/types'; 
+// mockDeliveryPartners is no longer needed
+import type { Order as OrderType, OrderStatus, OrderItem as OrderItemType, OrderAddress } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { db } from '@/lib/firebase';
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, Timestamp, collection, query, where, limit, getDocs } from 'firebase/firestore';
 
 const getOrderStatusSteps = (status: string) => {
   const steps = [
@@ -32,15 +32,20 @@ const getOrderStatusSteps = (status: string) => {
   if (statusLower.includes('delivered')) completedIndex = 4;
   else if (statusLower.includes('out for delivery') || statusLower.includes('shipped')) completedIndex = 3;
   else if (statusLower.includes('processing')) completedIndex = 2;
-  else if (statusLower.includes('confirmed')) completedIndex = 1; 
+  else if (statusLower.includes('confirmed')) completedIndex = 1;
   else if (statusLower.includes('placed')) completedIndex = 0;
 
   return steps.map((step, index) => ({
     ...step,
     completed: index <= completedIndex,
-    current: index === completedIndex && completedIndex !==4 
+    current: index === completedIndex && completedIndex !==4
   }));
 };
+
+interface AssignedDeliveryPartner {
+  name: string;
+  phoneNumber: string;
+}
 
 export default function TrackOrderPage() {
   const params = useParams();
@@ -48,37 +53,33 @@ export default function TrackOrderPage() {
   const orderIdParam = params.orderId as string;
 
   const [order, setOrder] = useState<OrderType | null>(null);
-  const [deliveryPartner, setDeliveryPartner] = useState<DeliveryPartnerType | null>(null);
-  const [eta, setEta] = useState<number | null>(null); 
-  const [distance, setDistance] = useState<number | null>(null); 
+  const [assignedDeliveryPartner, setAssignedDeliveryPartner] = useState<AssignedDeliveryPartner | null>(null);
+  const [eta, setEta] = useState<number | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchOrder() {
-      console.log("TrackOrderPage: Attempting to fetch order with ID:", orderIdParam);
-      setIsLoading(true);
-      setOrder(null); 
-      setDeliveryPartner(null);
-      if (orderIdParam) {
-        setPageError(null); 
-      }
-
+    async function fetchData() {
       if (!orderIdParam) {
-        console.error("TrackOrderPage: fetchOrder called with no orderIdParam.");
         setPageError("Order ID is missing in the URL.");
         setIsLoading(false);
         return;
       }
 
+      setIsLoading(true);
+      setOrder(null);
+      setAssignedDeliveryPartner(null);
+      setPageError(null);
+
       try {
+        // Fetch Order
         const orderRef = doc(db, "orders", orderIdParam);
         const orderSnap = await getDoc(orderRef);
 
         if (orderSnap.exists()) {
           const data = orderSnap.data();
-          // Basic validation for critical fields before attempting to create fetchedOrder
-          if (!data.userId || !data.items || typeof data.totalAmount !== 'number' && typeof data.total !== 'number' || !data.orderStatus || !data.address || !data.orderDate) {
+          if (!data.userId || !data.items || (typeof data.totalAmount !== 'number' && typeof data.total !== 'number') || !data.orderStatus || !data.address || !data.orderDate) {
             console.error("TrackOrderPage: Order data from Firestore is malformed for ID:", orderIdParam, data);
             setPageError("Order data is incomplete or malformed. Please contact support.");
             setOrder(null);
@@ -92,6 +93,7 @@ export default function TrackOrderPage() {
               deliveryAddress: data.address as OrderAddress,
               orderDate: (data.orderDate as Timestamp).toDate().toISOString(),
               estimatedDeliveryTime: data.estimatedDeliveryTime ? ((data.estimatedDeliveryTime as Timestamp).toDate().toISOString()) : undefined,
+              // deliveryPartnerId is still on the order, but not used for mock lookup anymore
               deliveryPartnerId: data.deliveryPartnerId,
               name: data.name,
               phoneNumber: data.phoneNumber,
@@ -106,53 +108,68 @@ export default function TrackOrderPage() {
             setOrder(fetchedOrder);
             console.log("TrackOrderPage: Order fetched successfully:", fetchedOrder);
 
-            if (fetchedOrder.deliveryPartnerId) {
-              const partner = mockDeliveryPartners.find(dp => dp.id === fetchedOrder.deliveryPartnerId);
-              setDeliveryPartner(partner || null);
-              if (!partner) console.warn(`Delivery partner with ID ${fetchedOrder.deliveryPartnerId} not found in mock data.`);
-            } else {
-              setDeliveryPartner(null); 
-            }
-
+            // Calculate ETA/Distance based on fetched order
             const orderDateObj = new Date(fetchedOrder.orderDate);
-            const estimatedDelivery = fetchedOrder.estimatedDeliveryTime ? new Date(fetchedOrder.estimatedDeliveryTime) : new Date(orderDateObj.getTime() + 30 * 60000); 
+            const estimatedDelivery = fetchedOrder.estimatedDeliveryTime ? new Date(fetchedOrder.estimatedDeliveryTime) : new Date(orderDateObj.getTime() + 30 * 60000);
             const now = new Date();
             const remainingMinutes = Math.max(0, Math.round((estimatedDelivery.getTime() - now.getTime()) / 60000));
-            
+
             if (fetchedOrder.status.toLowerCase() === 'delivered') {
                 setEta(0); setDistance(0);
             } else if (['cancelled', 'failed'].includes(fetchedOrder.status.toLowerCase())) {
                 setEta(0); setDistance(0);
             } else if (remainingMinutes > 0) {
                 setEta(remainingMinutes);
-                setDistance(parseFloat(Math.max(0.1, remainingMinutes * 0.35).toFixed(1))); 
-            } else { 
-                setEta(fetchedOrder.status.toLowerCase().includes('out for delivery') ? 5 : 10); 
+                setDistance(parseFloat(Math.max(0.1, remainingMinutes * 0.35).toFixed(1)));
+            } else {
+                setEta(fetchedOrder.status.toLowerCase().includes('out for delivery') ? 5 : 10);
                 setDistance(fetchedOrder.status.toLowerCase().includes('out for delivery') ? 1.5 : 3.0);
+            }
+
+            // Fetch an available delivery partner (replaces mock logic)
+            // This part is independent of a deliveryPartnerId on the order for now, as per prompt.
+            try {
+                const usersRef = collection(db, "users");
+                const q = query(usersRef,
+                    where("role", "==", "deliveryBoy"),
+                    where("availabilityStatus", "==", "online"),
+                    limit(1)
+                );
+                const partnerQuerySnapshot = await getDocs(q);
+                if (!partnerQuerySnapshot.empty) {
+                    const partnerDoc = partnerQuerySnapshot.docs[0].data();
+                    setAssignedDeliveryPartner({
+                        name: partnerDoc.name || "N/A",
+                        phoneNumber: partnerDoc.phoneNumber || "N/A"
+                    });
+                } else {
+                    setAssignedDeliveryPartner(null); // No online partner found
+                }
+            } catch (partnerError: any) {
+                console.error("Error fetching delivery partner:", partnerError);
+                setAssignedDeliveryPartner(null); // Treat as no partner found on error
             }
           }
         } else {
           console.warn(`Order with ID ${orderIdParam} not found in Firestore.`);
           setOrder(null);
-          setDeliveryPartner(null);
           setPageError(`Order with ID ${orderIdParam} not found.`);
         }
       } catch (error: any) {
-        console.error("Error fetching order from Firestore:", error);
+        console.error("Error fetching order data:", error);
         setPageError(`Failed to fetch order details: ${error.message || "Please try again."}`);
         setOrder(null);
-        setDeliveryPartner(null);
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchOrder();
+    fetchData();
   }, [orderIdParam]);
 
   useEffect(() => {
     if (!order || ['delivered', 'cancelled', 'failed'].includes(order.status.toLowerCase()) || isLoading || eta === 0) {
-      return; 
+      return;
     }
     const simulationInterval = setInterval(() => {
       setEta(prevEta => {
@@ -163,7 +180,7 @@ export default function TrackOrderPage() {
         return newEta;
       });
       setDistance(prevDistance => parseFloat(Math.max(0, (prevDistance || 1) - 0.35).toFixed(1)));
-    }, 5000); 
+    }, 5000);
     return () => clearInterval(simulationInterval);
   }, [order, isLoading, eta]);
 
@@ -172,13 +189,13 @@ export default function TrackOrderPage() {
   const renderMap = () => {
     return (
       <div style={{ width: '100%', height: '450px', borderRadius: '0.5rem', overflow: 'hidden' }}>
-        <iframe 
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d57302.63291536073!2d85.86197830599366!3d26.15062508977816!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39edb835434acdb1%3A0x70ec31d04822699e!2sDarbhanga%2C%20Bihar!5e0!3m2!1sen!2sin!4v1749675032868!5m2!1sen!2sin" 
-          width="100%" 
-          height="100%" 
-          style={{ border:0 }} 
-          allowFullScreen={true} 
-          loading="lazy" 
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d57302.63291536073!2d85.86197830599366!3d26.15062508977816!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39edb835434acdb1%3A0x70ec31d04822699e!2sDarbhanga%2C%20Bihar!5e0!3m2!1sen!2sin!4v1749675032868!5m2!1sen!2sin"
+          width="100%"
+          height="100%"
+          style={{ border:0 }}
+          allowFullScreen={true}
+          loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
           title="Delivery Map (Static Placeholder)"
           data-ai-hint="static map embed"
@@ -200,7 +217,7 @@ export default function TrackOrderPage() {
         </div>
     );
   }
-  
+
   if (!order) {
     return (
       <div className="container mx-auto py-10 px-4 text-center">
@@ -222,7 +239,7 @@ export default function TrackOrderPage() {
       </div>
     );
   }
-            
+
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6">
@@ -240,7 +257,7 @@ export default function TrackOrderPage() {
         </h1>
         <p className="text-muted-foreground mt-1">Order ID: {orderIdParam?.substring(0,10) || 'N/A'}...</p>
       </header>
-            
+
       <div className="grid lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
           <Card className="shadow-lg">
@@ -251,7 +268,7 @@ export default function TrackOrderPage() {
               {renderMap()}
             </CardContent>
           </Card>
-            
+
           <Card className="shadow-lg">
             <CardHeader>
                 <CardTitle className="flex items-center"><Package className="mr-2 h-5 w-5 text-accent"/>Order Items</CardTitle>
@@ -300,20 +317,20 @@ export default function TrackOrderPage() {
             <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center text-lg font-semibold text-primary">
-                        <Clock className="mr-2 h-5 w-5"/> 
+                        <Clock className="mr-2 h-5 w-5"/>
                         ETA: {eta !== null && eta > 0 ? `~${eta} min` : (order.status.toLowerCase() === 'delivered' ? 'Delivered' : (eta === 0 ? 'Arriving Soon' : 'Calculating...'))}
                     </div>
                     <div className="flex items-center text-sm text-muted-foreground">
                         <Navigation className="mr-1 h-4 w-4"/> {distance !== null && distance > 0 ? `${distance} km` : (order.status.toLowerCase() === 'delivered' ? '-' : '...')}
                     </div>
                 </div>
-                <Progress 
-                    value={order.status.toLowerCase() === 'delivered' ? 100 : 
-                           (orderStatusSteps.findIndex(s=>s.current) / (orderStatusSteps.length -1)) * 100 || 
-                           (orderStatusSteps.filter(s => s.completed).length / (orderStatusSteps.length -1)) * 100} 
-                    aria-label={`Order status: ${order.status}, ${eta} minutes remaining`} 
+                <Progress
+                    value={order.status.toLowerCase() === 'delivered' ? 100 :
+                           (orderStatusSteps.findIndex(s=>s.current) / (orderStatusSteps.length -1)) * 100 ||
+                           (orderStatusSteps.filter(s => s.completed).length / (orderStatusSteps.length -1)) * 100}
+                    aria-label={`Order status: ${order.status}, ${eta} minutes remaining`}
                     className="w-full h-2" />
-                
+
                 <div className="space-y-3 mt-3 pt-3 border-t">
                     {orderStatusSteps.map((step, index) => (
                         <div key={index} className={`flex items-center ${step.completed ? 'text-green-600' : 'text-muted-foreground'} ${step.current ? 'font-semibold text-primary animate-pulse' : ''}`}>
@@ -328,30 +345,27 @@ export default function TrackOrderPage() {
             </CardContent>
           </Card>
 
-          {order && (
-            <Card className="shadow-md">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center">
-                      {deliveryPartner ? <Truck className="mr-2 h-5 w-5 text-accent"/> : <UserCheck className="mr-2 h-5 w-5 text-muted-foreground"/>}
-                      Delivery Partner
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-1 text-sm">
-                  {deliveryPartner ? (
-                    <>
-                      <p><strong>{deliveryPartner.name}</strong></p>
-                      <p className="text-xs text-muted-foreground">{deliveryPartner.vehicleDetails}</p>
-                      {deliveryPartner.rating && <p className="text-xs text-muted-foreground">Rating: {deliveryPartner.rating} ★</p>}
-                      <Button variant="outline" size="sm" className="w-full mt-2 text-xs" onClick={() => alert('Contacting delivery partner... (Feature not implemented)')}>
-                          <Phone className="mr-1.5 h-3.5 w-3.5"/> Contact Rider
-                      </Button>
-                    </>
-                  ) : (
-                    <p className="text-muted-foreground">Awaiting delivery partner assignment...</p>
-                  )}
-                </CardContent>
-            </Card>
-          )}
+          <Card className="shadow-md">
+            <CardHeader>
+                <CardTitle className="text-lg flex items-center">
+                  {assignedDeliveryPartner ? <Truck className="mr-2 h-5 w-5 text-accent"/> : <UserCheck className="mr-2 h-5 w-5 text-muted-foreground"/>}
+                  Delivery Partner
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-1 text-sm">
+              {assignedDeliveryPartner ? (
+                <>
+                  <p><strong>{assignedDeliveryPartner.name}</strong></p>
+                  <p className="text-xs text-muted-foreground">Phone: {assignedDeliveryPartner.phoneNumber}</p>
+                  <Button variant="outline" size="sm" className="w-full mt-2 text-xs" onClick={() => alert(`Contacting ${assignedDeliveryPartner.name} at ${assignedDeliveryPartner.phoneNumber} (Feature not implemented)`)}>
+                      <Phone className="mr-1.5 h-3.5 w-3.5"/> Contact Rider
+                  </Button>
+                </>
+              ) : (
+                <p className="text-muted-foreground">Awaiting delivery partner assignment...</p>
+              )}
+            </CardContent>
+          </Card>
 
           <Card className="shadow-md">
             <CardHeader>
@@ -368,6 +382,5 @@ export default function TrackOrderPage() {
     </div>
   );
 }
-
     
     
