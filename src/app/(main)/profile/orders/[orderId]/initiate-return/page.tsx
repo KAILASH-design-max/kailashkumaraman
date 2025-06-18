@@ -160,9 +160,9 @@ export default function InitiateReturnPage() {
         items: Object.values(selectedItemsForReturn).map(item => ({
           productId: item.productId,
           name: item.name,
-          quantity: item.returnQuantity, // using 'quantity' as per prompt's Firestore structure
+          quantity: item.returnQuantity, 
           reason: item.reason,
-          price: item.price, // price per item at time of purchase
+          price: item.price, 
           imageUrl: item.imageUrl || '',
         })),
         additionalNotes: additionalNotes.trim() || null,
@@ -170,10 +170,8 @@ export default function InitiateReturnPage() {
         requestedAt: serverTimestamp(),
       };
 
-      // 1. Create new document in 'returns' collection
       const docRef = await addDoc(collection(db, "returns"), newReturnRequestDoc);
       
-      // 2. Update the original order's status
       const orderRef = doc(db, "orders", orderId);
       await updateDoc(orderRef, {
         orderStatus: 'Return Requested' 
@@ -196,9 +194,10 @@ export default function InitiateReturnPage() {
 
   const canInitiateReturn = useMemo(() => {
     if (!order) return false;
-    // Stricter: only allow returns for 'Delivered' or 'Shipped' orders.
-    // This could be further configured by how many days past delivery, etc.
-    return ['Delivered', 'Shipped'].includes(order.status);
+    if (typeof order.status === 'string') {
+        return order.status.trim().toLowerCase() === 'delivered';
+    }
+    return false;
   }, [order]);
 
 
@@ -256,7 +255,7 @@ export default function InitiateReturnPage() {
           <AlertTitle>Return Not Possible for this Order</AlertTitle>
           <AlertDescription>
             This order (status: {order.status}) is not currently eligible for return. 
-            Typically, returns are accepted for 'Delivered' or 'Shipped' orders. Please check our return policy or contact support.
+            Typically, returns are accepted for 'Delivered' orders. Please check our return policy or contact support.
           </AlertDescription>
         </Alert>
       </div>

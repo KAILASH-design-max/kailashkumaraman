@@ -141,15 +141,15 @@ Please use the link provided by Firebase to create this index. If the error pers
       case 'processing':
       case 'confirmed':
       case 'placed':
-      case 'return requested': // Added for return status
+      case 'return requested': 
         return 'bg-yellow-100 text-yellow-700';
       case 'cancelled':
       case 'failed':
-      case 'return rejected': // Added for return status
+      case 'return rejected': 
         return 'bg-red-100 text-red-700';
-      case 'return approved': // Added for return status
-      case 'refunded': // Added for return status
-         return 'bg-purple-100 text-purple-700'; // Or another distinct color
+      case 'return approved': 
+      case 'refunded': 
+         return 'bg-purple-100 text-purple-700'; 
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -190,9 +190,11 @@ Please use the link provided by Firebase to create this index. If the error pers
     }
   };
 
-  const canInitiateReturnForOrder = (orderStatus: string) => {
-    // Show "Initiate Return" button only if the order status is 'Delivered' (case-insensitive).
-    return orderStatus.toLowerCase() === 'delivered';
+  const canInitiateReturnForOrder = (orderStatus: string | undefined) => {
+    if (typeof orderStatus === 'string') {
+      return orderStatus.trim().toLowerCase() === 'delivered';
+    }
+    return false;
   };
 
 
