@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   ListOrdered, MapPin, CreditCard, Heart, Settings, ShieldCheck, Bell, Repeat, RotateCcw, MessageSquareQuote, LogOut, UserCircle, Edit3, Share2, Filter, Activity, PackageSearch, Sparkles, Info, ListChecks, Brain,
-  Truck, TrendingDown, Gift 
+  Truck, TrendingDown, Gift, HelpCircle 
 } from 'lucide-react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
@@ -247,10 +247,11 @@ export default function ProfileDashboardPage() {
       <footer className="mt-12 text-center">
         <p className="text-muted-foreground mb-1">Need help or have questions about your account?</p>
         <Button variant="link" asChild className="text-primary text-lg">
-          <Link href="/support"><MessageSquareQuote className="mr-2 h-5 w-5" />Contact Support Center</Link>
+          <Link href="/support"><HelpCircle className="mr-2 h-5 w-5" />Contact Support Center</Link>
         </Button>
       </footer>
     </div>
   );
 }
+    
     

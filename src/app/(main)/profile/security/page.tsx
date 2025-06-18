@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, ShieldCheck, Lock, Activity, MessageSquareQuote } from 'lucide-react';
+import { ChevronLeft, ShieldCheck, Lock, Activity, MessageSquareQuote, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -104,7 +104,7 @@ export default function SecurityPage() {
         
         <Card className="shadow-lg">
           <CardHeader>
-            <CardTitle className="text-xl flex items-center"><MessageSquareQuote className="mr-2 h-5 w-5 text-accent"/>Customer Support</CardTitle>
+            <CardTitle className="text-xl flex items-center"><HelpCircle className="mr-2 h-5 w-5 text-accent"/>Customer Support</CardTitle>
             <CardDescription>Get help with your account or any issues you're facing.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -123,3 +123,5 @@ export default function SecurityPage() {
     </div>
   );
 }
+
+    
