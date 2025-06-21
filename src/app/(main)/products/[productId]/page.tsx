@@ -18,7 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useCart } from '@/hooks/useCart';
-import { useEffect, useState } from 'react'; // Removed 'use' import
+import { useEffect, useState } from 'react';
 
 // Function to get product by ID
 async function getProductById(id: string): Promise<Product | undefined> {
@@ -27,7 +27,7 @@ async function getProductById(id: string): Promise<Product | undefined> {
 }
 
 export default function ProductDetailPage({ params }: { params: { productId: string } }) {
-  const { productId } = params; // Correct way to access route params in a Client Component
+  const { productId } = params;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
@@ -76,8 +76,9 @@ export default function ProductDetailPage({ params }: { params: { productId: str
   const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
   const categoryName = mockCategories.find(c => c.id === product.category)?.name;
 
-  const mainImageSrc = product.imageUrl || 'https://placehold.co/600x450.png';
+  const mainImageSrc = product.images?.[0] || 'https://placehold.co/600x450.png';
   const mainImageDataAiHint = product.dataAiHint || 'product details main';
+  const isAvailable = product.status === 'active' && product.stock > 0;
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -127,27 +128,27 @@ export default function ProductDetailPage({ params }: { params: { productId: str
 
           <p className="text-muted-foreground text-base leading-relaxed">{product.description}</p>
           
-          {product.status === 'In Stock' && product.stock > 0 ? (
+          {isAvailable ? (
             <div className="flex items-center space-x-2 text-green-600">
               <CheckCircle className="h-5 w-5" />
-              <span>{product.status} ({product.stock} available)</span>
+              <span>In Stock ({product.stock} available)</span>
             </div>
           ) : (
             <div className="flex items-center space-x-2 text-destructive">
               <XCircle className="h-5 w-5" />
-              <span>{product.status || 'Out of Stock'}</span>
+              <span>Out of Stock</span>
             </div>
           )}
 
 
           <div className="flex items-center space-x-4">
-            {(product.status === 'In Stock' && product.stock > 0) ? (
+            {isAvailable ? (
               <Button size="lg" className="w-full md:w-auto flex-grow" onClick={handleAddToCart}>
                 <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
               </Button>
             ) : (
                <Button size="lg" className="w-full md:w-auto flex-grow" disabled>
-                <ShoppingCart className="mr-2 h-5 w-5" /> {product.status || 'Out of Stock'}
+                <ShoppingCart className="mr-2 h-5 w-5" /> Out of Stock
                </Button>
             )}
           </div>
@@ -160,7 +161,7 @@ export default function ProductDetailPage({ params }: { params: { productId: str
                     <li>Category: {categoryName || 'N/A'}</li>
                     <li>Weight/Volume: {product.weight || 'N/A'}</li>
                     <li>Origin: {product.origin || 'N/A'}</li>
-                    <li>Status: {product.status || 'N/A'} (Stock: {product.stock})</li>
+                    <li>Status: {product.status} (Stock: {product.stock})</li>
                 </ul>
               </AccordionContent>
             </AccordionItem>

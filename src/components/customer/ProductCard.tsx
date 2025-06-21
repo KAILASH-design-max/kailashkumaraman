@@ -20,9 +20,9 @@ export function ProductCard({ product }: ProductCardProps) {
     addToCart(product, 1);
   };
 
-  const imageUrl = product.imageUrl || 'https://placehold.co/400x300.png';
+  const imageUrl = product.images?.[0] || 'https://placehold.co/400x300.png';
   const imageHint = product.dataAiHint || 'product image';
-  const isAvailable = product.status === 'In Stock' && product.stock > 0;
+  const isAvailable = product.status === 'active' && product.stock > 0;
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl flex flex-col h-full group">
@@ -38,7 +38,7 @@ export function ProductCard({ product }: ProductCardProps) {
           />
            {!isAvailable && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-              <span className="text-white font-semibold px-3 py-1 bg-destructive rounded">{product.status || 'OUT OF STOCK'}</span>
+              <span className="text-white font-semibold px-3 py-1 bg-destructive rounded">OUT OF STOCK</span>
             </div>
           )}
         </CardHeader>
@@ -66,7 +66,7 @@ export function ProductCard({ product }: ProductCardProps) {
              <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
            </Button>
         ) : (
-          <Button className="w-full" size="sm" disabled variant="outline">{product.status || 'Out of Stock'}</Button>
+          <Button className="w-full" size="sm" disabled variant="outline">Out of Stock</Button>
         )}
       </CardFooter>
     </Card>

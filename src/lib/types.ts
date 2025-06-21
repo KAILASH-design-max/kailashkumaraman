@@ -4,17 +4,18 @@ export interface Product {
   name: string;
   description: string;
   price: number;
-  category: string; // Category name or ID (string as per schema)
-  imageUrl: string;
+  category: string;
+  images: string[];
   rating?: number;
   reviewsCount?: number;
-  stock: number; // Replaces inStock and stockCount
-  weight?: string; // Replaces weightVolume
-  status?: string; // e.g., "In Stock", "Out of Stock"
+  stock: number;
+  lowStockThreshold?: number;
+  weight?: string;
+  status: 'active' | 'inactive' | 'archived' | string;
   origin?: string;
-  // deliveryInfo?: string; // Removed as not in new schema
-  // promoCodes?: string[]; // Removed, handled by separate collection
+  popularity?: number;
   createdAt: string; // ISO string for client-side, Firestore converts to Timestamp
+  updatedAt?: string;
   dataAiHint?: string;
 }
 
@@ -106,20 +107,20 @@ export interface Review {
   userId: string;
   userName: string;
   rating: number;
-  comment?: string; // Changed from reviewText
-  reviewedAt: string; // Changed from date/createdAt (ISO string)
-  // orderId?: string; // Optional if reviews are only subcollection of product
-  // productId?: string; // Implicit from subcollection path
+  comment?: string;
+  reviewedAt: string; // ISO string
 }
 
 export interface PromoCode {
-  id: string; // Document ID from Firestore (e.g., "SAVE20")
+  id: string;
   code: string;
   discountType: 'percentage' | 'fixed';
   discountValue: number;
   minOrderValue?: number;
   expiresAt: string; // ISO string
-  isActive: boolean;
-  appliesTo?: Array<string>; // Array of product IDs or category IDs/slugs
-  description?: string; // Added for better display
+  status: 'active' | 'inactive' | string;
+  usageLimit?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }

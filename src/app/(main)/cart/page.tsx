@@ -88,7 +88,7 @@ export default function CartPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           {cartItems.map((item) => {
-            const imageUrl = item.imageUrl || 'https://placehold.co/112x112.png';
+            const imageUrl = item.images?.[0] || 'https://placehold.co/112x112.png';
             const imageHint = item.dataAiHint || 'product item';
             return (
               <Card key={item.id} className="flex flex-col sm:flex-row items-center p-4 gap-4 shadow-md">

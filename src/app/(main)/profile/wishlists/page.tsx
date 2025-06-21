@@ -39,12 +39,12 @@ export default function WishlistsPage() {
       id: 'wl1', 
       name: 'Birthday Ideas 🎂', 
       items: [
-        { id: 'wli1', productId: mockProducts[5].id, name: mockProducts[5].name, price: mockProducts[5].price, imageUrl: mockProducts[5].imageUrl, dataAiHint: mockProducts[5].dataAiHint },
-        { id: 'wli2', productId: mockProducts[6].id, name: mockProducts[6].name, price: mockProducts[6].price, imageUrl: mockProducts[6].imageUrl, dataAiHint: mockProducts[6].dataAiHint },
+        { id: 'wli1', productId: mockProducts[5].id, name: mockProducts[5].name, price: mockProducts[5].price, imageUrl: mockProducts[5].images[0], dataAiHint: mockProducts[5].dataAiHint },
+        { id: 'wli2', productId: mockProducts[6].id, name: mockProducts[6].name, price: mockProducts[6].price, imageUrl: mockProducts[6].images[0], dataAiHint: mockProducts[6].dataAiHint },
       ] 
     },
     { id: 'wl2', name: 'Kitchen Essentials 🍳', items: [
-        { id: 'wli3', productId: mockProducts[7].id, name: mockProducts[7].name, price: mockProducts[7].price, imageUrl: mockProducts[7].imageUrl, dataAiHint: mockProducts[7].dataAiHint },
+        { id: 'wli3', productId: mockProducts[7].id, name: mockProducts[7].name, price: mockProducts[7].price, imageUrl: mockProducts[7].images[0], dataAiHint: mockProducts[7].dataAiHint },
     ] },
   ]);
   const [showCreateForm, setShowCreateForm] = useState(false);

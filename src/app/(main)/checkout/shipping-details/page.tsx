@@ -20,8 +20,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { PromoCode } from '@/lib/types'; // Using the global PromoCode type
-import { mockPromoCodesData } from '@/lib/mockData'; // Using the new mock promo codes
+import type { PromoCode } from '@/lib/types';
+import { mockPromoCodesData } from '@/lib/mockData';
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
 const DELIVERY_CHARGE_STANDARD = 50;
@@ -34,8 +34,7 @@ const savedAddresses = [
   { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India', phoneNumber: '9876543211' },
 ];
 
-// Using the new mockPromoCodesData aligned with the global PromoCode type
-const availablePromoCodes: PromoCode[] = mockPromoCodesData.filter(pc => pc.isActive && new Date(pc.expiresAt) > new Date());
+const availablePromoCodes: PromoCode[] = mockPromoCodesData.filter(pc => pc.status === 'active' && new Date(pc.expiresAt) > new Date());
 
 
 export default function ShippingDetailsPage() {

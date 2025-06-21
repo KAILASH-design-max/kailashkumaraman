@@ -102,7 +102,7 @@ export default function FinalReviewPage() {
             name: String(item.name),
             quantity: Number(item.quantity) || 1,
             price: Number(item.price) || 0,
-            imageUrl: String(item.imageUrl || 'https://placehold.co/60x60.png')
+            imageUrl: String(item.images?.[0] || 'https://placehold.co/60x60.png')
         })),
         total: Number(finalOrderData.summary?.totalAmount) || 0,
         orderStatus: 'Placed',
@@ -199,7 +199,7 @@ export default function FinalReviewPage() {
                 <h3 className="text-xl font-semibold mb-3 flex items-center"><Package className="mr-3 h-6 w-6 text-primary"/>Items in Your Order</h3>
                 <div className="space-y-3">
                 {displayCartItems.map((item: CartItemType) => {
-                    const imageUrl = item.imageUrl || 'https://placehold.co/60x60.png';
+                    const imageUrl = item.images?.[0] || 'https://placehold.co/60x60.png';
                     const imageHint = item.dataAiHint || 'review item';
                     return (
                     <Card key={item.id} className="flex items-center p-3 gap-3 shadow-sm border">

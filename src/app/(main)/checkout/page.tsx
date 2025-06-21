@@ -53,7 +53,7 @@ export default function VerifyItemsPage() {
             </CardHeader>
             <CardContent className="px-1 space-y-4">
             {cartItems.map((item: CartItem) => {
-                const imageUrl = item.imageUrl || 'https://placehold.co/60x60.png';
+                const imageUrl = item.images?.[0] || 'https://placehold.co/60x60.png';
                 const imageHint = item.dataAiHint || 'checkout item';
                 return (
                 <Card key={item.id} className="flex items-center p-3 gap-3 shadow-sm border">
