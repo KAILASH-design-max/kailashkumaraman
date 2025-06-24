@@ -36,17 +36,25 @@ async function fetchActiveFruitProducts(): Promise<Partial<Product>[]> {
   const products: Partial<Product>[] = [];
   querySnapshot.forEach((doc) => {
     const data = doc.data();
+    // Using the serializeObject helper to handle potential Timestamps
+    const serializedData = serializeObject(data);
+
     products.push({
       id: doc.id,
-      name: data.name,
-      price: data.price,
-      stock: data.stock,
-      rating: data.rating,
-      popularity: data.popularity,
-      weight: data.weight,
-      origin: data.origin,
-      images: data.images,
-      lowStockThreshold: data.lowStockThreshold,
+      name: serializedData.name,
+      price: serializedData.price,
+      stock: serializedData.stock,
+      rating: serializedData.rating,
+      popularity: serializedData.popularity,
+      weight: serializedData.weight,
+      origin: serializedData.origin,
+      images: serializedData.images,
+      lowStockThreshold: serializedData.lowStockThreshold,
+      category: serializedData.category,
+      description: serializedData.description,
+      status: serializedData.status,
+      createdAt: serializedData.createdAt,
+      updatedAt: serializedData.updatedAt,
     });
   });
 
