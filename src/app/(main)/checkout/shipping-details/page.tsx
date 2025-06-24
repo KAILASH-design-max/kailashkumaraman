@@ -21,7 +21,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { PromoCode } from '@/lib/types';
-import { mockPromoCodesData } from '@/lib/mockData';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
 const DELIVERY_CHARGE_STANDARD = 50;
@@ -33,8 +34,6 @@ const savedAddresses = [
   { id: 'addr1', name: 'Home', street: '123 Main St', city: 'Mumbai', postalCode: '400001', country: 'India', phoneNumber: '9876543210' },
   { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India', phoneNumber: '9876543211' },
 ];
-
-const availablePromoCodes: PromoCode[] = mockPromoCodesData.filter(pc => pc.status === 'active' && new Date(pc.expiresAt) > new Date());
 
 
 export default function ShippingDetailsPage() {
@@ -50,11 +49,62 @@ export default function ShippingDetailsPage() {
   const [appliedPromoCode, setAppliedPromoCode] = useState<{ code: string; discountAmount: number; description: string } | null>(null);
   const [promoMessage, setPromoMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
 
+  const [availablePromoCodes, setAvailablePromoCodes] = useState<PromoCode[]>([]);
+  const [promoFetchError, setPromoFetchError] = useState<string | null>(null);
+
+
   useEffect(() => {
     if (cartItems.length === 0) {
         router.push('/cart');
     }
-  }, [cartItems, router]);
+    
+    async function fetchPromoCodes() {
+      setPromoFetchError(null);
+      try {
+        const promoCodesRef = collection(db, 'promoCodes');
+        // Query only by status, as expiresAt is a string in the Firestore schema.
+        const q = query(promoCodesRef, where('status', '==', 'active'));
+        const querySnapshot = await getDocs(q);
+        const now = new Date();
+        const codes: PromoCode[] = [];
+
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          // Firestore 'expiresAt' field is a string, so we parse it.
+          const expiresAtDate = new Date(data.expiresAt as string);
+
+          // Client-side filtering for expiration date
+          if (expiresAtDate > now) {
+              codes.push({
+                  id: doc.id,
+                  code: data.code,
+                  description: data.description,
+                  discountType: data.discountType,
+                  value: data.value,
+                  minOrderValue: data.minOrderValue,
+                  status: data.status,
+                  expiresAt: data.expiresAt, // keep as string
+                  usageLimit: data.usageLimit,
+                  // Handle potential Timestamps for other date fields if they exist
+                  createdAt: data.createdAt && data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : undefined,
+                  updatedAt: data.updatedAt && data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : undefined,
+              });
+          }
+        });
+        setAvailablePromoCodes(codes);
+      } catch (e: any) {
+        console.error("Error fetching promo codes: ", e);
+        if (e.code === 'failed-precondition') {
+           setPromoFetchError("A Firestore index is required. Please check the browser console for a link to create it.");
+        } else {
+           setPromoFetchError("Could not load promo codes at this time.");
+        }
+      }
+    }
+
+    fetchPromoCodes();
+
+  }, [cartItems.length, router]);
 
   const subtotal = getCartTotal();
 
@@ -254,17 +304,23 @@ export default function ShippingDetailsPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {availablePromoCodes.map((promo) => (
-                        <DropdownMenuItem
-                          key={promo.id}
-                          onClick={() => {
-                            setPromoCodeInput(promo.code);
-                            setPromoMessage(null); 
-                          }}
-                        >
-                          {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description || `${promo.value}${promo.discountType === 'percentage' ? '%' : '₹'} off`}</span>
+                      {availablePromoCodes.length > 0 ? (
+                        availablePromoCodes.map((promo) => (
+                          <DropdownMenuItem
+                            key={promo.id}
+                            onClick={() => {
+                              setPromoCodeInput(promo.code);
+                              setPromoMessage(null); 
+                            }}
+                          >
+                            {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description || `${promo.value}${promo.discountType === 'percentage' ? '%' : '₹'} off`}</span>
+                          </DropdownMenuItem>
+                        ))
+                      ) : (
+                        <DropdownMenuItem disabled>
+                            {promoFetchError ? 'Error loading codes' : 'No active promo codes'}
                         </DropdownMenuItem>
-                      ))}
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                   <Button variant="outline" onClick={handleApplyPromoCode} className="shrink-0">Apply</Button>
@@ -276,6 +332,9 @@ export default function ShippingDetailsPage() {
                         <AlertDescription>{promoMessage.text}</AlertDescription>
                     </Alert>
                 )}
+                 {promoFetchError && (
+                    <p className="text-xs text-destructive mt-1">{promoFetchError}</p>
+                 )}
               </div>
         </div>
 
