@@ -587,9 +587,9 @@ export const mockOrders: Order[] = [
 ];
 
 export const mockPromoCodesData: PromoCode[] = [
-  { id: 'SAVE20', code: 'SAVE20', discountType: 'percentage', discountValue: 20, minOrderValue: 199, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), status: 'active', description: 'Get 20% off on orders above ₹199' },
-  { id: 'FLAT50', code: 'FLAT50', discountType: 'fixed', discountValue: 50, minOrderValue: 299, expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), status: 'active', description: 'Flat ₹50 off on orders above ₹299' },
-  { id: 'FREEDEL', code: 'FREEDEL', discountType: 'fixed', discountValue: 50, // Assuming standard delivery is 50
+  { id: 'SAVE20', code: 'SAVE20', discountType: 'percentage', value: 20, minOrderValue: 199, expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), status: 'active', description: 'Get 20% off on orders above ₹199' },
+  { id: 'FLAT50', code: 'FLAT50', discountType: 'fixed', value: 50, minOrderValue: 299, expiresAt: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(), status: 'active', description: 'Flat ₹50 off on orders above ₹299' },
+  { id: 'FREEDEL', code: 'FREEDEL', discountType: 'fixed', value: 50, // Assuming standard delivery is 50
     minOrderValue: 99, expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), status: 'active', description: 'Free Delivery on orders above ₹99' },
-  { id: 'EXPIRED10', code: 'EXPIRED10', discountType: 'percentage', discountValue: 10, expiresAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), status: 'inactive', description: '10% off (Expired)' },
+  { id: 'EXPIRED10', code: 'EXPIRED10', discountType: 'percentage', value: 10, expiresAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), status: 'inactive', description: '10% off (Expired)' },
 ];

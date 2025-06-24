@@ -115,7 +115,7 @@ export interface PromoCode {
   id: string;
   code: string;
   discountType: 'percentage' | 'fixed';
-  discountValue: number;
+  value: number;
   minOrderValue?: number;
   expiresAt: string; // ISO string
   status: 'active' | 'inactive' | string;

@@ -102,12 +102,12 @@ export default function ShippingDetailsPage() {
       const currentStandardDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
 
       if (codeToApply.discountType === 'percentage') {
-        discount = subtotal * (codeToApply.discountValue / 100);
+        discount = subtotal * (codeToApply.value / 100);
       } else if (codeToApply.discountType === 'fixed') {
         if (codeToApply.code === 'FREEDEL') {
-            discount = Math.min(codeToApply.discountValue, currentStandardDeliveryCharge);
+            discount = Math.min(codeToApply.value, currentStandardDeliveryCharge);
         } else {
-            discount = codeToApply.discountValue;
+            discount = codeToApply.value;
         }
       }
       
@@ -262,7 +262,7 @@ export default function ShippingDetailsPage() {
                             setPromoMessage(null); 
                           }}
                         >
-                          {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description || `${promo.discountValue}${promo.discountType === 'percentage' ? '%' : '₹'} off`}</span>
+                          {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description || `${promo.value}${promo.discountType === 'percentage' ? '%' : '₹'} off`}</span>
                         </DropdownMenuItem>
                       ))}
                     </DropdownMenuContent>
