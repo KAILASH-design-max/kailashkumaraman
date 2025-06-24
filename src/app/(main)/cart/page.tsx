@@ -8,19 +8,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MinusCircle, PlusCircle, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles } from 'lucide-react';
+import { MinusCircle, PlusCircle, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle } from 'lucide-react';
 import { useState } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
-
-
-const DELIVERY_CHARGE_THRESHOLD = 299;
-const DELIVERY_CHARGE_AMOUNT = 50;
-const GST_RATE = 0.18;
-const HANDLING_CHARGE = 5;
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
@@ -31,10 +25,17 @@ export default function CartPage() {
   const [isRecipeLoading, setIsRecipeLoading] = useState(false);
   const [recipeError, setRecipeError] = useState<string | null>(null);
 
-  const subtotal = getCartTotal();
-  const deliveryCharge = subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0 ? DELIVERY_CHARGE_AMOUNT : 0;
-  const gstAmount = subtotal * GST_RATE;
-  const totalAmount = subtotal + deliveryCharge + gstAmount + HANDLING_CHARGE;
+  // Static order summary values for display
+  const subtotalStatic = 250.00;
+  const gstRate = 0.18;
+  const handlingCharge = 5.00;
+  const deliveryFee = 30.00;
+  const promoCode = 'SAVE31';
+  const discountAmount = 10.00;
+
+  const gstAmountStatic = subtotalStatic * gstRate;
+  const totalAmountStatic = subtotalStatic + gstAmountStatic + handlingCharge + deliveryFee - discountAmount;
+
 
   const handleGenerateRecipe = async () => {
     if (cartItems.length === 0) {
@@ -244,32 +245,43 @@ export default function CartPage() {
             <CardHeader>
               <CardTitle className="text-2xl">Order Summary</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex justify-between">
-                <span>Subtotal</span>
-                <span>₹{subtotal.toFixed(2)}</span>
-              </div>
-              {deliveryCharge > 0 && (
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Delivery Charge</span>
-                  <span>₹{deliveryCharge.toFixed(2)}</span>
+            <CardContent className="space-y-4">
+              <div className="space-y-2 text-muted-foreground">
+                <div className="flex justify-between text-foreground">
+                  <span>Subtotal</span>
+                  <span>₹{subtotalStatic.toFixed(2)}</span>
                 </div>
-              )}
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>GST (18%)</span>
-                <span>₹{gstAmount.toFixed(2)}</span>
+                <div className="flex justify-between">
+                  <span>Delivery Fee</span>
+                  <span>₹{deliveryFee.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>GST (18%)</span>
+                  <span>₹{gstAmountStatic.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Handling Charge</span>
+                  <span>₹{handlingCharge.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center text-green-600 font-medium">
+                  <span className="flex items-center">
+                    <Tag className="mr-2 h-4 w-4" />
+                    Promo Applied ({promoCode})
+                  </span>
+                  <span>-₹{discountAmount.toFixed(2)}</span>
+                </div>
               </div>
-              <div className="flex justify-between text-sm text-muted-foreground">
-                <span>Handling Charge</span>
-                <span>₹{HANDLING_CHARGE.toFixed(2)}</span>
-              </div>
-              <Separator className="my-3" />
-              <div className="flex justify-between text-xl font-bold">
-                <span>Total</span>
-                <span>₹{totalAmount.toFixed(2)}</span>
+              <Separator />
+              <div className="flex justify-between text-xl font-bold text-foreground">
+                <span>Total Payable</span>
+                <span>₹{totalAmountStatic.toFixed(2)}</span>
               </div>
             </CardContent>
-            <CardFooter className="flex flex-col gap-2">
+            <CardFooter className="flex flex-col gap-4">
+                <div className="flex items-center justify-center text-green-700 font-semibold text-sm bg-green-50/50 p-3 rounded-md w-full">
+                    <CheckCircle className="mr-2 h-6 w-6" />
+                    You Saved ₹{discountAmount.toFixed(2)} on this order!
+                </div>
                {cartItems.length > 0 ? (
                 <Button className="w-full" size="lg" onClick={handleProceedToCheckout}>
                     Proceed to Checkout
