@@ -1,212 +1,100 @@
-'use client';
 
-import Image from 'next/image';
-import { mockProducts, mockCategories } from '@/lib/mockData';
+import { ProductDetailClient } from '@/components/customer/ProductDetailClient';
+import { mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
-import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ProductCard } from '@/components/customer/ProductCard';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { useCart } from '@/hooks/useCart';
-import { useEffect, useState } from 'react';
+import { notFound } from 'next/navigation';
+import { db } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, limit, getDocs, Timestamp } from 'firebase/firestore';
 
-// Function to get product by ID
-async function getProductById(id: string): Promise<Product | undefined> {
-  // This is a client-side accessible function for now as it uses mockData
-  return mockProducts.find(p => p.id === id);
+// Helper to convert Firestore Timestamps and shape the data
+function serializeProduct(doc: any): Product {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        name: data.name || '',
+        description: data.description || '',
+        price: data.price || 0,
+        category: data.category || '',
+        images: data.images || [],
+        rating: data.rating,
+        reviewsCount: data.reviewsCount,
+        stock: data.stock || 0,
+        lowStockThreshold: data.lowStockThreshold,
+        weight: data.weight,
+        status: data.status || 'inactive',
+        origin: data.origin,
+        popularity: data.popularity,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt,
+        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : data.updatedAt,
+    };
 }
 
-export default function ProductDetailPage({ params }: { params: { productId: string } }) {
-  const { productId } = params;
+async function getProductById(id: string): Promise<Product | undefined> {
+  try {
+    const productRef = doc(db, 'products', id);
+    const productSnap = await getDoc(productRef);
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [loading, setLoading] = useState(true);
-  const { addToCart } = useCart();
-
-  useEffect(() => {
-    async function loadProduct() {
-      if (!productId) {
-        setProduct(null);
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      const fetchedProduct = await getProductById(productId);
-      setProduct(fetchedProduct || null);
-      setLoading(false);
+    if (!productSnap.exists()) {
+      console.warn(`Product with ID ${id} not found.`);
+      return undefined;
     }
-    loadProduct();
-  }, [productId]);
-
-  if (loading) {
-    return (
-      <div className="container mx-auto py-12 px-4 text-center">
-        <p>Loading product details...</p>
-      </div>
-    );
+    
+    return serializeProduct(productSnap);
+  } catch (error) {
+    console.error(`Error fetching product by ID ${id}:`, error);
+    return undefined;
   }
+}
+
+async function getRelatedProducts(product: Product): Promise<Product[]> {
+    if (!product.category) return [];
+    try {
+        const productsRef = collection(db, 'products');
+        // Query for other products in the same category, excluding the current product.
+        const q = query(
+            productsRef, 
+            where('category', '==', product.category), 
+            where('status', '==', 'active'),
+            limit(5) // fetch 5 and filter out the current one
+        );
+        const querySnapshot = await getDocs(q);
+        const related: Product[] = [];
+        querySnapshot.forEach((doc) => {
+            if (doc.id !== product.id) {
+                related.push(serializeProduct(doc));
+            }
+        });
+        return related.slice(0, 4); // return at most 4
+    } catch (error) {
+        console.error("Error fetching related products:", error);
+        return [];
+    }
+}
+
+export default async function ProductDetailPage({ params }: { params: { productId: string } }) {
+  const { productId } = params;
+  
+  if (!productId) {
+    notFound();
+  }
+
+  const product = await getProductById(productId);
 
   if (!product) {
-    return (
-      <div className="container mx-auto py-12 px-4 text-center">
-        <h1 className="text-3xl font-bold">Product not found</h1>
-        <Link href="/products" className="mt-4 inline-block">
-          <Button variant="outline"><ChevronLeft className="mr-2 h-4 w-4" />Back to Products</Button>
-        </Link>
-      </div>
-    );
+    notFound();
   }
-
-  const handleAddToCart = () => {
-    if (product) {
-      addToCart(product, 1);
-    }
-  };
-
-  const relatedProducts = mockProducts.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
-  const categoryName = mockCategories.find(c => c.id === product.category)?.name;
-
-  const mainImageSrc = product.images?.[0] || 'https://placehold.co/600x450.png';
-  const mainImageDataAiHint = product.dataAiHint || 'product details main';
-  const isAvailable = product.status === 'active' && product.stock > 0;
+  
+  // Fetch related products and category name in parallel
+  const [relatedProducts, categoryNameResult] = await Promise.all([
+    getRelatedProducts(product),
+    Promise.resolve(mockCategories.find(c => c.id === product.category)?.name) // Still using mockCategories for this
+  ]);
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="mb-6">
-        <Link href="/products" className="text-sm text-muted-foreground hover:text-primary flex items-center">
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back to Products {categoryName && `/ ${categoryName}`}
-        </Link>
-      </div>
-
-      <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-        <div>
-          <div className="mb-4">
-            <Image
-              src={mainImageSrc}
-              alt={product.name}
-              width={600}
-              height={450}
-              className="w-full h-auto object-cover rounded-lg shadow-lg aspect-[4/3]"
-              data-ai-hint={mainImageDataAiHint}
-              priority 
-            />
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <h1 className="text-4xl font-bold">{product.name}</h1>
-          {categoryName && <Badge variant="outline">{categoryName}</Badge>}
-
-          <div className="flex items-center space-x-4">
-            {product.rating && (
-              <div className="flex items-center gap-1">
-                <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                <span className="text-md font-medium">{product.rating.toFixed(1)}</span>
-                <span className="text-sm text-muted-foreground">({product.reviewsCount || 0} reviews)</span>
-              </div>
-            )}
-             {(product.reviewsCount && product.reviewsCount > 0) && <Separator orientation="vertical" className="h-5"/>}
-            {(product.reviewsCount && product.reviewsCount > 0) && (
-              <a href="#reviews" className="text-sm text-primary hover:underline flex items-center">
-                <MessageSquare className="mr-1 h-4 w-4"/> See Reviews
-              </a>
-            )}
-          </div>
-
-          <p className="text-3xl font-bold text-primary">₹{product.price.toFixed(2)}</p>
-
-          <p className="text-muted-foreground text-base leading-relaxed">{product.description}</p>
-          
-          {isAvailable ? (
-            <div className="flex items-center space-x-2 text-green-600">
-              <CheckCircle className="h-5 w-5" />
-              <span>In Stock ({product.stock} available)</span>
-            </div>
-          ) : (
-            <div className="flex items-center space-x-2 text-destructive">
-              <XCircle className="h-5 w-5" />
-              <span>Out of Stock</span>
-            </div>
-          )}
-
-
-          <div className="flex items-center space-x-4">
-            {isAvailable ? (
-              <Button size="lg" className="w-full md:w-auto flex-grow" onClick={handleAddToCart}>
-                <ShoppingCart className="mr-2 h-5 w-5" /> Add to Cart
-              </Button>
-            ) : (
-               <Button size="lg" className="w-full md:w-auto flex-grow" disabled>
-                <ShoppingCart className="mr-2 h-5 w-5" /> Out of Stock
-               </Button>
-            )}
-          </div>
-
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="item-1">
-              <AccordionTrigger>Product Details</AccordionTrigger>
-              <AccordionContent>
-                <ul className="space-y-1 text-sm text-muted-foreground list-disc list-inside">
-                    <li>Category: {categoryName || 'N/A'}</li>
-                    <li>Weight/Volume: {product.weight || 'N/A'}</li>
-                    <li>Origin: {product.origin || 'N/A'}</li>
-                    <li>Status: {product.status} (Stock: {product.stock})</li>
-                </ul>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
-        </div>
-      </div>
-
-      <section id="reviews" className="mt-16 pt-8 border-t">
-        <h2 className="text-3xl font-semibold mb-6">Customer Reviews</h2>
-        {product.reviewsCount && product.reviewsCount > 0 ? (
-           <div className="space-y-6">
-            {[...Array(Math.min(3, product.reviewsCount || 0))].map((_, i) => ( // Simulating reviews
-                <Card key={i}>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <CardTitle className="text-lg">User {i+1}</CardTitle>
-                            <div className="flex items-center">
-                                {[...Array(5)].map((_, s_idx) => (
-                                    <Star key={s_idx} className={`h-4 w-4 ${s_idx < (product.rating || 5) - i % 2 ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}/>
-                                ))}
-                            </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Reviewed on {new Date(Date.now() - i * 24 * 3600 * 1000).toLocaleDateString()}</p>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm">This is a great product! Highly recommended. Quality is good and delivery was fast.</p>
-                    </CardContent>
-                </Card>
-            ))}
-            { (product.reviewsCount || 0) > 3 && <Button variant="link">Show all reviews</Button>}
-        </div>
-        ) : (
-             <p className="text-muted-foreground">No reviews yet for this product. Be the first to write one!</p>
-        )}
-      </section>
-
-      {relatedProducts.length > 0 && (
-        <section className="mt-16 pt-8 border-t">
-          <h2 className="text-3xl font-semibold mb-6">You Might Also Like</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {relatedProducts.map((relatedProduct) => (
-              <ProductCard key={relatedProduct.id} product={relatedProduct} />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
+    <ProductDetailClient 
+      product={product} 
+      relatedProducts={relatedProducts} 
+      categoryName={categoryNameResult}
+    />
   );
 }
