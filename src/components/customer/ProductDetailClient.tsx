@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -36,6 +37,7 @@ export function ProductDetailClient({ product, relatedProducts, categoryName }: 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [selectedImage, setSelectedImage] = useState(product.images?.[0] || 'https://placehold.co/600x450.png');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -75,12 +77,16 @@ export function ProductDetailClient({ product, relatedProducts, categoryName }: 
 
     return () => unsubscribe();
   }, [product.id, toast]);
+  
+  // Reset selected image when product changes
+  useEffect(() => {
+    setSelectedImage(product.images?.[0] || 'https://placehold.co/600x450.png');
+  }, [product]);
 
   const handleAddToCart = () => {
     addToCart(product, 1);
   };
   
-  const mainImageSrc = product.images?.[0] || 'https://placehold.co/600x450.png';
   const mainImageDataAiHint = product.dataAiHint || 'product details main';
   const isAvailable = product.status === 'active' && product.stock > 0;
   const isLowStock = isAvailable && product.lowStockThreshold != null && product.stock < product.lowStockThreshold;
@@ -98,7 +104,7 @@ export function ProductDetailClient({ product, relatedProducts, categoryName }: 
         <div>
           <div className="mb-4">
             <Image
-              src={mainImageSrc}
+              src={selectedImage}
               alt={product.name}
               width={600}
               height={450}
@@ -107,6 +113,26 @@ export function ProductDetailClient({ product, relatedProducts, categoryName }: 
               priority 
             />
           </div>
+           {product.images && product.images.length > 1 && (
+            <div className="grid grid-cols-5 gap-2">
+              {product.images.map((img, index) => (
+                <div
+                  key={index}
+                  className={`relative aspect-square cursor-pointer rounded-md overflow-hidden border-2 transition-all ${selectedImage === img ? 'border-primary shadow-md' : 'border-transparent hover:border-muted'}`}
+                  onClick={() => setSelectedImage(img)}
+                >
+                  <Image
+                    src={img}
+                    alt={`${product.name} thumbnail ${index + 1}`}
+                    fill
+                    sizes="(max-width: 768px) 20vw, 10vw"
+                    className="object-cover"
+                    data-ai-hint={product.dataAiHint || `product thumbnail ${index + 1}`}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
