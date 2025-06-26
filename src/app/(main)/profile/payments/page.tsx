@@ -12,7 +12,7 @@ interface PaymentMethod {
   id: string;
   type: 'card' | 'upi' | 'wallet';
   displayName: string; 
-  details: string; // e.g., **** **** **** 1234 or upi@example or PayPal
+  details: string; // e.g., '**** **** **** 1234' or 'user@example' or 'PayPal'
   isDefault?: boolean;
 }
 
