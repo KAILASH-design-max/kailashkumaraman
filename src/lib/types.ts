@@ -1,4 +1,5 @@
 
+
 export interface Product {
   id: string; // Document ID from Firestore
   name: string;
@@ -38,6 +39,20 @@ export interface OrderAddress {
   country: string;
   name?: string;
   phoneNumber?: string;
+}
+
+export interface Address {
+  id: string; // Firestore document ID
+  userId: string;
+  name: string; // e.g., 'Home', 'Work'
+  street: string;
+  city: string;
+  postalCode: string;
+  country: string;
+  phoneNumber: string;
+  isDefault?: boolean;
+  createdAt: string; // ISO string
+  updatedAt?: string; // ISO string
 }
 
 export interface OrderItem {

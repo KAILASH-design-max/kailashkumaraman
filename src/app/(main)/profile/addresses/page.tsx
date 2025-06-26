@@ -2,56 +2,214 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MapPin, Edit3, Trash2, PlusCircle, CheckCircle, Phone } from 'lucide-react';
+import { ChevronLeft, MapPin, Edit3, Trash2, PlusCircle, CheckCircle, Phone, Loader2, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { auth, db } from '@/lib/firebase';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  writeBatch,
+  serverTimestamp,
+  getDocs,
+  Timestamp,
+  orderBy,
+  limit
+} from 'firebase/firestore';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface Address {
-  id: string;
+  id: string; // Firestore document ID
+  userId: string;
   name: string;
   street: string;
   city: string;
   postalCode: string;
   country: string;
-  phoneNumber: string; // Changed from phone, and made mandatory
+  phoneNumber: string;
   isDefault?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export default function AddressesPage() {
-  const [addresses, setAddresses] = useState<Address[]>([
-    { id: 'addr1', name: 'Home', street: '123 Main St, Apt 4B', city: 'Mumbai', postalCode: '400001', country: 'India', phoneNumber: '9876543210', isDefault: true },
-    { id: 'addr2', name: 'Work', street: '789 Business Park, Suite 200', city: 'Delhi', postalCode: '110001', country: 'India', phoneNumber: '9876543211' },
-  ]);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
+  const { toast } = useToast();
 
-  const handleSetDefault = (id: string) => {
-    setAddresses(prev => prev.map(addr => ({ ...addr, isDefault: addr.id === id })));
-    // API call to set default address would go here
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      if (!user) {
+        setIsLoading(false);
+        setAddresses([]);
+      }
+    });
+    return () => unsubscribeAuth();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      setIsLoading(true);
+      setError(null);
+      const addressesRef = collection(db, 'addresses');
+      const q = query(addressesRef, where('userId', '==', currentUser.uid), orderBy('createdAt', 'desc'));
+      
+      const unsubscribeFirestore = onSnapshot(q, (querySnapshot) => {
+        const fetchedAddresses: Address[] = [];
+        querySnapshot.forEach((doc) => {
+          fetchedAddresses.push({ id: doc.id, ...doc.data() } as Address);
+        });
+        setAddresses(fetchedAddresses);
+        setIsLoading(false);
+      }, (err) => {
+        console.error("Firestore onSnapshot error: ", err);
+        setError("Failed to fetch addresses. Please check your connection and Firestore security rules.");
+        setIsLoading(false);
+      });
+      
+      return () => unsubscribeFirestore();
+    } else {
+        setIsLoading(false);
+        setAddresses([]);
+    }
+  }, [currentUser]);
+
+  const handleSetDefault = async (addressIdToSet: string) => {
+    if (!currentUser) return;
+    
+    const addressesRef = collection(db, 'addresses');
+    const q = query(addressesRef, where('userId', '==', currentUser.uid), where('isDefault', '==', true));
+    
+    try {
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+
+        querySnapshot.forEach(docSnap => {
+            if (docSnap.id !== addressIdToSet) {
+                batch.update(docSnap.ref, { isDefault: false });
+            }
+        });
+
+        const newDefaultRef = doc(db, 'addresses', addressIdToSet);
+        batch.update(newDefaultRef, { isDefault: true, updatedAt: serverTimestamp() });
+        
+        await batch.commit();
+        toast({ title: "Success", description: "Default address updated." });
+    } catch (e) {
+        console.error("Error setting default address: ", e);
+        toast({ title: "Error", description: "Could not set default address.", variant: "destructive" });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setAddresses(prev => prev.filter(addr => addr.id !== id));
-    // API call to delete address would go here
+  const handleDelete = async (id: string) => {
+    try {
+        await deleteDoc(doc(db, 'addresses', id));
+        toast({ title: "Address Deleted", description: "The address has been removed.", variant: "destructive" });
+    } catch (e) {
+        console.error("Error deleting address: ", e);
+        toast({ title: "Error", description: "Could not delete address.", variant: "destructive" });
+    }
   };
   
-  const handleAddNewAddress = (e: React.FormEvent) => {
+  const handleAddNewAddress = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Basic validation
+    if (!currentUser) {
+      toast({ title: "Not Authenticated", description: "You must be logged in to add an address.", variant: "destructive" });
+      return;
+    }
     if (!newAddress.name || !newAddress.street || !newAddress.city || !newAddress.postalCode || !newAddress.phoneNumber) {
-        alert("Please fill all required fields, including phone number.");
+        toast({ title: "Missing Fields", description: "Please fill all required fields.", variant: "destructive" });
         return;
     }
-    const newAddr: Address = { ...newAddress, id: `addr${Date.now()}`};
-    setAddresses(prev => [...prev, newAddr]);
-    setNewAddress({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
-    setShowAddForm(false);
-    // API call to add new address would go here
-  }
+
+    setIsSubmitting(true);
+    try {
+      const addressesRef = collection(db, 'addresses');
+      const q = query(addressesRef, where('userId', '==', currentUser.uid), limit(1));
+      const snapshot = await getDocs(q);
+      const isFirstAddress = snapshot.empty;
+
+      await addDoc(collection(db, 'addresses'), {
+        ...newAddress,
+        userId: currentUser.uid,
+        isDefault: isFirstAddress,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      toast({ title: "Success", description: "New address added successfully." });
+      setNewAddress({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
+      setShowAddForm(false);
+    } catch (e) {
+      console.error("Error adding new address: ", e);
+      toast({ title: "Error", description: "Could not add new address.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+        return <div className="text-center"><Loader2 className="h-8 w-8 animate-spin text-primary mx-auto" /><p className="mt-2">Loading addresses...</p></div>;
+    }
+    if (error) {
+        return <Alert variant="destructive"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
+    }
+    if (!currentUser) {
+        return <Alert><AlertTitle>Please Log In</AlertTitle><AlertDescription>You need to be logged in to manage your addresses. <Link href="/login?redirect=/profile/addresses" className="text-primary font-semibold hover:underline">Log in now</Link>.</AlertDescription></Alert>
+    }
+    if (addresses.length === 0 && !showAddForm) {
+      return <p className="text-center text-muted-foreground p-4 border border-dashed rounded-md">You have no saved addresses. Add one to get started!</p>;
+    }
+    return addresses.map((address) => (
+      <Card key={address.id} className={`shadow-md ${address.isDefault ? 'border-2 border-primary' : ''}`}>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">{address.name} {address.isDefault && <span className="text-xs text-primary ml-2">(Default)</span>}</CardTitle>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="icon" onClick={() => toast({ title: "Info", description: "Edit functionality is not yet implemented." })}>
+                <Edit3 className="h-4 w-4" /> <span className="sr-only">Edit</span>
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => handleDelete(address.id)} className="text-destructive hover:text-destructive/80">
+                <Trash2 className="h-4 w-4" /> <span className="sr-only">Delete</span>
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm">{address.street}</p>
+          <p className="text-sm">{address.city}, {address.postalCode}, {address.country}</p>
+          <p className="text-sm flex items-center"><Phone className="mr-1.5 h-3.5 w-3.5 text-muted-foreground"/>{address.phoneNumber}</p>
+          {!address.isDefault && (
+            <Button variant="link" size="sm" onClick={() => handleSetDefault(address.id)} className="p-0 h-auto mt-2 text-primary">
+              <CheckCircle className="mr-1 h-3 w-3"/> Set as Default
+            </Button>
+          )}
+          <Separator className="my-3"/>
+          <ul className="text-xs text-muted-foreground space-y-1 pl-4 list-disc">
+              <li><strong>Default Address:</strong> Used for faster checkouts. Only one can be default.</li>
+              <li><strong>Manage Addresses:</strong> Add, edit, or remove addresses at any time.</li>
+          </ul>
+        </CardContent>
+      </Card>
+    ));
+  };
 
   return (
     <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8">
@@ -73,9 +231,11 @@ export default function AddressesPage() {
         </p>
       </header>
 
-      <Button onClick={() => setShowAddForm(!showAddForm)} className="mb-6">
-        <PlusCircle className="mr-2 h-4 w-4" /> {showAddForm ? 'Cancel Adding' : 'Add New Address'}
-      </Button>
+      {currentUser && (
+        <Button onClick={() => setShowAddForm(!showAddForm)} className="mb-6">
+            <PlusCircle className="mr-2 h-4 w-4" /> {showAddForm ? 'Cancel Adding' : 'Add New Address'}
+        </Button>
+      )}
 
       {showAddForm && (
         <Card className="mb-8 shadow-lg">
@@ -104,7 +264,7 @@ export default function AddressesPage() {
               </div>
               <div>
                 <Label htmlFor="addrCountry">Country</Label>
-                <Input id="addrCountry" type="text" placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({...newAddress, country: e.target.value})} required />
+                <Input id="addrCountry" type="text" placeholder="Country" value={newAddress.country} onChange={e => setNewAddress({...newAddress, country: e.target.value})} />
               </div>
               <div>
                 <Label htmlFor="addrPhoneNumber">Phone Number</Label>
@@ -113,7 +273,10 @@ export default function AddressesPage() {
                   <Input id="addrPhoneNumber" type="tel" placeholder="Phone Number" value={newAddress.phoneNumber} onChange={e => setNewAddress({...newAddress, phoneNumber: e.target.value})} className="pl-10" required />
                 </div>
               </div>
-              <Button type="submit">Save New Address</Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                Save New Address
+              </Button>
             </form>
           </CardContent>
         </Card>
@@ -121,44 +284,8 @@ export default function AddressesPage() {
 
       <div className="space-y-6">
         <h2 className="text-2xl font-semibold">Saved Addresses</h2>
-        {addresses.length === 0 && !showAddForm ? (
-          <p>You have no saved addresses. Add one to get started!</p>
-        ) : (
-          addresses.map((address) => (
-            <Card key={address.id} className={`shadow-md ${address.isDefault ? 'border-2 border-primary' : ''}`}>
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <CardTitle className="text-lg">{address.name} {address.isDefault && <span className="text-xs text-primary ml-2">(Default)</span>}</CardTitle>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => alert('Edit functionality to be implemented for ID: ' + address.id)}>
-                      <Edit3 className="h-4 w-4" /> <span className="sr-only">Edit</span>
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(address.id)} className="text-destructive hover:text-destructive/80">
-                      <Trash2 className="h-4 w-4" /> <span className="sr-only">Delete</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm">{address.street}</p>
-                <p className="text-sm">{address.city}, {address.postalCode}, {address.country}</p>
-                <p className="text-sm flex items-center"><Phone className="mr-1.5 h-3.5 w-3.5 text-muted-foreground"/>{address.phoneNumber}</p>
-                {!address.isDefault && (
-                  <Button variant="link" size="sm" onClick={() => handleSetDefault(address.id)} className="p-0 h-auto mt-2 text-primary">
-                    <CheckCircle className="mr-1 h-3 w-3"/> Set as Default
-                  </Button>
-                )}
-                <Separator className="my-3"/>
-                <ul className="text-xs text-muted-foreground space-y-1 pl-4 list-disc">
-                    <li><strong>Edit/Delete Addresses:</strong> Modify details or remove saved addresses.</li>
-                    <li><strong>Set Default Address:</strong> Choose a primary address for quicker checkouts.</li>
-                </ul>
-              </CardContent>
-            </Card>
-          ))
-        )}
+        {renderContent()}
       </div>
     </div>
   );
 }
-
