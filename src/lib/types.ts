@@ -104,11 +104,12 @@ export interface DeliveryPartner {
 
 export interface Review {
   id: string; // Document ID from Firestore
+  productId: string;
   userId: string;
   userName: string;
   rating: number;
   comment?: string;
-  reviewedAt: string; // ISO string
+  createdAt: string; // ISO string
 }
 
 export interface PromoCode {

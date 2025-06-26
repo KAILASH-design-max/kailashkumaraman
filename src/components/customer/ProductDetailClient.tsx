@@ -2,9 +2,9 @@
 'use client';
 
 import Image from 'next/image';
-import type { Product } from '@/lib/types';
+import type { Product, Review } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
+import { Star, ShoppingCart, ChevronLeft, MessageSquare, CheckCircle, XCircle, AlertTriangle, Send, Loader2, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -18,6 +18,13 @@ import {
 } from "@/components/ui/accordion";
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { db, auth } from '@/lib/firebase';
+import { collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy, type Timestamp } from 'firebase/firestore';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface ProductDetailClientProps {
     product: Product;
@@ -28,9 +35,109 @@ interface ProductDetailClientProps {
 export function ProductDetailClient({ product, relatedProducts, categoryName }: ProductDetailClientProps) {
   const { addToCart } = useCart();
   const { toast } = useToast();
-  
+
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newRating, setNewRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [newComment, setNewComment] = useState('');
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [hasUserReviewed, setHasUserReviewed] = useState(false);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!product.id) return;
+    setReviewsLoading(true);
+
+    const reviewsRef = collection(db, 'reviews');
+    const q = query(reviewsRef, where('productId', '==', product.id), orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetchedReviews: Review[] = [];
+      let userHasReviewedThisProduct = false;
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        if (currentUser && data.userId === currentUser.uid) {
+          userHasReviewedThisProduct = true;
+        }
+        fetchedReviews.push({
+          id: doc.id,
+          productId: data.productId,
+          userId: data.userId,
+          userName: data.userName,
+          rating: data.rating,
+          comment: data.comment,
+          createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() ?? new Date().toISOString(),
+        });
+      });
+      setReviews(fetchedReviews);
+      setHasUserReviewed(userHasReviewedThisProduct);
+      setReviewsLoading(false);
+    }, (error) => {
+      console.error("Error fetching reviews: ", error);
+      toast({ title: "Error", description: "Could not fetch reviews.", variant: "destructive" });
+      setReviewsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [product.id, currentUser, toast]);
+
   const handleAddToCart = () => {
     addToCart(product, 1);
+  };
+  
+  const handleReviewSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) {
+      setReviewError("You must be logged in to submit a review.");
+      return;
+    }
+    if (newRating === 0) {
+      setReviewError("Please select a star rating.");
+      return;
+    }
+     if (hasUserReviewed) {
+      setReviewError("You have already submitted a review for this product.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    setReviewError(null);
+
+    try {
+      await addDoc(collection(db, "reviews"), {
+        productId: product.id,
+        userId: currentUser.uid,
+        userName: currentUser.displayName || "Anonymous User",
+        rating: newRating,
+        comment: newComment,
+        createdAt: serverTimestamp(),
+      });
+      toast({
+        title: "Review Submitted!",
+        description: "Thank you for your feedback.",
+      });
+      setNewRating(0);
+      setNewComment('');
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      setReviewError("Failed to submit review. Please try again.");
+      toast({
+        title: "Submission Failed",
+        description: "There was an error submitting your review.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingReview(false);
+    }
   };
 
   const mainImageSrc = product.images?.[0] || 'https://placehold.co/600x450.png';
@@ -71,11 +178,11 @@ export function ProductDetailClient({ product, relatedProducts, categoryName }: 
               <div className="flex items-center gap-1">
                 <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
                 <span className="text-md font-medium">{product.rating.toFixed(1)}</span>
-                <span className="text-sm text-muted-foreground">({product.reviewsCount || 0} reviews)</span>
+                <span className="text-sm text-muted-foreground">({reviews.length || product.reviewsCount || 0} reviews)</span>
               </div>
             )}
-             {(product.reviewsCount && product.reviewsCount > 0) && <Separator orientation="vertical" className="h-5"/>}
-            {(product.reviewsCount && product.reviewsCount > 0) && (
+             {(reviews.length > 0) && <Separator orientation="vertical" className="h-5"/>}
+            {(reviews.length > 0) && (
               <a href="#reviews" className="text-sm text-primary hover:underline flex items-center">
                 <MessageSquare className="mr-1 h-4 w-4"/> See Reviews
               </a>
@@ -136,31 +243,77 @@ export function ProductDetailClient({ product, relatedProducts, categoryName }: 
 
       <section id="reviews" className="mt-16 pt-8 border-t">
         <h2 className="text-3xl font-semibold mb-6">Customer Reviews</h2>
-        {product.reviewsCount && product.reviewsCount > 0 ? (
-           <div className="space-y-6">
-            {[...Array(Math.min(3, product.reviewsCount || 0))].map((_, i) => ( // Simulating reviews
-                <Card key={i}>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <CardTitle className="text-lg">User {i+1}</CardTitle>
-                            <div className="flex items-center">
-                                {[...Array(5)].map((_, s_idx) => (
-                                    <Star key={s_idx} className={`h-4 w-4 ${s_idx < (product.rating || 5) - i % 2 ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}/>
-                                ))}
+        <div className="grid md:grid-cols-2 gap-8">
+            <div className="space-y-6">
+                {reviewsLoading ? (
+                    <p className="text-muted-foreground">Loading reviews...</p>
+                ) : reviews.length > 0 ? (
+                reviews.map((review) => (
+                    <Card key={review.id} className="bg-secondary/30">
+                        <CardHeader className="pb-3">
+                            <div className="flex justify-between items-center">
+                                <div className="flex items-center gap-2">
+                                    <UserCircle className="h-8 w-8 text-muted-foreground" />
+                                    <CardTitle className="text-base font-semibold">{review.userName}</CardTitle>
+                                </div>
+                                <div className="flex items-center">
+                                    {[...Array(5)].map((_, s_idx) => (
+                                        <Star key={s_idx} className={`h-4 w-4 ${s_idx < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`}/>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Reviewed on {new Date(Date.now() - i * 24 * 3600 * 1000).toLocaleDateString()}</p>
+                            <p className="text-xs text-muted-foreground pt-1">{new Date(review.createdAt).toLocaleDateString()}</p>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm italic">"{review.comment || 'No comment provided.'}"</p>
+                        </CardContent>
+                    </Card>
+                ))
+                ) : (
+                    <p className="text-muted-foreground text-center py-4">No reviews yet. Be the first to write one!</p>
+                )}
+            </div>
+
+            <div>
+                 <Card className="sticky top-24 shadow-lg">
+                    <CardHeader>
+                        <CardTitle>Write a Review</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <p className="text-sm">This is a great product! Highly recommended. Quality is good and delivery was fast.</p>
+                        {!currentUser ? (
+                             <p className="text-center text-muted-foreground">Please <Link href="/login" className="text-primary font-medium hover:underline">sign in</Link> to write a review.</p>
+                        ) : hasUserReviewed ? (
+                            <p className="text-center text-green-600">Thank you for your review!</p>
+                        ) : (
+                            <form onSubmit={handleReviewSubmit} className="space-y-4">
+                                <div>
+                                    <Label className="font-medium mb-2 block">Your Rating</Label>
+                                    <div className="flex items-center gap-1" onMouseLeave={() => setHoverRating(0)}>
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                className={`h-7 w-7 cursor-pointer transition-colors ${ (hoverRating || newRating) >= star ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground' }`}
+                                                onClick={() => setNewRating(star)}
+                                                onMouseEnter={() => setHoverRating(star)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <Label htmlFor="comment" className="font-medium">Your Comment (Optional)</Label>
+                                    <Textarea id="comment" value={newComment} onChange={e => setNewComment(e.target.value)} placeholder="Tell us what you thought..."/>
+                                </div>
+                                {reviewError && <p className="text-sm text-destructive">{reviewError}</p>}
+                                <Button type="submit" disabled={isSubmittingReview} className="w-full">
+                                    {isSubmittingReview ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Send className="mr-2 h-4 w-4"/>}
+                                    Submit Review
+                                </Button>
+                            </form>
+                        )}
                     </CardContent>
-                </Card>
-            ))}
-            { (product.reviewsCount || 0) > 3 && <Button variant="link">Show all reviews</Button>}
+                 </Card>
+            </div>
         </div>
-        ) : (
-             <p className="text-muted-foreground">No reviews yet for this product. Be the first to write one!</p>
-        )}
       </section>
 
       {relatedProducts.length > 0 && (
