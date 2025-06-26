@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import { CheckCircle, Package, MapPin, CreditCard, Edit3, PlusCircle, Trash2, ChevronLeft, Tag, AlertCircle, ChevronDown, ShoppingBag, Phone } from 'lucide-react';
+import { CheckCircle, Package, MapPin, CreditCard, Edit3, PlusCircle, Trash2, ChevronLeft, Tag, AlertCircle, ChevronDown, ShoppingBag, Phone, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   DropdownMenu,
@@ -20,9 +20,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { PromoCode } from '@/lib/types';
-import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import type { PromoCode, Address } from '@/lib/types';
+import { db, auth } from '@/lib/firebase';
+import { collection, query, where, getDocs, Timestamp, onSnapshot } from 'firebase/firestore';
+import type { User as FirebaseUser } from 'firebase/auth';
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
 const DELIVERY_CHARGE_STANDARD = 50;
@@ -30,20 +31,19 @@ const DELIVERY_CHARGE_EXPRESS_EXTRA = 50;
 const GST_RATE = 0.18;
 const HANDLING_CHARGE = 5;
 
-const savedAddresses = [
-  { id: 'addr1', name: 'Home', street: '123 Main St', city: 'Mumbai', postalCode: '400001', country: 'India', phoneNumber: '9876543210' },
-  { id: 'addr2', name: 'Work', street: '456 Business Park', city: 'Delhi', postalCode: '110001', country: 'India', phoneNumber: '9876543211' },
-];
-
-
 export default function ShippingDetailsPage() {
   const { cartItems, getCartTotal } = useCart();
   const router = useRouter();
 
   const [shippingOption, setShippingOption] = useState('saved');
-  const [selectedAddressId, setSelectedAddressId] = useState(savedAddresses[0]?.id || '');
   const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
   const [shippingMethod, setShippingMethod] = useState('standard'); 
+
+  // Firestore-related state
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
+  const [addressesLoading, setAddressesLoading] = useState(true);
+  const [selectedAddressId, setSelectedAddressId] = useState('');
 
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedPromoCode, setAppliedPromoCode] = useState<{ code: string; discountAmount: number; description: string } | null>(null);
@@ -52,9 +52,15 @@ export default function ShippingDetailsPage() {
   const [availablePromoCodes, setAvailablePromoCodes] = useState<PromoCode[]>([]);
   const [promoFetchError, setPromoFetchError] = useState<string | null>(null);
 
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+    });
+    return () => unsubscribeAuth();
+  }, []);
 
   useEffect(() => {
-    if (cartItems.length === 0) {
+    if (cartItems.length === 0 && !currentUser) { // Allow navigation if user is just loading
         router.push('/cart');
     }
     
@@ -62,49 +68,75 @@ export default function ShippingDetailsPage() {
       setPromoFetchError(null);
       try {
         const promoCodesRef = collection(db, 'promoCodes');
-        // Query only by status, as expiresAt is a string in the Firestore schema.
         const q = query(promoCodesRef, where('status', '==', 'active'));
         const querySnapshot = await getDocs(q);
         const now = new Date();
         const codes: PromoCode[] = [];
-
         querySnapshot.forEach((doc) => {
           const data = doc.data();
-          // Firestore 'expiresAt' field is a string, so we parse it.
           const expiresAtDate = new Date(data.expiresAt as string);
-
-          // Client-side filtering for expiration date
           if (expiresAtDate > now) {
-              codes.push({
-                  id: doc.id,
-                  code: data.code,
-                  description: data.description,
-                  discountType: data.discountType,
-                  value: data.value,
-                  minOrderValue: data.minOrderValue,
-                  status: data.status,
-                  expiresAt: data.expiresAt, // keep as string
-                  usageLimit: data.usageLimit,
-                  // Handle potential Timestamps for other date fields if they exist
-                  createdAt: data.createdAt && data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : undefined,
-                  updatedAt: data.updatedAt && data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : undefined,
-              });
+              codes.push({ id: doc.id, ...data } as PromoCode);
           }
         });
         setAvailablePromoCodes(codes);
       } catch (e: any) {
-        console.error("Error fetching promo codes: ", e);
-        if (e.code === 'failed-precondition') {
-           setPromoFetchError("A Firestore index is required. Please check the browser console for a link to create it.");
-        } else {
-           setPromoFetchError("Could not load promo codes at this time.");
-        }
+        setPromoFetchError("Could not load promo codes.");
       }
     }
-
     fetchPromoCodes();
 
-  }, [cartItems.length, router]);
+    // Fetch addresses from Firestore
+    if (currentUser) {
+      setAddressesLoading(true);
+      const addressesRef = collection(db, 'addresses');
+      const q = query(addressesRef, where('userId', '==', currentUser.uid));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          const fetchedAddresses: Address[] = [];
+          let defaultAddressId = '';
+          querySnapshot.forEach((doc) => {
+              const data = doc.data();
+              const address: Address = {
+                  id: doc.id,
+                  userId: data.userId,
+                  name: data.name || '',
+                  street: data.street || '',
+                  city: data.city || '',
+                  postalCode: data.postalCode || '',
+                  country: data.country || '',
+                  phoneNumber: data.phoneNumber || '',
+                  isDefault: data.isDefault || false,
+                  createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+                  updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : undefined,
+              };
+              fetchedAddresses.push(address);
+              if (address.isDefault) {
+                  defaultAddressId = doc.id;
+              }
+          });
+          setSavedAddresses(fetchedAddresses);
+          
+          if (defaultAddressId) {
+              setSelectedAddressId(defaultAddressId);
+          } else if (fetchedAddresses.length > 0) {
+              setSelectedAddressId(fetchedAddresses[0].id);
+          } else {
+              setSelectedAddressId('');
+              setShippingOption('new');
+          }
+          setAddressesLoading(false);
+      }, (error) => {
+          console.error("Error fetching addresses:", error);
+          setPromoMessage({ type: 'error', text: 'Could not fetch saved addresses.' });
+          setAddressesLoading(false);
+      });
+      return () => unsubscribe();
+    } else {
+      setAddressesLoading(false);
+      setSavedAddresses([]);
+    }
+
+  }, [cartItems.length, router, currentUser]);
 
   const subtotal = getCartTotal();
 
@@ -132,7 +164,6 @@ export default function ShippingDetailsPage() {
     return Math.max(0, preliminaryTotal);
   }, [subtotal, gstAmount, deliveryCharge, HANDLING_CHARGE, calculatedDiscount]);
 
-
   const handleApplyPromoCode = () => {
     if (!promoCodeInput.trim()) {
       setPromoMessage({ type: 'info', text: 'Please enter a promo code.' });
@@ -150,28 +181,23 @@ export default function ShippingDetailsPage() {
 
       let discount = 0;
       const currentStandardDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
-
       if (codeToApply.discountType === 'percentage') {
         discount = subtotal * (codeToApply.value / 100);
       } else if (codeToApply.discountType === 'fixed') {
-        if (codeToApply.code === 'FREEDEL') {
-            discount = Math.min(codeToApply.value, currentStandardDeliveryCharge);
-        } else {
-            discount = codeToApply.value;
-        }
+        discount = (codeToApply.code === 'FREEDEL') ? Math.min(codeToApply.value, currentStandardDeliveryCharge) : codeToApply.value;
       }
       
       discount = Math.min(discount, subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE); 
 
-      if (discount <= 0 && !(codeToApply.code === 'FREEDEL' && currentStandardDeliveryCharge > 0) ) {
-         setPromoMessage({ type: 'info', text: `Promo code "${codeToApply.code}" cannot be applied or provides no discount for your current cart.` });
+      if (discount <= 0 && !(codeToApply.code === 'FREEDEL' && currentStandardDeliveryCharge > 0)) {
+         setPromoMessage({ type: 'info', text: `Promo code "${codeToApply.code}" provides no discount.` });
          setAppliedPromoCode(null);
       } else {
         setAppliedPromoCode({ code: codeToApply.code, discountAmount: discount, description: codeToApply.description || 'Discount applied' });
-        setPromoMessage({ type: 'success', text: `Promo code "${codeToApply.code}" applied! You saved ₹${discount.toFixed(2)}.` });
+        setPromoMessage({ type: 'success', text: `Promo "${codeToApply.code}" applied! You saved ₹${discount.toFixed(2)}.` });
       }
     } else {
-      setPromoMessage({ type: 'error', text: 'Invalid or expired promo code. Please try again.' });
+      setPromoMessage({ type: 'error', text: 'Invalid or expired promo code.' });
       setAppliedPromoCode(null);
     }
   };
@@ -188,7 +214,7 @@ export default function ShippingDetailsPage() {
 
   const handleProceedToPayment = () => {
     if (!isAddressValid()) {
-        setPromoMessage({ type: 'error', text: 'Please select or enter a valid shipping address, including phone number.'});
+        setPromoMessage({ type: 'error', text: 'Please select or enter a valid shipping address.'});
         return;
     }
     const currentAddress = shippingOption === 'saved' 
@@ -204,14 +230,7 @@ export default function ShippingDetailsPage() {
         address: currentAddress, 
         method: shippingMethod,
         promoCode: appliedPromoCode,
-        summary: { 
-            subtotal, 
-            discount: calculatedDiscount, 
-            deliveryCharge, 
-            gstAmount, 
-            handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0,
-            totalAmount 
-        }
+        summary: { subtotal, discount: calculatedDiscount, deliveryCharge, gstAmount, handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0, totalAmount }
     };
     if (typeof window !== 'undefined') {
         localStorage.setItem('checkoutShippingInfo', JSON.stringify(shippingInfo));
@@ -224,7 +243,7 @@ export default function ShippingDetailsPage() {
       <div className="container mx-auto py-12 px-4 text-center">
         <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
         <h1 className="text-3xl font-semibold mb-4">Your Cart is Empty</h1>
-        <p className="text-muted-foreground mb-8">Redirecting you to your cart...</p>
+        <p className="text-muted-foreground mb-8">Redirecting...</p>
       </div>
     );
   }
@@ -233,8 +252,7 @@ export default function ShippingDetailsPage() {
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6">
         <Link href="/checkout" className="text-sm text-muted-foreground hover:text-primary flex items-center">
-          <ChevronLeft className="mr-1 h-4 w-4" />
-          Back to Item Review
+          <ChevronLeft className="mr-1 h-4 w-4" /> Back to Item Review
         </Link>
       </div>
       <h1 className="text-3xl font-bold mb-2 text-center">Shipping Details</h1>
@@ -245,13 +263,32 @@ export default function ShippingDetailsPage() {
             <h3 className="text-xl font-semibold flex items-center"><MapPin className="mr-3 h-6 w-6 text-primary" /> Step 2: Choose Delivery Address</h3>
               <RadioGroup value={shippingOption} onValueChange={setShippingOption} className="space-y-3">
                 <div>
-                  <RadioGroupItem value="saved" id="savedAddr" /><Label htmlFor="savedAddr" className="ml-2 cursor-pointer">Use a saved address</Label>
+                  <RadioGroupItem value="saved" id="savedAddr" disabled={savedAddresses.length === 0 && !addressesLoading} />
+                  <Label htmlFor="savedAddr" className="ml-2 cursor-pointer">Use a saved address</Label>
                 </div>
                 {shippingOption === 'saved' && (
-                  <Select value={selectedAddressId} onValueChange={setSelectedAddressId} disabled={savedAddresses.length === 0}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder={savedAddresses.length > 0 ? "Select a saved address" : "No saved addresses"} /></SelectTrigger>
-                    <SelectContent>{savedAddresses.map(addr => (<SelectItem key={addr.id} value={addr.id}>{addr.name} - {addr.street}, {addr.city}</SelectItem>))}</SelectContent>
-                  </Select>
+                  addressesLoading ? (
+                      <div className="flex items-center space-x-2 text-muted-foreground p-2">
+                          <Loader2 className="h-4 w-4 animate-spin"/>
+                          <span>Loading your addresses...</span>
+                      </div>
+                  ) : (
+                      <Select value={selectedAddressId} onValueChange={setSelectedAddressId} disabled={savedAddresses.length === 0}>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={savedAddresses.length > 0 ? "Select a saved address" : "No saved addresses found"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {savedAddresses.map(addr => (
+                                  <SelectItem key={addr.id} value={addr.id}>
+                                      {addr.name} {addr.isDefault && '(Default)'} - {addr.street}, {addr.city}
+                                  </SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  )
+                )}
+                {savedAddresses.length === 0 && !addressesLoading && shippingOption === 'saved' && (
+                    <p className="text-sm text-muted-foreground mt-2 px-1">No saved addresses. Please add a new address below.</p>
                 )}
                 <div>
                   <RadioGroupItem value="new" id="newAddr" /><Label htmlFor="newAddr" className="ml-2 cursor-pointer">Enter a new address</Label>
@@ -308,10 +345,7 @@ export default function ShippingDetailsPage() {
                         availablePromoCodes.map((promo) => (
                           <DropdownMenuItem
                             key={promo.id}
-                            onClick={() => {
-                              setPromoCodeInput(promo.code);
-                              setPromoMessage(null); 
-                            }}
+                            onClick={() => { setPromoCodeInput(promo.code); setPromoMessage(null); }}
                           >
                             {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description || `${promo.value}${promo.discountType === 'percentage' ? '%' : '₹'} off`}</span>
                           </DropdownMenuItem>
@@ -326,7 +360,7 @@ export default function ShippingDetailsPage() {
                   <Button variant="outline" onClick={handleApplyPromoCode} className="shrink-0">Apply</Button>
                 </div>
                 {promoMessage && (
-                    <Alert variant={promoMessage.type === 'error' ? 'destructive' : 'default'} className={`text-sm mt-2 ${promoMessage.type === 'success' ? 'border-green-500 bg-green-50 text-green-700 [&>svg]:text-green-700' : promoMessage.type === 'error' ? 'border-red-500 bg-red-50 text-red-700' : 'border-blue-500 bg-blue-50 text-blue-700 [&>svg]:text-blue-700'}`}>
+                    <Alert variant={promoMessage.type === 'error' ? 'destructive' : 'default'} className={`text-sm mt-2 ${promoMessage.type === 'success' ? 'border-green-500 bg-green-50 text-green-700 [&>svg]:text-green-700' : 'border-blue-500 bg-blue-50 text-blue-700 [&>svg]:text-blue-700'}`}>
                         {promoMessage.type === 'error' && <AlertCircle className="h-4 w-4" />}
                         {promoMessage.type === 'success' && <CheckCircle className="h-4 w-4" />}
                         <AlertDescription>{promoMessage.text}</AlertDescription>
@@ -378,3 +412,4 @@ export default function ShippingDetailsPage() {
     </div>
   );
 }
+
