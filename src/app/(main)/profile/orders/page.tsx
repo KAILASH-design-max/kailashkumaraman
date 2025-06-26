@@ -4,17 +4,18 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, ListOrdered, Filter, Repeat, RotateCcw, PackageSearch, ShoppingBag, Loader2, Phone, Truck } from 'lucide-react';
+import { ChevronLeft, ListOrdered, Filter, Repeat, RotateCcw, PackageSearch, ShoppingBag, Loader2, Phone, Truck, Star, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy, Timestamp, type DocumentData } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, Timestamp, type DocumentData, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { User as FirebaseUser } from 'firebase/auth';
-import Image from 'next/image'; // For displaying item images
+import Image from 'next/image';
 import { useCart } from '@/hooks/useCart';
 import { mockProducts } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { Textarea } from '@/components/ui/textarea';
 
 // Define a more specific type for Firestore order data
 interface FirestoreOrderItem {
@@ -22,11 +23,11 @@ interface FirestoreOrderItem {
   name: string;
   quantity: number;
   price: number;
-  imageUrl?: string; // Optional: if stored with the order item
+  imageUrl?: string;
 }
 
 interface FirestoreOrderAddress {
-    name: string; // Recipient's name
+    name: string;
     street: string;
     city: string;
     postalCode: string;
@@ -35,15 +36,15 @@ interface FirestoreOrderAddress {
 }
 
 interface FirestoreOrder extends DocumentData {
-  id: string; // Firestore document ID
+  id: string;
   userId: string;
-  name: string; // Recipient's name
+  name: string;
   phoneNumber: string;
-  address: FirestoreOrderAddress; // Full address object
+  address: FirestoreOrderAddress;
   items: FirestoreOrderItem[];
-  total: number; // totalAmount
-  orderStatus: string; // 'Placed', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'
-  orderDate: Timestamp; // Firestore Timestamp
+  total: number;
+  orderStatus: string;
+  orderDate: Timestamp;
   shippingMethod?: string;
   paymentMethod?: string;
   promoCodeApplied?: string | null;
@@ -54,11 +55,111 @@ interface FirestoreOrder extends DocumentData {
 }
 
 
+// --- Review Form Component ---
+const ProductReviewForm = ({ 
+  product, 
+  user, 
+  onReviewSubmitted 
+}: { 
+  product: FirestoreOrderItem, 
+  user: FirebaseUser, 
+  onReviewSubmitted: () => void 
+}) => {
+  const [rating, setRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating === 0) {
+      toast({ title: "Rating Required", description: "Please select a star rating.", variant: "destructive" });
+      return;
+    }
+    if (comment.trim().length < 10) {
+      toast({ title: "Comment Too Short", description: "Please write at least 10 characters.", variant: "destructive" });
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      await addDoc(collection(db, 'reviews'), {
+        productId: product.productId,
+        userId: user.uid,
+        userName: user.displayName || 'Anonymous User',
+        rating: rating,
+        comment: comment.trim(),
+        createdAt: serverTimestamp(),
+      });
+      toast({ 
+        title: "Review Submitted!", 
+        description: "Thank you for your feedback. It helps other shoppers!",
+        className: "bg-green-100 border-green-300 text-green-800"
+      });
+      onReviewSubmitted();
+    } catch (error) {
+        console.error("Error submitting review:", error);
+        toast({ title: "Submission Failed", description: "Could not submit your review. Please try again.", variant: "destructive" });
+    } finally {
+        setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-3 p-4 border-t space-y-3 bg-secondary/30 rounded-b-md">
+       <div className="flex items-center gap-4">
+        {product.imageUrl && (
+            <Image src={product.imageUrl} alt={product.name} width={40} height={40} className="rounded-md object-cover" data-ai-hint="review product"/>
+        )}
+        <p className="font-semibold text-sm">{product.name}</p>
+       </div>
+       <div>
+         <label className="text-sm font-medium">Your Rating</label>
+        <div className="flex items-center my-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+            <Star
+                key={star}
+                onClick={() => setRating(star)}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                className={`cursor-pointer h-6 w-6 transition-colors ${
+                (hoverRating || rating) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                }`}
+            />
+            ))}
+        </div>
+       </div>
+      <div>
+        <label htmlFor={`comment-${product.productId}`} className="text-sm font-medium">Your Review (min. 10 characters)</label>
+        <Textarea 
+            id={`comment-${product.productId}`}
+            value={comment} 
+            onChange={(e) => setComment(e.target.value)} 
+            placeholder={`What did you think of the ${product.name}?`} 
+            className="mt-1 bg-background"
+            rows={3}
+            required
+        />
+      </div>
+      <div className="flex justify-end gap-2">
+         <Button type="submit" size="sm" disabled={isSubmitting}>
+          {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+          Submit Review
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+
 export default function OrdersPage() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [orders, setOrders] = useState<FirestoreOrder[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(new Set());
+  const [reviewingItemId, setReviewingItemId] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
@@ -67,7 +168,8 @@ export default function OrdersPage() {
       setCurrentUser(user);
       if (!user) {
         setIsLoading(false);
-        setOrders([]); // Clear orders if user logs out
+        setOrders([]);
+        setReviewedProductIds(new Set());
       }
     });
     return () => unsubscribeAuth();
@@ -75,6 +177,18 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (currentUser) {
+      // Fetch user's reviews to check which products are already reviewed
+      const reviewsQuery = query(collection(db, 'reviews'), where('userId', '==', currentUser.uid));
+      const unsubscribeReviews = onSnapshot(reviewsQuery, (snapshot) => {
+          const productIds = new Set<string>();
+          snapshot.forEach(doc => productIds.add(doc.data().productId));
+          setReviewedProductIds(productIds);
+      }, (firestoreError) => {
+        console.error("Error fetching reviews:", firestoreError);
+        // Do not block order loading if reviews fail to load, just log it.
+      });
+
+      // Fetch user's orders
       setIsLoading(true);
       setError(null);
       const ordersRef = collection(db, 'orders');
@@ -116,9 +230,11 @@ Please use the link provided by Firebase to create this index. If the error pers
         setIsLoading(false);
       });
 
-      return () => unsubscribeFirestore();
+      return () => {
+          unsubscribeFirestore();
+          unsubscribeReviews();
+      };
     } else {
-      // No user logged in, or user logged out
       setIsLoading(false);
       setOrders([]);
     }
@@ -196,7 +312,11 @@ Please use the link provided by Firebase to create this index. If the error pers
     }
     return false;
   };
-
+  
+  const handleReviewSubmitted = (productId: string) => {
+      setReviewedProductIds(prev => new Set(prev).add(productId));
+      setReviewingItemId(null);
+  }
 
   if (isLoading) {
     return (
@@ -280,18 +400,46 @@ Please use the link provided by Firebase to create this index. If the error pers
                 <div className="mb-3">
                     <h4 className="font-medium text-sm mb-1">Items:</h4>
                     <ul className="space-y-2">
-                        {order.items.map((item, index) => (
-                            <li key={index} className="flex items-center gap-3 p-2 border-b last:border-b-0">
-                                {item.imageUrl && (
-                                    <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="rounded object-cover aspect-square" data-ai-hint="order item" />
-                                )}
-                                <div className="flex-grow">
-                                    <p className="text-sm font-medium">{item.name}</p>
-                                    <p className="text-xs text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
-                                </div>
-                                <p className="text-sm font-semibold">₹{(item.quantity * item.price).toFixed(2)}</p>
-                            </li>
-                        ))}
+                        {order.items.map((item, index) => {
+                            const uniqueItemId = `${order.id}-${item.productId}`;
+                            const isReviewed = reviewedProductIds.has(item.productId);
+                            const isReviewing = reviewingItemId === uniqueItemId;
+                            return (
+                                <li key={index} className="flex flex-col p-2 border-b last:border-b-0">
+                                    <div className="flex items-center gap-3">
+                                      {item.imageUrl && (
+                                          <Image src={item.imageUrl} alt={item.name} width={40} height={40} className="rounded object-cover aspect-square" data-ai-hint="order item" />
+                                      )}
+                                      <div className="flex-grow">
+                                          <p className="text-sm font-medium">{item.name}</p>
+                                          <p className="text-xs text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
+                                      </div>
+                                      <p className="text-sm font-semibold">₹{(item.quantity * item.price).toFixed(2)}</p>
+                                    </div>
+                                    {order.orderStatus.toLowerCase() === 'delivered' && (
+                                      <div className="mt-2 self-end">
+                                        {isReviewed ? (
+                                          <Button variant="outline" size="sm" disabled className="text-green-600">
+                                            <CheckCircle className="mr-2 h-4 w-4"/> Review Submitted
+                                          </Button>
+                                        ) : (
+                                          <Button variant="secondary" size="sm" onClick={() => setReviewingItemId(isReviewing ? null : uniqueItemId)}>
+                                            <Star className="mr-2 h-4 w-4"/>
+                                            {isReviewing ? 'Cancel Review' : 'Write a Review'}
+                                          </Button>
+                                        )}
+                                      </div>
+                                    )}
+                                    {isReviewing && !isReviewed && currentUser && (
+                                      <ProductReviewForm
+                                        product={item}
+                                        user={currentUser}
+                                        onReviewSubmitted={() => handleReviewSubmitted(item.productId)}
+                                      />
+                                    )}
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
                 <Separator className="my-3"/>
@@ -328,4 +476,3 @@ Please use the link provided by Firebase to create this index. If the error pers
     </div>
   );
 }
-
