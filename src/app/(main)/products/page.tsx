@@ -1,116 +1,91 @@
 
-'use client'; // For client-side interactions like searchParams and filtering
-
-import { useSearchParams } from 'next/navigation';
 import { ProductCard } from '@/components/customer/ProductCard';
-import { mockProducts, mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { Input } from '@/components/ui/input';
-import { Search as SearchIcon, Filter, X } from 'lucide-react';
-import { useState, useMemo } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { PackageSearch } from 'lucide-react';
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, where, Timestamp } from 'firebase/firestore';
 
-export default function ProductsPage() {
-  const searchParams = useSearchParams();
-  const initialCategory = searchParams.get('category') || 'all';
-  const initialSearchTerm = searchParams.get('q') || '';
+// Helper to safely serialize product data from Firestore, handling Timestamps
+function serializeProduct(doc: any): Product {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        name: data.name || '',
+        description: data.description || '',
+        price: data.price || 0,
+        category: data.category || '',
+        images: data.images || [],
+        rating: data.rating,
+        reviewsCount: data.reviewsCount,
+        stock: data.stock || 0,
+        status: data.status || 'inactive',
+        lowStockThreshold: data.lowStockThreshold,
+        weight: data.weight,
+        origin: data.origin,
+        popularity: data.popularity,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : String(data.createdAt || ''),
+        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : String(data.updatedAt || ''),
+        dataAiHint: data.dataAiHint,
+    };
+}
 
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [searchTerm, setSearchTerm] = useState(initialSearchTerm); // Search term state remains for URL query
-  const [sortBy, setSortBy] = useState('relevance'); // options: relevance, price-asc, price-desc, rating
-
-  const filteredProducts = useMemo(() => {
-    let products = mockProducts;
-
-    if (selectedCategory !== 'all') {
-      const categoryId = mockCategories.find(c => c.slug === selectedCategory)?.id;
-      if (categoryId) {
-        products = products.filter(p => p.category === categoryId);
-      }
-    }
-
-    if (searchTerm) {
-      products = products.filter(p =>
-        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    // Sorting
-    if (sortBy === 'price-asc') {
-      products = [...products].sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-desc') {
-      products = [...products].sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'rating') {
-      products = [...products].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-    }
-
-    return products;
-  }, [selectedCategory, searchTerm, sortBy]);
+async function fetchActiveProducts(): Promise<Product[]> {
+  const productsCollection = collection(db, 'products');
+  // Query for products where status is 'active'
+  const q = query(productsCollection, where('status', '==', 'active'));
   
-  const currentCategoryName = mockCategories.find(c => c.slug === selectedCategory)?.name || "All Products";
+  const querySnapshot = await getDocs(q);
+  const products: Product[] = [];
+  querySnapshot.forEach((doc) => {
+    products.push(serializeProduct(doc));
+  });
+
+  return products;
+}
+
+export default async function ProductsPage() {
+    let products: Product[] = [];
+    let productError: string | null = null;
+
+    try {
+        products = await fetchActiveProducts();
+    } catch (e: any) {
+        console.error("Error fetching products from Firestore:", e);
+        if (e.code === 'failed-precondition') {
+            productError = "A Firestore index is required to query products by status. Please check the server logs for a link to create the necessary index in your Firebase console. The query requires a single-field index on the 'status' field in the 'products' collection.";
+        } else if (e.code === 'permission-denied') {
+            productError = "Permission denied. Please check your Firestore security rules to ensure that you have permission to read from the 'products' collection.";
+        } else {
+            productError = `An unexpected error occurred while fetching products. Please check the console for more details. Error: ${e.message}`;
+        }
+    }
 
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-8 text-center">
-        <h1 className="text-4xl font-bold mb-2">{currentCategoryName}</h1>
-        <p className="text-muted-foreground">Browse our wide selection of products.</p>
+        <h1 className="text-4xl font-bold mb-2">All Products</h1>
+        <p className="text-muted-foreground">Browse our wide selection of available products.</p>
       </div>
-
-      {/* Filters Bar */}
-      <div className="mb-8 p-4 bg-card rounded-lg shadow sticky top-16 z-40 flex flex-col md:flex-row gap-4 items-center md:justify-start">
-        <div className="flex gap-2 w-full md:w-auto">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-full md:w-[180px] h-11">
-              <Filter className="h-4 w-4 mr-2 text-muted-foreground"/>
-              <SelectValue placeholder="Filter by category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {mockCategories.map(category => (
-                <SelectItem key={category.id} value={category.slug}>
-                  {category.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full md:w-[180px] h-11">
-              <SelectValue placeholder="Sort by" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="relevance">Relevance</SelectItem>
-              <SelectItem value="price-asc">Price: Low to High</SelectItem>
-              <SelectItem value="price-desc">Price: High to Low</SelectItem>
-              <SelectItem value="rating">Rating</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {filteredProducts.length > 0 ? (
+      
+      {productError ? (
+         <Alert variant="destructive" className="max-w-2xl mx-auto">
+            <AlertTitle>Error Fetching Products</AlertTitle>
+            <AlertDescription className="whitespace-pre-wrap">{productError}</AlertDescription>
+        </Alert>
+      ) : products.length > 0 ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {filteredProducts.map((product: Product) => (
+          {products.map((product: Product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
       ) : (
         <div className="text-center py-12">
+          <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
           <h2 className="text-2xl font-semibold mb-4">No Products Found</h2>
-          <p className="text-muted-foreground mb-6">
-            Try adjusting your filters or search via the header bar.
+          <p className="text-muted-foreground">
+            There are currently no active products available. Please check back later.
           </p>
-          <Button onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}>
-            <X className="mr-2 h-4 w-4" /> Clear Filters
-          </Button>
         </div>
       )}
     </div>
