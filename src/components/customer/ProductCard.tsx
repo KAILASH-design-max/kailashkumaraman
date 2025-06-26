@@ -6,8 +6,9 @@ import Image from 'next/image';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star, ShoppingCart } from 'lucide-react';
+import { Star, ShoppingCart, AlertTriangle } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { Badge } from '@/components/ui/badge';
 
 interface ProductCardProps {
   product: Product;
@@ -23,6 +24,7 @@ export function ProductCard({ product }: ProductCardProps) {
   const imageUrl = product.images?.[0] || 'https://placehold.co/400x300.png';
   const imageHint = product.dataAiHint || 'product image';
   const isAvailable = product.status === 'active' && product.stock > 0;
+  const isLowStock = isAvailable && product.lowStockThreshold != null && product.stock <= product.lowStockThreshold;
 
   return (
     <Card className="overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl flex flex-col h-full group">
@@ -40,6 +42,12 @@ export function ProductCard({ product }: ProductCardProps) {
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
               <span className="text-white font-semibold px-3 py-1 bg-destructive rounded">OUT OF STOCK</span>
             </div>
+          )}
+           {isLowStock && (
+            <Badge variant="destructive" className="absolute top-2 right-2 bg-yellow-500 text-white border-yellow-500 hover:bg-yellow-600">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Low Stock
+            </Badge>
           )}
         </CardHeader>
       </Link>
