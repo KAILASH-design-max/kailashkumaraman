@@ -140,3 +140,20 @@ export interface PromoCode {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface PaymentMethodDetails {
+  cardNumberMasked?: string;
+  upiId?: string;
+  balance?: number;
+}
+
+export interface PaymentMethod {
+  id: string; // Firestore document ID
+  userId: string;
+  type: 'card' | 'upi' | 'wallet';
+  label: string;
+  details: PaymentMethodDetails;
+  isDefault?: boolean;
+  createdAt: string; // ISO string for client
+  updatedAt?: string; // ISO string for client
+}
