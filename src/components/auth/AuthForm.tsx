@@ -1,28 +1,26 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  type ConfirmationResult,
-  type AuthError,
-  type User as FirebaseUser,
-} from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  updateDoc,
+  doc,
+  serverTimestamp,
+} from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertTriangle } from 'lucide-react';
 
-declare global {
-  interface Window {
-    recaptchaVerifier?: RecaptchaVerifier;
-    confirmationResult?: ConfirmationResult;
-  }
-}
+const SIMULATED_OTP = '123456';
 
 export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const { toast } = useToast();
@@ -33,124 +31,59 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const [otp, setOtp] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [timer, setTimer] = useState(60);
-  const [canResend, setCanResend] = useState(false);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow sign-in button.
-        },
-      });
-    }
-  }, []);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isOtpSent && timer > 0) {
-      interval = setInterval(() => {
-        setTimer((prevTimer) => prevTimer - 1);
-      }, 1000);
-    } else if (timer === 0) {
-      setCanResend(true);
-    }
-    return () => clearInterval(interval);
-  }, [isOtpSent, timer]);
-
-  const handleFirebaseAuthError = (error: AuthError) => {
-    console.error("Firebase Auth Error:", error.code, error.message);
-    let errorMessage = "An unexpected error occurred. Please try again.";
-    switch (error.code) {
-      case "auth/operation-not-allowed":
-        errorMessage = "Phone number sign-in is not enabled for this app. Please enable it in the Firebase console.";
-        break;
-      case "auth/billing-not-enabled":
-        errorMessage = "Firebase billing is not enabled for this project. Please upgrade to the Blaze (pay-as-you-go) plan in the Firebase console to use phone authentication.";
-        break;
-      case "auth/invalid-phone-number":
-        errorMessage = "The phone number you entered is not valid. Please ensure it's in E.164 format (e.g., +919876543210).";
-        break;
-      case "auth/too-many-requests":
-        errorMessage = "Too many requests. Please try again later.";
-        break;
-      case "auth/code-expired":
-        errorMessage = "The verification code has expired. Please request a new one.";
-        break;
-      case "auth/invalid-verification-code":
-        errorMessage = "The OTP you entered is incorrect. Please try again.";
-        break;
-      default:
-        errorMessage = `An error occurred: ${error.message}`;
-    }
-    toast({
-      title: 'Authentication Failed',
-      description: errorMessage,
-      variant: 'destructive',
-    });
-  };
-
-  const handleUserInFirestore = async (user: FirebaseUser) => {
-    if (!user.phoneNumber) return;
-    const userRef = doc(db, 'users', user.uid);
-    try {
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
-            await updateDoc(userRef, { lastLogin: serverTimestamp() });
-        } else {
-            await setDoc(userRef, {
-                uid: user.uid,
-                phoneNumber: user.phoneNumber,
-                createdAt: serverTimestamp(),
-                lastLogin: serverTimestamp(),
-            });
-        }
-    } catch (firestoreError: any) {
-        console.error("Error handling user in Firestore:", firestoreError);
-        toast({
-            title: 'Database Error',
-            description: 'Could not save your user data, but you are logged in.',
-            variant: 'destructive',
-        });
-    }
-  };
-
-  const onPhoneNumberSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setCanResend(false);
-
-    let formattedPhone = phone.trim();
-    if (!formattedPhone.startsWith('+')) {
-      if (formattedPhone.length === 10) {
-        formattedPhone = `+91${formattedPhone}`;
-      } else {
-        toast({
-          title: 'Invalid Phone Number',
-          description: 'Please enter a valid 10-digit phone number, with or without the +91 country code.',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-    }
+  const handleUserInFirestore = async (phoneNumber: string) => {
+    const customersRef = collection(db, 'customers');
+    const q = query(customersRef, where('phoneNumber', '==', phoneNumber));
     
     try {
-      const appVerifier = window.recaptchaVerifier;
-      if (!appVerifier) {
-        throw new Error("reCAPTCHA verifier not initialized.");
+      const querySnapshot = await getDocs(q);
+      if (querySnapshot.empty) {
+        // New user
+        const newCustomerDoc = await addDoc(customersRef, {
+          phoneNumber: phoneNumber,
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
+          isVerified: false,
+        });
+        return { uid: newCustomerDoc.id, phoneNumber };
+      } else {
+        // Existing user
+        const userDoc = querySnapshot.docs[0];
+        await updateDoc(doc(db, 'customers', userDoc.id), {
+          lastLogin: serverTimestamp(),
+        });
+        return { uid: userDoc.id, phoneNumber };
       }
-      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      window.confirmationResult = confirmationResult;
-      setIsOtpSent(true);
-      setTimer(60); // Reset timer
-      toast({ title: 'OTP Sent', description: `An OTP has been sent to ${phone}.` });
-    } catch (error) {
-      handleFirebaseAuthError(error as AuthError);
-    } finally {
-      setIsLoading(false);
+    } catch (firestoreError: any) {
+      console.error("Error handling user in Firestore:", firestoreError);
+      toast({
+        title: 'Database Error',
+        description: 'Could not save your user data, but you are logged in for this session.',
+        variant: 'destructive',
+      });
+      // Allow login even if firestore fails, but return a temporary object
+      return { uid: `temp_${Date.now()}`, phoneNumber };
     }
+  };
+
+  const onPhoneNumberSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (phone.trim().length < 10) {
+      toast({
+        title: 'Invalid Phone Number',
+        description: 'Please enter a valid phone number.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setIsLoading(true);
+    // Simulate sending OTP
+    setTimeout(() => {
+      setIsOtpSent(true);
+      setIsLoading(false);
+      toast({ title: 'OTP Sent (Simulated)', description: `Enter ${SIMULATED_OTP} to continue.` });
+    }, 500);
   };
 
   const onOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -158,67 +91,39 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     setIsLoading(true);
     const redirectUrl = searchParams.get('redirect') || '/';
 
-    if (!window.confirmationResult) {
-      toast({ title: "Error", description: "Confirmation result not found. Please try sending the OTP again.", variant: "destructive" });
+    if (otp !== SIMULATED_OTP) {
+      toast({
+        title: 'Incorrect OTP',
+        description: `Please enter the correct simulated OTP: ${SIMULATED_OTP}`,
+        variant: 'destructive',
+      });
       setIsLoading(false);
       return;
     }
 
-    try {
-      const result = await window.confirmationResult.confirm(otp);
-      const user = result.user;
-      console.log("OTP verification successful, user:", user);
-      
-      await handleUserInFirestore(user);
+    // "Verification" successful
+    const userSessionData = await handleUserInFirestore(phone);
 
-      toast({ title: 'Login Successful', description: 'Welcome to SpeedyShop!' });
-      router.push(redirectUrl);
-    } catch (error) {
-      handleFirebaseAuthError(error as AuthError);
-    } finally {
-      setIsLoading(false);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('userSession', JSON.stringify(userSessionData));
     }
+    
+    toast({ title: 'Login Successful', description: 'Welcome to SpeedyShop! (Simulated)' });
+    router.push(redirectUrl);
+    // Force a reload to ensure navbar state updates
+    setTimeout(() => window.location.reload(), 200);
+    setIsLoading(false);
   };
-
-  const resendOtp = async () => {
-    if (!canResend) return;
-    setIsLoading(true);
-
-    let formattedPhone = phone.trim();
-    if (!formattedPhone.startsWith('+')) {
-      if (formattedPhone.length === 10) {
-        formattedPhone = `+91${formattedPhone}`;
-      } else {
-        toast({
-          title: 'Invalid Phone Number',
-          description: 'Please check the phone number before resending.',
-          variant: 'destructive',
-        });
-        setIsLoading(false);
-        return;
-      }
-    }
-
-    try {
-      const appVerifier = window.recaptchaVerifier;
-       if (!appVerifier) {
-        throw new Error("reCAPTCHA verifier not initialized.");
-      }
-      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
-      window.confirmationResult = confirmationResult;
-      setTimer(60);
-      setCanResend(false);
-      toast({ title: 'OTP Resent', description: 'A new OTP has been sent.' });
-    } catch (error) {
-        handleFirebaseAuthError(error as AuthError);
-    } finally {
-        setIsLoading(false);
-    }
-  }
 
   return (
     <div className="space-y-6">
-      <div id="recaptcha-container"></div>
+        <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Developer Notice</AlertTitle>
+            <AlertDescription>
+                This is a temporary login simulation for testing only. Use OTP <strong>123456</strong> to proceed.
+            </AlertDescription>
+        </Alert>
       {!isOtpSent ? (
         <form onSubmit={onPhoneNumberSubmit} className="space-y-6">
           <div>
@@ -228,7 +133,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              placeholder="+91 98765 43210"
+              placeholder="Enter your phone number"
               required
             />
           </div>
@@ -253,15 +158,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Verify OTP & Log In
+            Verify & Log In
           </Button>
-          <div className="text-center text-sm">
-            {canResend ? (
-                <Button variant="link" onClick={resendOtp} disabled={isLoading}>Resend OTP</Button>
-            ) : (
-                <p className="text-muted-foreground">Resend OTP in {timer}s</p>
-            )}
-          </div>
         </form>
       )}
     </div>

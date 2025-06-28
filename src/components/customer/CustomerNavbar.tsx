@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -17,8 +16,6 @@ import { useCart } from '@/hooks/useCart';
 import { Input } from '@/components/ui/input';
 import { LocationDialog } from '@/components/shared/LocationDialog';
 import { mockProducts } from '@/lib/mockData'; 
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 
@@ -29,32 +26,45 @@ const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType
   { href: '/products', label: 'All Products' },
 ];
 
+interface UserSession {
+  uid: string;
+  phoneNumber: string;
+}
 
-const useAuthHook = () => { 
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+const useSimulatedAuth = () => { 
+  const [userSession, setUserSession] = useState<UserSession | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
+    try {
+      const storedSession = localStorage.getItem('userSession');
+      if (storedSession) {
+        setUserSession(JSON.parse(storedSession));
+      }
+    } catch (e) {
+      console.error("Failed to parse user session from localStorage", e);
+      localStorage.removeItem('userSession');
+    } finally {
       setIsLoading(false);
-    });
-    return () => unsubscribe();
+    }
   }, []);
 
-  const logout = async () => {
-    try {
-      await signOut(auth);
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/'); 
-    } catch (error) {
-      console.error("Error signing out: ", error);
-      toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
-    }
+  const logout = () => {
+    localStorage.removeItem('userSession');
+    setUserSession(null);
+    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+    router.push('/');
+    setTimeout(() => window.location.reload(), 200); // Force reload to clear state
   };
-  return { currentUser, isLoggedIn: !!currentUser, logout, isLoading };
+  
+  return { 
+    currentUser: userSession ? { displayName: userSession.phoneNumber } : null, // Mock FirebaseUser object
+    isLoggedIn: !!userSession, 
+    logout, 
+    isLoading 
+  };
 };
 
 
@@ -62,7 +72,7 @@ export function CustomerNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { currentUser, isLoggedIn, logout: performLogout, isLoading: authIsLoading } = useAuthHook();
+  const { currentUser, isLoggedIn, logout: performLogout, isLoading: authIsLoading } = useSimulatedAuth();
   const { getTotalItems, getCartTotal } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); 
@@ -109,7 +119,7 @@ export function CustomerNavbar() {
   const closeSheet = () => setIsSheetOpen(false);
 
   const handleLogout = async () => {
-    await performLogout();
+    performLogout();
     closeSheet();
   };
 

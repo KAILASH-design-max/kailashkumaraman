@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -11,54 +10,39 @@ import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast'; 
-import { auth } from '@/lib/firebase'; 
-import { signOut, onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth'; 
 import { useState, useEffect } from 'react';
+
+interface UserSession {
+  uid: string;
+  phoneNumber: string;
+}
 
 export default function ProfileDashboardPage() {
   const router = useRouter();
   const { toast } = useToast(); 
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
-  const [userDetails, setUserDetails] = useState({
-    name: 'Guest User',
-    email: 'No email available',
-    joinDate: 'N/A',
-  });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      if (user) {
-        setUserDetails({
-          name: user.displayName || user.phoneNumber || 'User',
-          email: user.email || user.phoneNumber || 'No contact info provided',
-          joinDate: user.metadata.creationTime 
-            ? `Joined on ${new Date(user.metadata.creationTime).toLocaleDateString()}` 
-            : 'Joined date not available',
-        });
-      } else {
-        setUserDetails({
-          name: 'Guest User',
-          email: 'No email available',
-          joinDate: 'N/A',
-        });
-      }
-      setIsLoadingAuth(false);
-    });
-    return () => unsubscribe();
+    try {
+        const storedSession = localStorage.getItem('userSession');
+        if (storedSession) {
+            setCurrentUser(JSON.parse(storedSession));
+        }
+    } catch (e) {
+        console.error("Failed to parse user session from localStorage", e);
+        localStorage.removeItem('userSession');
+    } finally {
+        setIsLoadingAuth(false);
+    }
   }, []);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     console.log('User logging out...');
-    try {
-      await signOut(auth);
-      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-      router.push('/'); 
-    } catch (error) {
-      console.error("Error signing out: ", error);
-      toast({ title: 'Logout Failed', description: 'Could not log out. Please try again.', variant: 'destructive' });
-    }
+    localStorage.removeItem('userSession');
+    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+    router.push('/'); 
+    setTimeout(() => window.location.reload(), 200); // Force reload
   };
 
   if (isLoadingAuth) {
@@ -76,6 +60,12 @@ export default function ProfileDashboardPage() {
       </div>
     );
   }
+
+  const userDetails = {
+    name: currentUser.phoneNumber || 'User',
+    email: currentUser.phoneNumber,
+    joinDate: 'Joined recently', // Simplified for simulation
+  };
 
 
   return (
