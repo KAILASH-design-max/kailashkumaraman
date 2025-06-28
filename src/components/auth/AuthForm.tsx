@@ -37,8 +37,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
-    // Initialize reCAPTCHA on component mount
-    if (!window.recaptchaVerifier) {
+    if (typeof window !== 'undefined' && !window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
         'size': 'invisible',
         'callback': () => {
@@ -68,7 +67,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         errorMessage = "Phone number sign-in is not enabled for this app. Please enable it in the Firebase console.";
         break;
       case "auth/invalid-phone-number":
-        errorMessage = "The phone number you entered is not valid.";
+        errorMessage = "The phone number you entered is not valid. Please ensure it's in E.164 format (e.g., +919876543210).";
         break;
       case "auth/too-many-requests":
         errorMessage = "Too many requests. Please try again later.";
@@ -118,13 +117,28 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     e.preventDefault();
     setIsLoading(true);
     setCanResend(false);
+
+    let formattedPhone = phone.trim();
+    if (!formattedPhone.startsWith('+')) {
+      if (formattedPhone.length === 10) {
+        formattedPhone = `+91${formattedPhone}`;
+      } else {
+        toast({
+          title: 'Invalid Phone Number',
+          description: 'Please enter a valid 10-digit phone number, with or without the +91 country code.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
     
     try {
       const appVerifier = window.recaptchaVerifier;
       if (!appVerifier) {
         throw new Error("reCAPTCHA verifier not initialized.");
       }
-      const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       window.confirmationResult = confirmationResult;
       setIsOtpSent(true);
       setTimer(60); // Reset timer
@@ -166,12 +180,28 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const resendOtp = async () => {
     if (!canResend) return;
     setIsLoading(true);
+
+    let formattedPhone = phone.trim();
+    if (!formattedPhone.startsWith('+')) {
+      if (formattedPhone.length === 10) {
+        formattedPhone = `+91${formattedPhone}`;
+      } else {
+        toast({
+          title: 'Invalid Phone Number',
+          description: 'Please check the phone number before resending.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+    }
+
     try {
       const appVerifier = window.recaptchaVerifier;
        if (!appVerifier) {
         throw new Error("reCAPTCHA verifier not initialized.");
       }
-      const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
+      const confirmationResult = await signInWithPhoneNumber(auth, formattedPhone, appVerifier);
       window.confirmationResult = confirmationResult;
       setTimer(60);
       setCanResend(false);
