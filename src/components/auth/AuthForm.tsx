@@ -120,7 +120,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Priya Sharma"
+              placeholder="enter your name"
               required
             />
           </div>
@@ -131,7 +131,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="+91 98765 43210"
+              placeholder="enter your phone number"
               required
             />
           </div>
