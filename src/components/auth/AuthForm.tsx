@@ -66,6 +66,9 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
       case "auth/operation-not-allowed":
         errorMessage = "Phone number sign-in is not enabled for this app. Please enable it in the Firebase console.";
         break;
+      case "auth/billing-not-enabled":
+        errorMessage = "Firebase billing is not enabled for this project. Please upgrade to the Blaze (pay-as-you-go) plan in the Firebase console to use phone authentication.";
+        break;
       case "auth/invalid-phone-number":
         errorMessage = "The phone number you entered is not valid. Please ensure it's in E.164 format (e.g., +919876543210).";
         break;
