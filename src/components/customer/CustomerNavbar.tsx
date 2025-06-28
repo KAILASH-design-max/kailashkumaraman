@@ -31,10 +31,10 @@ interface DarkStore {
 }
 
 const mockDarkStores: DarkStore[] = [
-    { id: 'ds1', name: 'Delhi Central', lat: 28.6327, lng: 77.2198, active: true },
-    { id: 'ds2', name: 'Gurgaon South', lat: 28.4595, lng: 77.0266, active: true },
-    { id: 'ds3', name: 'Noida East', lat: 28.5355, lng: 77.3910, active: false }, // Inactive store
-    { id: 'ds4', name: 'Rohini West', lat: 28.7041, lng: 77.1025, active: true },
+    { id: 'ds1', name: 'Darbhanga Central', lat: 26.17, lng: 85.9, active: true },
+    { id: 'ds2', name: 'Laheriasarai South', lat: 26.10, lng: 85.91, active: true },
+    { id: 'ds3', name: 'Muzaffarpur Hub', lat: 26.12, lng: 85.36, active: false }, // Inactive store
+    { id: 'ds4', name: 'Samastipur East', lat: 25.86, lng: 85.78, active: true },
 ];
 
 function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
@@ -107,7 +107,7 @@ export function CustomerNavbar() {
   const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); 
 
   const [deliveryTime, setDeliveryTime] = useState<string>('Calculating...');
-  const [currentLocation, setCurrentLocation] = useState<Location>({ name: "Daryaganj, Delhi", lat: 28.6473, lng: 77.2407 });
+  const [currentLocation, setCurrentLocation] = useState<Location>({ name: "Darbhanga, Bihar", lat: 26.17, lng: 85.9 });
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
 
   useEffect(() => {
