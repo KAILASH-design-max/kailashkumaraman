@@ -28,6 +28,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [name, setName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -60,6 +61,12 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    if (mode === 'signup' && password !== confirmPassword) {
+      setError("Passwords do not match.");
+      setIsLoading(false);
+      return;
+    }
 
     const redirectUrl = searchParams.get('redirect') || '/';
 
@@ -120,7 +127,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="enter your name"
+              placeholder="Enter your full name"
               required
             />
           </div>
@@ -131,7 +138,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="enter your phone number"
+              placeholder="Enter your phone number"
               required
             />
           </div>
@@ -144,7 +151,7 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="you@example.com"
+          placeholder="Enter your email address"
           required
         />
       </div>
@@ -155,10 +162,23 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="••••••••"
+          placeholder={mode === 'signup' ? "Create a secure password" : "••••••••"}
           required
         />
       </div>
+      {mode === 'signup' && (
+        <div>
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input
+            id="confirmPassword"
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Re-enter your password to confirm"
+            required
+          />
+        </div>
+      )}
       <Button type="submit" className="w-full" disabled={isLoading}>
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
         {mode === 'login' ? 'Log In' : 'Create Account'}
