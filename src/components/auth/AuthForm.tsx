@@ -2,166 +2,134 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { db } from '@/lib/firebase';
+import { useState, type FormEvent } from 'react';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { auth, db } from '@/lib/firebase';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  type AuthError 
+} from 'firebase/auth';
 import {
   collection,
-  query,
-  where,
-  getDocs,
-  addDoc,
-  updateDoc,
   doc,
+  setDoc,
   serverTimestamp,
 } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
-
-const SIMULATED_OTP = '123456';
 
 export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleUserInFirestore = async (phoneNumber: string) => {
-    const customersRef = collection(db, 'customers');
-    const q = query(customersRef, where('phoneNumber', '==', phoneNumber));
-    
-    try {
-      const querySnapshot = await getDocs(q);
-      if (querySnapshot.empty) {
-        // New user
-        const newCustomerDoc = await addDoc(customersRef, {
-          phoneNumber: phoneNumber,
-          createdAt: serverTimestamp(),
-          lastLogin: serverTimestamp(),
-          isVerified: false,
-        });
-        return { uid: newCustomerDoc.id, phoneNumber };
-      } else {
-        // Existing user
-        const userDoc = querySnapshot.docs[0];
-        await updateDoc(doc(db, 'customers', userDoc.id), {
-          lastLogin: serverTimestamp(),
-        });
-        return { uid: userDoc.id, phoneNumber };
-      }
-    } catch (firestoreError: any) {
-      console.error("Error handling user in Firestore:", firestoreError);
-      toast({
-        title: 'Database Error',
-        description: 'Could not save your user data, but you are logged in for this session.',
-        variant: 'destructive',
-      });
-      // Allow login even if firestore fails, but return a temporary object
-      return { uid: `temp_${Date.now()}`, phoneNumber };
+  const handleFirebaseAuthError = (error: AuthError) => {
+    console.error("Firebase Auth Error:", error.code, error.message);
+    let errorMessage = "An unexpected error occurred. Please try again.";
+    switch (error.code) {
+      case "auth/invalid-email":
+        errorMessage = "The email address is not valid. Please check and try again.";
+        break;
+      case "auth/user-not-found":
+      case "auth/wrong-password":
+        errorMessage = "Invalid email or password. Please try again.";
+        break;
+      case "auth/email-already-in-use":
+        errorMessage = "An account with this email address already exists. Please log in.";
+        break;
+      case "auth/weak-password":
+        errorMessage = "The password is too weak. It must be at least 6 characters long.";
+        break;
+      default:
+        errorMessage = `An error occurred: ${error.message}`;
     }
+    setError(errorMessage);
   };
-
-  const onPhoneNumberSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (phone.trim().length < 10) {
-      toast({
-        title: 'Invalid Phone Number',
-        description: 'Please enter a valid phone number.',
-        variant: 'destructive',
-      });
-      return;
-    }
-    setIsLoading(true);
-    // Simulate sending OTP
-    setTimeout(() => {
-      setIsOtpSent(true);
-      setIsLoading(false);
-      toast({ title: 'OTP Sent (Simulated)', description: `Enter ${SIMULATED_OTP} to continue.` });
-    }, 500);
-  };
-
-  const onOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(null);
+
     const redirectUrl = searchParams.get('redirect') || '/';
 
-    if (otp !== SIMULATED_OTP) {
-      toast({
-        title: 'Incorrect OTP',
-        description: `Please enter the correct simulated OTP: ${SIMULATED_OTP}`,
-        variant: 'destructive',
-      });
+    try {
+      if (mode === 'signup') {
+        // Sign up logic
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+
+        // Create a user document in Firestore
+        await setDoc(doc(db, "customers", user.uid), {
+          uid: user.uid,
+          email: user.email,
+          createdAt: serverTimestamp(),
+          lastLogin: serverTimestamp(),
+        });
+
+        toast({ title: 'Account Created', description: 'Welcome to SpeedyShop!' });
+        router.push(redirectUrl);
+
+      } else {
+        // Login logic
+        await signInWithEmailAndPassword(auth, email, password);
+        toast({ title: 'Login Successful', description: 'Welcome back!' });
+        router.push(redirectUrl);
+      }
+      
+      // Force a reload to ensure navbar state updates across the app
+      setTimeout(() => window.location.reload(), 200);
+
+    } catch (authError) {
+      handleFirebaseAuthError(authError as AuthError);
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    // "Verification" successful
-    const userSessionData = await handleUserInFirestore(phone);
-
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('userSession', JSON.stringify(userSessionData));
-    }
-    
-    toast({ title: 'Login Successful', description: 'Welcome to SpeedyShop! (Simulated)' });
-    router.push(redirectUrl);
-    // Force a reload to ensure navbar state updates
-    setTimeout(() => window.location.reload(), 200);
-    setIsLoading(false);
   };
 
   return (
-    <div className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {error && (
         <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Developer Notice</AlertTitle>
-            <AlertDescription>
-                This is a temporary login simulation for testing only. Use OTP <strong>123456</strong> to proceed.
-            </AlertDescription>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Authentication Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
-      {!isOtpSent ? (
-        <form onSubmit={onPhoneNumberSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <Input
-              id="phone"
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Enter your phone number"
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Send OTP
-          </Button>
-        </form>
-      ) : (
-        <form onSubmit={onOtpSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="otp" className="block text-sm font-medium text-gray-700 mb-1">Enter OTP</label>
-            <Input
-              id="otp"
-              type="text"
-              maxLength={6}
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              placeholder="Enter 6-digit code"
-              required
-            />
-          </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Verify & Log In
-          </Button>
-        </form>
       )}
-    </div>
+      <div>
+        <Label htmlFor="email">Email Address</Label>
+        <Input
+          id="email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor="password">Password</Label>
+        <Input
+          id="password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="••••••••"
+          required
+        />
+      </div>
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {mode === 'login' ? 'Log In' : 'Create Account'}
+      </Button>
+    </form>
   );
 }

@@ -11,38 +11,37 @@ import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast'; 
 import { useState, useEffect } from 'react';
-
-interface UserSession {
-  uid: string;
-  phoneNumber: string;
-}
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 
 export default function ProfileDashboardPage() {
   const router = useRouter();
   const { toast } = useToast(); 
-  const [currentUser, setCurrentUser] = useState<UserSession | null>(null);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
 
   useEffect(() => {
-    try {
-        const storedSession = localStorage.getItem('userSession');
-        if (storedSession) {
-            setCurrentUser(JSON.parse(storedSession));
-        }
-    } catch (e) {
-        console.error("Failed to parse user session from localStorage", e);
-        localStorage.removeItem('userSession');
-    } finally {
-        setIsLoadingAuth(false);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setCurrentUser(user);
+      } else {
+        setCurrentUser(null);
+      }
+      setIsLoadingAuth(false);
+    });
+    return () => unsubscribe();
   }, []);
 
-  const handleLogout = () => {
-    console.log('User logging out...');
-    localStorage.removeItem('userSession');
-    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-    router.push('/'); 
-    setTimeout(() => window.location.reload(), 200); // Force reload
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      router.push('/');
+      setTimeout(() => window.location.reload(), 200); // Force reload
+    } catch (error) {
+      console.error("Logout Error:", error);
+      toast({ title: 'Logout Failed', description: 'An error occurred during logout.', variant: 'destructive' });
+    }
   };
 
   if (isLoadingAuth) {
@@ -62,9 +61,11 @@ export default function ProfileDashboardPage() {
   }
 
   const userDetails = {
-    name: currentUser.phoneNumber || 'User',
-    email: currentUser.phoneNumber,
-    joinDate: 'Joined recently', // Simplified for simulation
+    name: currentUser.displayName || currentUser.email?.split('@')[0] || 'User',
+    email: currentUser.email || 'No email provided',
+    joinDate: currentUser.metadata.creationTime 
+      ? `Joined on ${new Date(currentUser.metadata.creationTime).toLocaleDateString()}` 
+      : 'Joined recently',
   };
 
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useCart } from '@/hooks/useCart';
@@ -9,24 +8,27 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { MinusCircle, PlusCircle, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
   const router = useRouter();
   const { toast } = useToast();
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   const [recipe, setRecipe] = useState<GenerateCartRecipeOutput | null>(null);
   const [isRecipeLoading, setIsRecipeLoading] = useState(false);
   const [recipeError, setRecipeError] = useState<string | null>(null);
 
   // Static order summary values for display
-  const subtotalStatic = 250.00;
+  const subtotalStatic = getCartTotal();
   const gstRate = 0.18;
   const handlingCharge = 5.00;
   const deliveryFee = 30.00;
@@ -34,7 +36,15 @@ export default function CartPage() {
   const discountAmount = 10.00;
 
   const gstAmountStatic = subtotalStatic * gstRate;
-  const totalAmountStatic = subtotalStatic + gstAmountStatic + handlingCharge + deliveryFee - discountAmount;
+  const totalAmountStatic = subtotalStatic > 0 ? (subtotalStatic + gstAmountStatic + handlingCharge + deliveryFee - discountAmount) : 0;
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      setAuthLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
 
 
   const handleGenerateRecipe = async () => {
@@ -58,7 +68,9 @@ export default function CartPage() {
   };
 
   const handleProceedToCheckout = () => {
-    if (auth.currentUser) {
+    if (authLoading) return; // Do nothing while auth state is loading
+    
+    if (currentUser) {
       router.push('/checkout');
     } else {
       toast({
@@ -127,7 +139,7 @@ export default function CartPage() {
                       if (!isNaN(newQuantity) && newQuantity >= 1) {
                         updateQuantity(item.id, newQuantity);
                       } else if (e.target.value === '') {
-                         // Allow clearing, will default to 1 or handle by updateQuantity
+                         // Allow clearing
                       }
                     }}
                     onBlur={(e) => { // Handle empty input on blur
@@ -283,12 +295,13 @@ export default function CartPage() {
                     You Saved ₹{discountAmount.toFixed(2)} on this order!
                 </div>
                {cartItems.length > 0 ? (
-                <Button className="w-full" size="lg" onClick={handleProceedToCheckout}>
+                <Button className="w-full" size="lg" onClick={handleProceedToCheckout} disabled={authLoading}>
+                    {authLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                     Proceed to Checkout
                 </Button>
                ) : (
                  <Button className="w-full" size="lg" disabled>
-                    Proceed to Checkout
+                    Add Items to Checkout
                  </Button>
                )}
               <Button variant="outline" className="w-full" asChild>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -68,11 +67,12 @@ export default function FinalReviewPage() {
   }, [contextCartItems, router]);
 
   const handlePlaceOrder = async () => {
+    const currentUser = auth.currentUser;
     if (!finalOrderData) {
         setPageError("Cannot place order, data is missing. Please go back through checkout.");
         return;
     }
-    if (!auth.currentUser) {
+    if (!currentUser) {
         toast({
             title: "Authentication Error",
             description: "You must be logged in to place an order. Redirecting to login...",
@@ -86,7 +86,7 @@ export default function FinalReviewPage() {
     setPageError(null);
 
     const orderDataToSave = {
-        userId: String(auth.currentUser.uid),
+        userId: String(currentUser.uid),
         name: String(finalOrderData.address?.name || "N/A"),
         phoneNumber: String(finalOrderData.address?.phoneNumber || "N/A"),
         address: {

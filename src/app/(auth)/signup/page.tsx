@@ -1,18 +1,20 @@
-
+import { AuthForm } from '@/components/auth/AuthForm';
 import Link from 'next/link';
 
 export default function SignupPage() {
   return (
     <>
-      <h2 className="text-2xl font-semibold text-center mb-6">One-Step Sign-In</h2>
-      <p className="text-sm text-muted-foreground text-center mb-4">
-        We've simplified our process! Your account is created automatically when you log in for the first time with your phone number.
+      <h2 className="text-2xl font-semibold text-center mb-1">Create an Account</h2>
+      <p className="text-sm text-muted-foreground text-center mb-6">
+        Sign up to start shopping with SpeedyShop.
       </p>
-      <div className="text-center">
-        <Link href="/login" className="font-medium text-primary hover:underline">
-          Proceed to Login &rarr;
+      <AuthForm mode="signup" />
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        Already have an account?{' '}
+        <Link href="/login" className="underline hover:text-primary">
+          Log In
         </Link>
-      </div>
+      </p>
     </>
   );
 }

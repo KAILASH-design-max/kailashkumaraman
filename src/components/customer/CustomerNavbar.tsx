@@ -18,6 +18,8 @@ import { LocationDialog } from '@/components/shared/LocationDialog';
 import { mockProducts } from '@/lib/mockData'; 
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 
 
 const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType }[] = [
@@ -26,42 +28,35 @@ const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType
   { href: '/products', label: 'All Products' },
 ];
 
-interface UserSession {
-  uid: string;
-  phoneNumber: string;
-}
-
-const useSimulatedAuth = () => { 
-  const [userSession, setUserSession] = useState<UserSession | null>(null);
+const useFirebaseAuth = () => { 
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const router = useRouter();
 
   useEffect(() => {
-    try {
-      const storedSession = localStorage.getItem('userSession');
-      if (storedSession) {
-        setUserSession(JSON.parse(storedSession));
-      }
-    } catch (e) {
-      console.error("Failed to parse user session from localStorage", e);
-      localStorage.removeItem('userSession');
-    } finally {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
       setIsLoading(false);
-    }
+    });
+    return () => unsubscribe();
   }, []);
 
-  const logout = () => {
-    localStorage.removeItem('userSession');
-    setUserSession(null);
-    toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
-    router.push('/');
-    setTimeout(() => window.location.reload(), 200); // Force reload to clear state
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      toast({ title: 'Logged Out', description: 'You have been successfully logged out.' });
+      router.push('/');
+      setTimeout(() => window.location.reload(), 200); // Force reload
+    } catch (error) {
+      console.error("Logout Error:", error);
+      toast({ title: 'Logout Failed', description: 'An error occurred during logout.', variant: 'destructive' });
+    }
   };
   
   return { 
-    currentUser: userSession ? { displayName: userSession.phoneNumber } : null, // Mock FirebaseUser object
-    isLoggedIn: !!userSession, 
+    currentUser,
+    isLoggedIn: !!currentUser, 
     logout, 
     isLoading 
   };
@@ -72,7 +67,7 @@ export function CustomerNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const { currentUser, isLoggedIn, logout: performLogout, isLoading: authIsLoading } = useSimulatedAuth();
+  const { currentUser, isLoggedIn, logout: performLogout, isLoading: authIsLoading } = useFirebaseAuth();
   const { getTotalItems, getCartTotal } = useCart();
   const [searchTerm, setSearchTerm] = useState('');
   const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); 
@@ -89,7 +84,7 @@ export function CustomerNavbar() {
     setDeliveryTime(calculateDeliveryTime());
     const deliveryIntervalId = setInterval(() => {
       setDeliveryTime(calculateDeliveryTime());
-    }, 1000); // This interval seems too frequent (every 1 second) for a display text. Consider increasing.
+    }, 1000);
 
     if (mockProducts && mockProducts.length > 0) {
       const placeholderIntervalId = setInterval(() => {
@@ -119,7 +114,7 @@ export function CustomerNavbar() {
   const closeSheet = () => setIsSheetOpen(false);
 
   const handleLogout = async () => {
-    performLogout();
+    await performLogout();
     closeSheet();
   };
 
@@ -172,7 +167,7 @@ export function CustomerNavbar() {
                         <Button asChild variant='ghost' className="w-full justify-start text-md py-3">
                           <Link href="/profile">
                               <User className="mr-2 h-5 w-5" />
-                              {currentUser?.displayName || 'My Profile'}
+                              {currentUser?.displayName || currentUser?.email || 'My Profile'}
                           </Link>
                         </Button>
                       </SheetClose>
@@ -244,7 +239,7 @@ export function CustomerNavbar() {
                isLoggedIn ? (
                  <Button asChild variant="ghost" className="px-3 py-2 h-11 text-sm">
                    <Link href="/profile">
-                      {currentUser?.displayName || 'Profile'}
+                      {currentUser?.displayName || currentUser?.email || 'Profile'}
                    </Link>
                  </Button>
                ) : (
@@ -267,7 +262,7 @@ export function CustomerNavbar() {
               <ShoppingCartIcon className="mr-2 h-5 w-5" />
               <div className="flex flex-col items-start -my-1">
                 <span className="text-xs leading-tight">{cartItemCount} {cartItemCount === 1 ? 'item' : 'items'}</span>
-                <span className="font-semibold leading-tight">₹{cartTotalAmount.toFixed(2)}</span>
+                <span className="font-semibold leading-tight">₹{getCartTotal().toFixed(2)}</span>
               </div>
             </Button>
           </div>
@@ -320,7 +315,7 @@ export function CustomerNavbar() {
         </div>
         
         {/* Mobile Search Bar */}
-         <div className="md:hidden px-4 pb-3 pt-2"> {/* Removed border-t as mobile location above has border-b */}
+         <div className="md:hidden px-4 pb-3 pt-2">
             <div className="relative w-full">
               <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
