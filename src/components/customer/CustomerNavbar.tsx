@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -14,13 +15,46 @@ import {
 import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Input } from '@/components/ui/input';
-import { LocationDialog } from '@/components/shared/LocationDialog';
+import { LocationDialog, type Location } from '@/components/shared/LocationDialog';
 import { mockProducts } from '@/lib/mockData'; 
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
 import { onAuthStateChanged, signOut, type User as FirebaseUser } from 'firebase/auth';
 
+interface DarkStore {
+  id: string;
+  name: string;
+  lat: number;
+  lng: number;
+  active: boolean;
+}
+
+const mockDarkStores: DarkStore[] = [
+    { id: 'ds1', name: 'Delhi Central', lat: 28.6327, lng: 77.2198, active: true },
+    { id: 'ds2', name: 'Gurgaon South', lat: 28.4595, lng: 77.0266, active: true },
+    { id: 'ds3', name: 'Noida East', lat: 28.5355, lng: 77.3910, active: false }, // Inactive store
+    { id: 'ds4', name: 'Rohini West', lat: 28.7041, lng: 77.1025, active: true },
+];
+
+function haversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+}
+
+function estimateDeliveryTime(distanceKm: number): string {
+    if (distanceKm <= 2) return "15–20 minutes";
+    if (distanceKm <= 5) return "20–30 minutes";
+    if (distanceKm <= 10) return "30–45 minutes";
+    return "Not Serviceable";
+}
 
 const mainSheetNavItems: { href: string; label: string; icon?: React.ElementType }[] = [
   { href: '/profile/orders', label: 'My Orders', icon: ListOrdered },
@@ -72,20 +106,12 @@ export function CustomerNavbar() {
   const [searchTerm, setSearchTerm] = useState('');
   const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); 
 
-  const [deliveryTime, setDeliveryTime] = useState<number | null>(null);
-  const [currentLocation, setCurrentLocation] = useState("Daryaganj, Delhi, 110002, India");
+  const [deliveryTime, setDeliveryTime] = useState<string>('Calculating...');
+  const [currentLocation, setCurrentLocation] = useState<Location>({ name: "Daryaganj, Delhi", lat: 28.6473, lng: 77.2407 });
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
 
-  const calculateDeliveryTime = () => {
-    return Math.floor(Math.random() * 21) + 10;
-  };
-
   useEffect(() => {
-    setDeliveryTime(calculateDeliveryTime());
-    const deliveryIntervalId = setInterval(() => {
-      setDeliveryTime(calculateDeliveryTime());
-    }, 1000);
-
+    // Placeholder switcher for search input
     if (mockProducts && mockProducts.length > 0) {
       const placeholderIntervalId = setInterval(() => {
         const randomIndex = Math.floor(Math.random() * mockProducts.length);
@@ -93,15 +119,31 @@ export function CustomerNavbar() {
         setSearchPlaceholder(`Search "${randomProductName}"...`);
       }, 4000); 
 
-      return () => {
-        clearInterval(deliveryIntervalId);
-        clearInterval(placeholderIntervalId); 
-      };
+      return () => clearInterval(placeholderIntervalId); 
     }
-    return () => clearInterval(deliveryIntervalId);
   }, []);
+  
+  useEffect(() => {
+    // This simulates fetching stores and calculating distance on location change
+    const activeStores = mockDarkStores.filter(store => store.active);
+    if (activeStores.length === 0) {
+        setDeliveryTime('No stores available');
+        return;
+    }
 
-  const handleLocationUpdate = (newLocation: string) => {
+    let nearestStoreDist = Infinity;
+    for (const store of activeStores) {
+        const distance = haversineDistance(currentLocation.lat, currentLocation.lng, store.lat, store.lng);
+        if (distance < nearestStoreDist) {
+            nearestStoreDist = distance;
+        }
+    }
+
+    setDeliveryTime(estimateDeliveryTime(nearestStoreDist));
+
+  }, [currentLocation]);
+
+  const handleLocationUpdate = (newLocation: Location) => {
     setCurrentLocation(newLocation);
     if (typeof window !== 'undefined') {
       setIsLocationDialogOpen(false);
@@ -202,11 +244,11 @@ export function CustomerNavbar() {
                 <div className="flex items-center cursor-pointer group">
                   <div className="text-left">
                     <p className="text-sm font-semibold text-foreground whitespace-nowrap">
-                      {deliveryTime !== null ? `Delivery in ${deliveryTime} minutes` : 'Checking...'}
+                      Delivery in {deliveryTime}
                     </p>
                     <div className="flex items-center">
                       <p className="text-xs text-muted-foreground truncate max-w-[180px] sm:max-w-[200px] md:max-w-[150px] lg:max-w-[200px]">
-                        {currentLocation}
+                        {currentLocation.name}
                       </p>
                       <ChevronDown className="h-3 w-3 text-muted-foreground ml-0.5 group-hover:text-primary transition-colors shrink-0" />
                     </div>
@@ -301,11 +343,11 @@ export function CustomerNavbar() {
                 <div className="inline-flex items-center cursor-pointer group p-1 hover:bg-muted rounded-md transition-colors">
                   <div className="text-left">
                     <p className="text-xs font-medium text-foreground whitespace-nowrap">
-                      {deliveryTime !== null ? `Delivery in ${deliveryTime} min` : 'Checking...'}
+                      Delivery in {deliveryTime}
                     </p>
                     <div className="flex items-center">
                       <p className="text-[11px] text-muted-foreground truncate max-w-[200px] xs:max-w-[240px]">
-                        {currentLocation}
+                        {currentLocation.name}
                       </p>
                       <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 group-hover:text-primary transition-colors shrink-0" />
                     </div>
