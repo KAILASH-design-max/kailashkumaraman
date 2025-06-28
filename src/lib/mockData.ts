@@ -511,6 +511,25 @@ export const mockProducts: Product[] = [
     description: 'Large 5L jar of Bisleri Mineral Water.', price: 75, category: 'cat4',
     images: ['https://placehold.co/600x450/B0E0E6/000000.png'], rating: 4.9, reviewsCount: 250, stock: 90, status: 'active',
     weight: '5 Liter Jar', origin: 'India', createdAt: nowISO, dataAiHint: 'bisleri water large'
+  },
+  {
+    id: 'prod85',
+    name: 'Apple',
+    description: 'good in test',
+    price: 99.92,
+    category: 'cat2',
+    images: ['https://banner2.cleanpng.com/20240121/vyv/transparent-green-leaf-realistic-red-apple-with-green-1710911378106.webp'],
+    rating: 4.2,
+    reviewsCount: 115,
+    stock: 89,
+    lowStockThreshold: 10,
+    weight: '500g',
+    status: 'active',
+    origin: 'farm',
+    popularity: 50,
+    createdAt: '2025-06-20T04:11:48.135Z',
+    updatedAt: '2025-06-22T02:29:14.915Z',
+    dataAiHint: 'red apple'
   }
 ];
 
@@ -593,3 +612,5 @@ export const mockPromoCodesData: PromoCode[] = [
     minOrderValue: 99, expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), status: 'active', description: 'Free Delivery on orders above ₹99' },
   { id: 'promo4', code: 'EXPIRED10', discountType: 'percentage', value: 10, expiresAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), status: 'inactive', description: '10% off (Expired)' },
 ];
+
+    
