@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
@@ -24,7 +24,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -68,8 +67,6 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
       return;
     }
 
-    const redirectUrl = searchParams.get('redirect') || '/';
-
     try {
       if (mode === 'signup') {
         // Sign up logic
@@ -90,17 +87,14 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         });
 
         toast({ title: 'Account Created', description: 'Welcome to SpeedyShop!' });
-        router.push(redirectUrl);
+        router.push('/');
 
       } else {
         // Login logic
         await signInWithEmailAndPassword(auth, email, password);
         toast({ title: 'Login Successful', description: 'Welcome back!' });
-        router.push(redirectUrl);
+        router.push('/');
       }
-      
-      // Force a reload to ensure navbar state updates across the app
-      setTimeout(() => window.location.reload(), 200);
 
     } catch (authError) {
       handleFirebaseAuthError(authError as AuthError);
