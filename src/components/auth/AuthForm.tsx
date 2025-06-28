@@ -37,6 +37,18 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
+    // Initialize reCAPTCHA on component mount
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {
+          // reCAPTCHA solved, allow sign-in button.
+        },
+      });
+    }
+  }, []);
+
+  useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isOtpSent && timer > 0) {
       interval = setInterval(() => {
@@ -47,18 +59,6 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     }
     return () => clearInterval(interval);
   }, [isOtpSent, timer]);
-
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {
-          // reCAPTCHA solved, allow sign-in button.
-        },
-      });
-    }
-    return window.recaptchaVerifier;
-  };
 
   const handleFirebaseAuthError = (error: AuthError) => {
     console.error("Firebase Auth Error:", error.code, error.message);
@@ -120,7 +120,10 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     setCanResend(false);
     
     try {
-      const appVerifier = setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier;
+      if (!appVerifier) {
+        throw new Error("reCAPTCHA verifier not initialized.");
+      }
       const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
       window.confirmationResult = confirmationResult;
       setIsOtpSent(true);
@@ -164,7 +167,10 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     if (!canResend) return;
     setIsLoading(true);
     try {
-      const appVerifier = setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier;
+       if (!appVerifier) {
+        throw new Error("reCAPTCHA verifier not initialized.");
+      }
       const confirmationResult = await signInWithPhoneNumber(auth, phone, appVerifier);
       window.confirmationResult = confirmationResult;
       setTimer(60);
