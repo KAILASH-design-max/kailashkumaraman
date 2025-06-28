@@ -31,8 +31,8 @@ export default function ProfileDashboardPage() {
       setCurrentUser(user);
       if (user) {
         setUserDetails({
-          name: user.displayName || 'User',
-          email: user.email || 'No email provided',
+          name: user.displayName || user.phoneNumber || 'User',
+          email: user.email || user.phoneNumber || 'No contact info provided',
           joinDate: user.metadata.creationTime 
             ? `Joined on ${new Date(user.metadata.creationTime).toLocaleDateString()}` 
             : 'Joined date not available',
@@ -253,5 +253,3 @@ export default function ProfileDashboardPage() {
     </div>
   );
 }
-    
-    
