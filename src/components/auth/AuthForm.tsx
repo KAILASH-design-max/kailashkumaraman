@@ -10,11 +10,11 @@ import { Loader2, AlertTriangle } from 'lucide-react';
 import { auth, db } from '@/lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  updateProfile,
   type AuthError 
 } from 'firebase/auth';
 import {
-  collection,
   doc,
   setDoc,
   serverTimestamp,
@@ -28,6 +28,8 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,10 +69,15 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
 
+        // Update user's profile with display name
+        await updateProfile(user, { displayName: name });
+
         // Create a user document in Firestore
         await setDoc(doc(db, "customers", user.uid), {
           uid: user.uid,
           email: user.email,
+          displayName: name,
+          phoneNumber: phoneNumber,
           createdAt: serverTimestamp(),
           lastLogin: serverTimestamp(),
         });
@@ -103,6 +110,32 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
           <AlertTitle>Authentication Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
+      )}
+      {mode === 'signup' && (
+        <>
+          <div>
+            <Label htmlFor="name">Full Name</Label>
+            <Input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Priya Sharma"
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Input
+              id="phoneNumber"
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="+91 98765 43210"
+              required
+            />
+          </div>
+        </>
       )}
       <div>
         <Label htmlFor="email">Email Address</Label>
