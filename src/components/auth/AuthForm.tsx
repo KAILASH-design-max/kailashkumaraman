@@ -64,6 +64,9 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
     console.error("Firebase Auth Error:", error.code, error.message);
     let errorMessage = "An unexpected error occurred. Please try again.";
     switch (error.code) {
+      case "auth/operation-not-allowed":
+        errorMessage = "Phone number sign-in is not enabled for this app. Please enable it in the Firebase console.";
+        break;
       case "auth/invalid-phone-number":
         errorMessage = "The phone number you entered is not valid.";
         break;
