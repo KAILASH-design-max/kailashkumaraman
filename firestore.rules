@@ -1,0 +1,61 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+  
+    // Customers can only access their own document
+    match /customers/{userId} {
+      allow read, write: if request.auth.uid == userId;
+    }
+    
+    // Users can only access their own addresses
+    match /addresses/{addressId} {
+      allow read, write, delete: if request.auth.uid == resource.data.userId;
+    }
+    
+    // Users can only access their own payment methods
+    match /paymentMethods/{paymentId} {
+      allow read, write, delete: if request.auth.uid == resource.data.userId;
+    }
+
+    // Users can read their own orders. Creating orders is open to authenticated users.
+    match /orders/{orderId} {
+        allow read, update: if request.auth.uid == resource.data.userId;
+        allow create: if request.auth != null;
+    }
+    
+    // Products are publicly readable
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if false; // Protect from client-side writes
+    }
+    
+    // Promo codes are publicly readable
+    match /promoCodes/{promoId} {
+        allow read: if true;
+        allow write: if false; // Admin only
+    }
+
+    // Reviews can be created by authenticated users.
+    // Users can only update/delete their own reviews.
+    match /reviews/{reviewId} {
+        allow read: if true;
+        allow create: if request.auth != null;
+        allow update, delete: if request.auth.uid == resource.data.userId;
+    }
+    
+    // Support messages can be created by anyone.
+    match /supportMessages/{messageId} {
+        allow create: if true;
+        allow read, write: if false; // Admin only
+    }
+    
+    // Return requests can be created by authenticated users.
+    // Users can read their own return requests.
+    match /returns/{returnId} {
+        allow create: if request.auth != null;
+        allow read: if request.auth.uid == resource.data.userId;
+    }
+  }
+}
