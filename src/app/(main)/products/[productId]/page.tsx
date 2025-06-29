@@ -4,7 +4,7 @@ import { mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, limit, getDocs, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, limit, getDocs, Timestamp, orderBy } from 'firebase/firestore';
 
 // Helper to convert Firestore Timestamps and shape the data
 function serializeProduct(doc: any): Product {
@@ -50,11 +50,12 @@ async function getRelatedProducts(product: Product): Promise<Product[]> {
     if (!product.category) return [];
     try {
         const productsRef = collection(db, 'products');
-        // Query for other products in the same category, excluding the current product.
+        // Query for other products in the same category, sorted by popularity, excluding the current product.
         const q = query(
             productsRef, 
             where('category', '==', product.category), 
             where('status', '==', 'active'),
+            orderBy('popularity', 'desc'),
             limit(5) // fetch 5 and filter out the current one
         );
         const querySnapshot = await getDocs(q);
