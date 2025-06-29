@@ -612,5 +612,3 @@ export const mockPromoCodesData: PromoCode[] = [
     minOrderValue: 99, expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), status: 'active', description: 'Free Delivery on orders above ₹99' },
   { id: 'promo4', code: 'EXPIRED10', discountType: 'percentage', value: 10, expiresAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), status: 'inactive', description: '10% off (Expired)' },
 ];
-
-    
