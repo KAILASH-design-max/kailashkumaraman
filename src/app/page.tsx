@@ -77,8 +77,7 @@ export default function RootPage() {
         <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-x-4 gap-y-4">
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref className="group block">
-                <Card className="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
-                  <CardContent className="p-0 relative aspect-square w-full">
+                <div className="relative aspect-square w-full transition-all hover:-translate-y-1">
                     <Image
                       src={category.imageUrl}
                       alt={category.name}
@@ -87,8 +86,7 @@ export default function RootPage() {
                       className="object-contain group-hover:scale-105 transition-transform duration-300"
                       data-ai-hint={category.dataAiHint || 'category image'}
                     />
-                  </CardContent>
-                </Card>
+                </div>
             </Link>
           ))}
         </div>
