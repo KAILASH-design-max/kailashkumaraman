@@ -77,7 +77,7 @@ export default function RootPage() {
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
           {allCategories.map((category) => (
             <Link key={category.id} href={`/products?category=${category.slug}`} passHref className="group block text-center">
-              <Card className="overflow-hidden h-full flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+              <Card className="overflow-hidden h-full flex flex-col justify-center transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
                 <CardContent className="p-2 flex-grow flex items-center justify-center">
                   <div className="relative aspect-square w-full">
                     <Image
@@ -90,9 +90,6 @@ export default function RootPage() {
                     />
                   </div>
                 </CardContent>
-                <div className="p-2 border-t bg-card">
-                  <p className="text-xs font-medium text-muted-foreground truncate group-hover:text-primary">{category.name}</p>
-                </div>
               </Card>
             </Link>
           ))}
