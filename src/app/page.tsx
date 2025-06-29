@@ -83,7 +83,7 @@ export default function RootPage() {
                       alt={category.name}
                       fill
                       sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, (max-width: 1024px) 15vw, 10vw"
-                      className="object-contain group-hover:scale-105 transition-transform duration-300"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                       data-ai-hint={category.dataAiHint || 'category image'}
                     />
                 </div>
