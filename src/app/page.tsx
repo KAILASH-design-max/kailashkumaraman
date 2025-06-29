@@ -74,9 +74,9 @@ export default function RootPage() {
       {/* Category Display Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 text-left">Shop by Category</h2>
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-x-4 gap-y-6">
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-x-4 gap-y-4">
           {allCategories.map((category) => (
-            <Link key={category.id} href={`/products?category=${category.slug}`} passHref className="group block text-center">
+            <Link key={category.id} href={`/products?category=${category.slug}`} passHref className="group block">
                 <Card className="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
                   <CardContent className="p-0 relative aspect-square w-full">
                     <Image
@@ -89,9 +89,6 @@ export default function RootPage() {
                     />
                   </CardContent>
                 </Card>
-                <p className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors line-clamp-2">
-                    {category.name}
-                </p>
             </Link>
           ))}
         </div>
