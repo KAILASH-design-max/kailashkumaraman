@@ -1,10 +1,19 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
+
 export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const year = new Date().getFullYear();
+  const [year, setYear] = useState(() => new Date().getFullYear());
+
+  useEffect(() => {
+    // This hook ensures that we're using the client's date after hydration.
+    setYear(new Date().getFullYear());
+  }, []);
 
   return (
       <div className="flex min-h-screen flex-col">
