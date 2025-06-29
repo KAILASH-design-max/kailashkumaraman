@@ -7,13 +7,12 @@ import { ProductCard } from '@/components/customer/ProductCard';
 import type { Product, Category } from '@/lib/types';
 import { mockCategories } from '@/lib/mockData';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { PackageSearch, AlertCircle, Loader2, Search as SearchIcon } from 'lucide-react';
+import { PackageSearch, AlertCircle, Loader2 } from 'lucide-react';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, query, where, orderBy, QueryConstraint, Timestamp } from 'firebase/firestore';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
 
 // Helper to safely serialize product data from Firestore
 function serializeProduct(doc: any): Product {
@@ -54,10 +53,10 @@ export default function ProductsPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [searchTerm, setSearchTerm] = useState('');
-
+    
     const selectedCategory = searchParams.get('category') || 'all';
     const currentSort = searchParams.get('sort') || 'popularity';
+    const searchQuery = searchParams.get('q') || '';
 
     const createQueryString = useCallback(
         (params: Record<string, string>) => {
@@ -130,19 +129,17 @@ export default function ProductsPage() {
     }, [selectedCategory, currentSort]);
 
     const handleFilterChange = (type: 'category' | 'sort', value: string) => {
-        if (type === 'category') setSearchTerm('');
         router.push(`/products?${createQueryString({ [type]: value })}`);
     };
 
     const handleClearFilters = () => {
-        setSearchTerm('');
         router.push('/products');
     };
 
     const filteredProducts = useMemo(() => {
-        if (!searchTerm) return products;
-        return products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
-    }, [products, searchTerm]);
+        if (!searchQuery) return products;
+        return products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }, [products, searchQuery]);
     
     const renderSkeletons = () => (
         Array.from({ length: 12 }).map((_, index) => (
@@ -161,10 +158,15 @@ export default function ProductsPage() {
     const categoryInfo = selectedCategory !== 'all' 
         ? mockCategories.find(c => c.id === selectedCategory) 
         : null;
-    const pageTitle = categoryInfo ? categoryInfo.name : 'All Products';
-    const pageDescription = categoryInfo 
+    let pageTitle = categoryInfo ? categoryInfo.name : 'All Products';
+    let pageDescription = categoryInfo 
         ? `Browse our selection of fresh ${categoryInfo.name}.`
         : 'Browse our wide selection of available products.';
+
+    if (searchQuery) {
+        pageTitle = `Search results for "${searchQuery}"`;
+        pageDescription = `${filteredProducts.length} products found.`;
+    }
 
     return (
         <div className="container mx-auto py-8 px-4">
@@ -174,7 +176,7 @@ export default function ProductsPage() {
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 p-4 bg-muted/50 rounded-lg border items-end">
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-2">
                     <label className="text-sm font-medium text-muted-foreground">Category</label>
                     <Select value={selectedCategory} onValueChange={(value) => handleFilterChange('category', value)}>
                         <SelectTrigger className="bg-background">
@@ -188,7 +190,7 @@ export default function ProductsPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="lg:col-span-1">
+                <div className="lg:col-span-2">
                     <label className="text-sm font-medium text-muted-foreground">Sort By</label>
                     <Select value={currentSort} onValueChange={(value) => handleFilterChange('sort', value)}>
                         <SelectTrigger className="bg-background">
@@ -201,22 +203,8 @@ export default function ProductsPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="lg:col-span-2">
-                    <label htmlFor="product-search" className="text-sm font-medium text-muted-foreground">Search Products</label>
-                    <div className="relative">
-                        <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            id="product-search"
-                            type="search"
-                            placeholder="Search by product name..."
-                            className="bg-background pl-10"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                </div>
 
-                {(selectedCategory !== 'all' || currentSort !== 'popularity' || searchTerm) && (
+                {(selectedCategory !== 'all' || currentSort !== 'popularity' || searchQuery) && (
                      <div className="lg:col-span-4 flex justify-end">
                         <Button variant="ghost" onClick={handleClearFilters} className="w-full sm:w-auto h-10">Clear All Filters</Button>
                     </div>
@@ -244,7 +232,7 @@ export default function ProductsPage() {
                     <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                     <h2 className="text-2xl font-semibold mb-4">No Products Found</h2>
                     <p className="text-muted-foreground">
-                        {searchTerm ? `No products match your search for "${searchTerm}".` : "Try adjusting your filters or check back later."}
+                        {searchQuery ? `No products match your search for "${searchQuery}".` : "Try adjusting your filters or check back later."}
                     </p>
                 </div>
             )}
