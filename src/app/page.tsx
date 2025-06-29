@@ -74,19 +74,26 @@ export default function RootPage() {
       {/* Category Display Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 text-left">Shop by Category</h2>
-        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-x-4 gap-y-4">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
           {allCategories.map((category) => (
-            <Link key={category.id} href={`/products?category=${category.slug}`} passHref className="group block">
-                <div className="relative aspect-square w-full transition-all hover:-translate-y-1">
+            <Link key={category.id} href={`/products?category=${category.slug}`} passHref className="group block text-center">
+              <Card className="overflow-hidden h-full flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1">
+                <CardContent className="p-2 flex-grow flex items-center justify-center">
+                  <div className="relative aspect-square w-full">
                     <Image
                       src={category.imageUrl}
                       alt={category.name}
                       fill
-                      sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, (max-width: 1024px) 15vw, 10vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 16vw, 12vw"
+                      className="object-contain group-hover:scale-105 transition-transform duration-300"
                       data-ai-hint={category.dataAiHint || 'category image'}
                     />
+                  </div>
+                </CardContent>
+                <div className="p-2 border-t bg-card">
+                  <p className="text-xs font-medium text-muted-foreground truncate group-hover:text-primary">{category.name}</p>
                 </div>
+              </Card>
             </Link>
           ))}
         </div>
