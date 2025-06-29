@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -148,11 +147,20 @@ export default function ProductsPage() {
         ))
     );
 
+    // Dynamic heading logic
+    const categoryInfo = selectedCategory !== 'all' 
+        ? mockCategories.find(c => c.id === selectedCategory) 
+        : null;
+    const pageTitle = categoryInfo ? categoryInfo.name : 'All Products';
+    const pageDescription = categoryInfo 
+        ? `Browse our selection of fresh ${categoryInfo.name}.`
+        : 'Browse our wide selection of available products.';
+
     return (
         <div className="container mx-auto py-8 px-4">
             <div className="mb-8 text-center">
-                <h1 className="text-4xl font-bold mb-2">All Products</h1>
-                <p className="text-muted-foreground">Browse our wide selection of available products.</p>
+                <h1 className="text-4xl font-bold mb-2">{pageTitle}</h1>
+                <p className="text-muted-foreground">{pageDescription}</p>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg border sticky top-[65px] md:top-[125px] z-40">
