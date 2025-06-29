@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -163,7 +164,7 @@ export default function ProductsPage() {
                 <p className="text-muted-foreground">{pageDescription}</p>
             </div>
             
-            <div className="flex flex-col sm:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg border sticky top-[65px] md:top-[125px] z-40">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8 p-4 bg-muted/50 rounded-lg border sticky top-[112px] md:top-[72px] z-40">
                 <div className="flex-1">
                     <label className="text-sm font-medium text-muted-foreground">Category</label>
                     <Select value={selectedCategory} onValueChange={(value) => handleFilterChange('category', value)}>

@@ -1,3 +1,4 @@
+
 'use client'; 
 
 import Link from 'next/link';
@@ -73,22 +74,24 @@ export default function RootPage() {
       {/* Category Display Section */}
       <section className="mb-12">
         <h2 className="text-3xl font-semibold mb-6 text-left">Shop by Category</h2>
-        <div className="grid grid-cols-9 gap-3">
+        <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-7 lg:grid-cols-9 gap-x-4 gap-y-6">
           {allCategories.map((category) => (
-            <Link key={category.id} href={`/products?category=${category.slug}`} passHref>
-              <Card className="group overflow-hidden text-center transition-all hover:shadow-xl hover:-translate-y-1 flex flex-col h-full bg-transparent border-transparent border-0 shadow-none">
-                <CardContent className="p-0 relative aspect-square w-full">
-                  <Image
-                    src={category.imageUrl}
-                    alt={category.name}
-                    fill
-                    sizes="(max-width: 479px) 20vw, (max-width: 767px) 15vw, (max-width: 1023px) 12vw, 10vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300 rounded-lg"
-                    data-ai-hint={category.dataAiHint || 'category image'}
-                  />
-                </CardContent>
-                {/* Removed category name display div from here */}
-              </Card>
+            <Link key={category.id} href={`/products?category=${category.slug}`} passHref className="group block text-center">
+                <Card className="overflow-hidden transition-all hover:shadow-lg hover:-translate-y-1">
+                  <CardContent className="p-0 relative aspect-square w-full">
+                    <Image
+                      src={category.imageUrl}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 640px) 25vw, (max-width: 768px) 20vw, (max-width: 1024px) 15vw, 10vw"
+                      className="object-contain group-hover:scale-105 transition-transform duration-300"
+                      data-ai-hint={category.dataAiHint || 'category image'}
+                    />
+                  </CardContent>
+                </Card>
+                <p className="mt-2 text-xs sm:text-sm font-medium text-muted-foreground group-hover:text-primary transition-colors line-clamp-2">
+                    {category.name}
+                </p>
             </Link>
           ))}
         </div>
