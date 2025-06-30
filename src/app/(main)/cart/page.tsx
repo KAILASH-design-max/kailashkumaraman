@@ -439,7 +439,7 @@ export default function CartPage() {
         <div className="lg:col-span-1 space-y-6">
           {currentUser && (
             <Card className="shadow-lg">
-              <Link href="/checkout/shipping-details">
+              <Link href="/profile/addresses">
                 <CardContent className="p-4 flex justify-between items-center cursor-pointer hover:bg-muted/50">
                     <div className="flex items-start gap-4">
                         <Home className="h-6 w-6 text-primary mt-1 shrink-0" />
