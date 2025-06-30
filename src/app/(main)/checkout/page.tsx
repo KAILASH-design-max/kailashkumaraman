@@ -1,18 +1,25 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import type { CartItem } from '@/lib/types';
-import { ChevronLeft, ShoppingBag, Edit3, Trash2, Clock, Package } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import type { CartItem, Address } from '@/lib/types';
+import { ChevronLeft, ShoppingBag, Edit3, Trash2, Clock, Package, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { db, auth } from '@/lib/firebase';
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import type { User as FirebaseUser } from 'firebase/auth';
 
-// Helper to get an emoji based on product name - simplified for demo
+const DELIVERY_CHARGE_THRESHOLD = 299;
+const DELIVERY_CHARGE_STANDARD = 50;
+const GST_RATE = 0.18;
+const HANDLING_CHARGE = 5;
+
 const getEmojiForProduct = (name: string) => {
     const lowerName = name.toLowerCase();
     if (lowerName.includes('apple')) return '🍎';
@@ -25,18 +32,18 @@ const getEmojiForProduct = (name: string) => {
     if (lowerName.includes('eggs')) return '🥚';
     if (lowerName.includes('carrot')) return '🥕';
     if (lowerName.includes('juice')) return '🧃';
-    return '🛒'; // Default
+    return '🛒'; 
 };
-
 
 export default function VerifyItemsPage() {
   const { cartItems, getCartTotal, removeFromCart, getTotalItems } = useCart();
   const router = useRouter();
   const { toast } = useToast();
 
-  const subtotal = getCartTotal();
-  const totalItems = getTotalItems();
-  const uniqueItemsCount = cartItems.length;
+  const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
+  const [addressLoading, setAddressLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     if (cartItems.length === 0) {
@@ -49,12 +56,88 @@ export default function VerifyItemsPage() {
     }
   }, [cartItems, router, toast]);
 
-  if (cartItems.length === 0) {
+  useEffect(() => {
+    const fetchDefaultAddress = async (userId: string) => {
+      setAddressLoading(true);
+      try {
+        const addressesRef = collection(db, 'addresses');
+        let q = query(addressesRef, where('userId', '==', userId), where('isDefault', '==', true), limit(1));
+        let querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          q = query(addressesRef, where('userId', '==', userId), orderBy('createdAt', 'desc'), limit(1));
+          querySnapshot = await getDocs(q);
+        }
+        
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          setDefaultAddress({ id: doc.id, ...doc.data() } as Address);
+        } else {
+          setDefaultAddress(null);
+        }
+      } catch (error) {
+        console.error("Error fetching default address:", error);
+        toast({ title: 'Error', description: 'Could not fetch your address.', variant: 'destructive' });
+      } finally {
+        setAddressLoading(false);
+      }
+    };
+    
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      setCurrentUser(user);
+      setAuthLoading(false);
+      if (user) {
+        fetchDefaultAddress(user.uid);
+      } else {
+        setAddressLoading(false);
+        setDefaultAddress(null);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [toast]);
+
+  const subtotal = getCartTotal();
+  const totalItems = getTotalItems();
+  const uniqueItemsCount = cartItems.length;
+
+  const shippingMethod = 'standard'; // Assume standard shipping
+  const deliveryCharge = useMemo(() => {
+    if (subtotal <= 0) return 0;
+    return subtotal < DELIVERY_CHARGE_THRESHOLD ? DELIVERY_CHARGE_STANDARD : 0;
+  }, [subtotal]);
+  
+  const gstAmount = useMemo(() => subtotal > 0 ? subtotal * GST_RATE : 0, [subtotal]);
+  
+  const totalAmount = useMemo(() => {
+    const preliminaryTotal = subtotal + gstAmount + deliveryCharge + (subtotal > 0 ? HANDLING_CHARGE : 0);
+    return Math.max(0, preliminaryTotal);
+  }, [subtotal, gstAmount, deliveryCharge]);
+
+  const handleProceedToPayment = () => {
+    if (!defaultAddress) {
+        toast({ title: 'Address Missing', description: 'Please add a default address in your profile to proceed.', variant: 'destructive'});
+        router.push('/profile/addresses');
+        return;
+    }
+
+    const shippingInfo = {
+        address: defaultAddress, 
+        method: shippingMethod,
+        promoCode: null, // Promo codes are handled elsewhere or removed.
+        summary: { subtotal, discount: 0, deliveryCharge, gstAmount, handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0, totalAmount }
+    };
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('checkoutShippingInfo', JSON.stringify(shippingInfo));
+    }
+    router.push('/checkout/payment-details');
+  };
+
+  if (cartItems.length === 0 || authLoading) {
     return (
       <div className="container mx-auto py-12 px-4 text-center">
-        <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
-        <h1 className="text-3xl font-semibold mb-4">Your Cart is Empty</h1>
-        <p className="text-muted-foreground mb-8">Redirecting you...</p>
+        <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground mt-4">Loading...</p>
       </div>
     );
   }
@@ -74,7 +157,7 @@ export default function VerifyItemsPage() {
         <Card className="border-none shadow-none">
             <CardHeader className="px-1 pb-4">
                 <CardTitle className="text-xl font-semibold">Step 1: Verify Your Items</CardTitle>
-                <CardDescription>Please review your cart contents, quantities, and prices.</CardDescription>
+                <CardDescription>Review your cart contents, quantities, and prices.</CardDescription>
             </CardHeader>
             <CardContent className="px-1 space-y-4">
             {cartItems.map((item: CartItem) => {
@@ -126,8 +209,9 @@ export default function VerifyItemsPage() {
             </div>
 
             <div className="mt-6 flex justify-end">
-                <Button onClick={() => router.push('/checkout/shipping-details')} className="w-full sm:w-auto" size="lg">
-                    Proceed to Shipping Details
+                <Button onClick={handleProceedToPayment} className="w-full sm:w-auto" size="lg" disabled={addressLoading}>
+                    {addressLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Proceed to Payment
                 </Button>
             </div>
             </CardContent>
@@ -136,4 +220,3 @@ export default function VerifyItemsPage() {
     </div>
   );
 }
-
