@@ -451,7 +451,10 @@ export default function CartPage() {
                               <p className="font-semibold">Loading address...</p>
                             ) : defaultAddress ? (
                               <>
-                                <p className="font-semibold">{defaultAddress.name}</p>
+                                <p className="font-semibold flex items-center gap-2">
+                                  {defaultAddress.name}
+                                  <CheckCircle className="h-4 w-4 text-green-600" />
+                                </p>
                                 <p className="text-xs text-muted-foreground line-clamp-1">
                                   {defaultAddress.street}, {defaultAddress.city}
                                 </p>
