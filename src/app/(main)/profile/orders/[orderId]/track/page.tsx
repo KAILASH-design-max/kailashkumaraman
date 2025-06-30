@@ -147,13 +147,13 @@ export default function TrackOrderPage() {
                 let vehicleDetailsString = 'Details not available';
                 if (partnerData.vehicleType && partnerData.vehicleRegistrationNumber) {
                     const type = partnerData.vehicleType.charAt(0).toUpperCase() + partnerData.vehicleType.slice(1);
-                    vehicleDetailsString = `${type} #${partnerData.vehicleRegistrationNumber}`;
+                    vehicleDetailsString = `${type} #${partnerData.vehicleRegistrationNumber.trim()}`;
                 } else if (partnerData.vehicleDetails) {
                     vehicleDetailsString = partnerData.vehicleDetails;
                 }
 
                 setAssignedDeliveryPartner({
-                  name: partnerData.name || "Delivery Partner",
+                  name: (partnerData.name || "Delivery Partner").trim(),
                   phoneNumber: partnerData.phoneNumber || "N/A",
                   vehicleDetails: vehicleDetailsString,
                   rating: partnerData.rating || 4.8,
