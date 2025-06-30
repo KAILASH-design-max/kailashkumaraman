@@ -220,7 +220,7 @@ export default function CartPage() {
   }
 
   const isCheckoutActionDisabled = authLoading || addressLoading || !defaultAddress;
-  const checkoutButtonLabel = defaultAddress ? "Select Delivery Option" : "Proceed to Checkout";
+  const checkoutButtonLabel = defaultAddress ? "Proceed to Checkout" : "Select Delivery Option";
   const checkoutTooltipMessage = addressLoading 
     ? "Fetching your address..." 
     : "Please select a delivery address to continue.";
