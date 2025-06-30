@@ -20,6 +20,12 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { Address } from '@/lib/types';
 import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 
 export default function CartPage() {
@@ -111,17 +117,27 @@ export default function CartPage() {
   };
 
   const handleProceedToCheckout = () => {
-    if (authLoading) return; // Do nothing while auth state is loading
+    if (authLoading || addressLoading) return; // Do nothing while loading
     
-    if (currentUser) {
-      router.push('/checkout');
-    } else {
+    if (!currentUser) {
       toast({
         title: "Login Required",
         description: "Please log in to proceed to checkout.",
         variant: "default",
       });
       router.push('/login?redirect=/checkout');
+      return;
+    }
+    
+    if (defaultAddress) {
+      router.push('/checkout');
+    } else {
+       // This case is handled by the disabled button, but as a fallback:
+       toast({
+         title: "Address Required",
+         description: "Please select a delivery address to continue.",
+         variant: "destructive",
+       });
     }
   };
 
@@ -137,6 +153,13 @@ export default function CartPage() {
       </div>
     );
   }
+
+  const isCheckoutActionDisabled = authLoading || addressLoading || !defaultAddress;
+  const checkoutButtonLabel = defaultAddress ? "Select Delivery Option" : "Proceed to Checkout";
+  const checkoutTooltipMessage = addressLoading 
+    ? "Fetching your address..." 
+    : "Please select a delivery address to continue.";
+
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -403,10 +426,27 @@ export default function CartPage() {
                     You Saved ₹{discountAmount.toFixed(2)} on this order!
                 </div>
                {cartItems.length > 0 ? (
-                <Button className="w-full" size="lg" onClick={handleProceedToCheckout} disabled={authLoading}>
-                    {authLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                    Proceed to Checkout
-                </Button>
+                isCheckoutActionDisabled ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="w-full" tabIndex={0}>
+                          <Button className="w-full" size="lg" disabled>
+                            {(authLoading || addressLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {checkoutButtonLabel}
+                          </Button>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{checkoutTooltipMessage}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : (
+                  <Button className="w-full" size="lg" onClick={handleProceedToCheckout}>
+                    {checkoutButtonLabel}
+                  </Button>
+                )
                ) : (
                  <Button className="w-full" size="lg" disabled>
                     Add Items to Checkout
