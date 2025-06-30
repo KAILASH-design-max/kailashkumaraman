@@ -272,26 +272,30 @@ export default function TrackOrderPage() {
             <CardHeader>
                 <CardTitle className="flex items-center text-xl"><ListChecks className="mr-2 h-5 w-5 text-accent"/>Order Status</CardTitle>
             </CardHeader>
-            <CardContent className="pt-2">
-                <div className="flex items-center justify-between">
+             <CardContent className="pt-4 overflow-x-auto">
+                <div className="flex items-start">
                     {orderStatusSteps.map((step, index) => (
-                        <div key={step.name} className={cn("flex flex-col items-center", index !== 0 && "flex-1")}>
-                            <div className={cn("flex items-center w-full", index === 0 && "justify-start", index === orderStatusSteps.length - 1 && "justify-end")}>
-                                {index > 0 && (
-                                    <Progress value={step.completed || step.current ? 100 : 0} className="w-full h-1 bg-muted rounded-none" />
-                                )}
-                                <div className={cn("flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300",
-                                    step.completed ? "bg-primary text-primary-foreground" :
-                                    step.current ? "bg-accent text-accent-foreground animate-pulse" : "bg-muted text-muted-foreground"
+                        <React.Fragment key={step.name}>
+                            <div className="flex flex-col items-center">
+                                <div className={cn(
+                                    "w-10 h-10 rounded-full flex items-center justify-center transition-colors duration-300 border-2",
+                                    step.completed 
+                                        ? "bg-green-600 border-green-600 text-white" 
+                                        : step.current 
+                                        ? "bg-primary border-primary text-primary-foreground animate-pulse" 
+                                        : "border-muted bg-background text-muted-foreground"
                                 )}>
                                     <step.icon className="h-5 w-5"/>
                                 </div>
-                                {index < orderStatusSteps.length - 1 && (
-                                    <Progress value={orderStatusSteps[index+1].completed || orderStatusSteps[index+1].current ? 100 : 0} className="w-full h-1 bg-muted rounded-none"/>
-                                )}
+                                <p className="text-xs text-center mt-2 w-20">{step.name}</p>
                             </div>
-                            <p className="text-xs text-center mt-2 w-20">{step.name}</p>
-                        </div>
+                            {index < orderStatusSteps.length - 1 && (
+                                <div className={cn(
+                                    "flex-1 h-1 mt-5", 
+                                    orderStatusSteps[index + 1].completed || orderStatusSteps[index + 1].current ? 'bg-primary' : 'bg-muted'
+                                )} />
+                            )}
+                        </React.Fragment>
                     ))}
                 </div>
             </CardContent>
