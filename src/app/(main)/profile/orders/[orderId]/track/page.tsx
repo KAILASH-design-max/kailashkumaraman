@@ -16,7 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, Timestamp, onSnapshot, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, Timestamp, onSnapshot, updateDoc, collection, addDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -256,20 +256,23 @@ export default function TrackOrderPage() {
 
     setIsRatingSubmitting(true);
     try {
-        const ratingData = {
-            deliveryPartnerName: assignedDeliveryPartner.name,
-            vehicle: assignedDeliveryPartner.vehicleDetails,
+        const partnerRef = doc(db, 'users', order.deliveryPartnerId);
+
+        const newRating = {
+            orderId: order.id,
             rating: deliveryRating,
             ratedAt: serverTimestamp(),
         };
-        const ratingsCollectionRef = collection(db, 'users', order.deliveryPartnerId, 'deliveryRatings');
-        await addDoc(ratingsCollectionRef, ratingData);
+
+        await updateDoc(partnerRef, {
+            deliveryRatings: arrayUnion(newRating)
+        });
         
         toast({ title: "Rating Submitted!", description: "Thank you for your feedback." });
         setIsRatingSubmitted(true);
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error submitting rating:", error);
-        toast({ title: "Submission Failed", description: "Could not submit your rating. Please try again.", variant: "destructive" });
+        toast({ title: "Submission Failed", description: `Could not submit your rating: ${error.message}`, variant: "destructive" });
     } finally {
         setIsRatingSubmitting(false);
     }
