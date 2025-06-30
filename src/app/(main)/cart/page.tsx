@@ -184,25 +184,45 @@ export default function CartPage() {
 
   const handleProceedToCheckout = () => {
     if (authLoading || addressLoading) return;
-    
+
     if (!currentUser) {
       toast({
         title: "Login Required",
         description: "Please log in to proceed to checkout.",
         variant: "default",
       });
-      router.push('/login?redirect=/checkout');
+      router.push('/login?redirect=/checkout/payment-details');
       return;
     }
-    
+
     if (defaultAddress) {
-      router.push('/checkout');
+      const shippingInfo = {
+        address: defaultAddress,
+        method: 'standard',
+        promoCode: appliedPromo ? {
+            code: appliedPromo.code,
+            discountAmount: discountAmount,
+            description: appliedPromo.description,
+        } : null,
+        summary: {
+            subtotal,
+            discount: discountAmount,
+            deliveryCharge: deliveryFee,
+            gstAmount: gstAmount,
+            handlingCharge: handlingCharge,
+            totalAmount: totalAmount,
+        }
+      };
+      if (typeof window !== 'undefined') {
+          localStorage.setItem('checkoutShippingInfo', JSON.stringify(shippingInfo));
+      }
+      router.push('/checkout/payment-details');
     } else {
-       toast({
-         title: "Address Required",
-         description: "Please select a delivery address to continue.",
-         variant: "destructive",
-       });
+      toast({
+        title: "Address Required",
+        description: "Please select a delivery address to continue.",
+        variant: "destructive",
+      });
     }
   };
 

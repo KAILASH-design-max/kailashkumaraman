@@ -75,11 +75,11 @@ export default function PaymentDetailsPage() {
             } catch (e) {
                 console.error("Error parsing shipping info from localStorage", e);
                 setPageError("Could not load shipping details. Please go back and try again.");
-                router.push('/checkout/shipping-details');
+                router.push('/cart');
             }
         } else {
             setPageError("Shipping details not found. Please start checkout again.");
-            router.push('/checkout/shipping-details');
+            router.push('/cart');
         }
     }
   }, [cartItems, router]);
@@ -155,7 +155,7 @@ export default function PaymentDetailsPage() {
         <AlertCircle className="mx-auto h-24 w-24 text-destructive mb-6" />
         <h1 className="text-3xl font-semibold mb-4">Error</h1>
         <p className="text-destructive mb-8">{pageError}</p>
-        <Button onClick={() => router.push('/checkout/shipping-details')}>Go Back</Button>
+        <Button onClick={() => router.push('/cart')}>Go Back to Cart</Button>
       </div>
     );
   }
@@ -164,9 +164,9 @@ export default function PaymentDetailsPage() {
   return (
     <div className="container mx-auto py-8 px-4">
       <div className="mb-6">
-        <Link href="/checkout/shipping-details" className="text-sm text-muted-foreground hover:text-primary flex items-center">
+        <Link href="/cart" className="text-sm text-muted-foreground hover:text-primary flex items-center">
           <ChevronLeft className="mr-1 h-4 w-4" />
-          Back to Shipping Details
+          Back to Cart
         </Link>
       </div>
       <h1 className="text-3xl font-bold mb-2 text-center">Payment Details</h1>
