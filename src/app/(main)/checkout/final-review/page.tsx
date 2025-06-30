@@ -126,18 +126,14 @@ export default function FinalReviewPage() {
       console.log("Order placed and saved to Firestore with ID: ", docRef.id);
 
       clearCart();
-      if (typeof window !== 'undefined') {
-          localStorage.removeItem('finalOrderData');
-          localStorage.removeItem('checkoutShippingInfo');
-      }
       
       toast({
         title: "Order Placed Successfully!",
-        description: `Thank you for your purchase. Redirecting to tracking...`,
+        description: `Thank you for your purchase. Redirecting to confirmation...`,
         variant: "default",
         duration: 3000,
       });
-      router.push(`/profile/orders/${docRef.id}/track`);
+      router.push(`/checkout/order-confirmation?orderId=${docRef.id}`);
     } catch (error) {
         console.error("Error placing order / saving to Firestore: ", error);
         setPageError("There was an issue placing your order. Please try again. If the problem persists, contact support.");
