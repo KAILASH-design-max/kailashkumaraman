@@ -59,7 +59,7 @@ export default function ProductsPage() {
     const searchQuery = searchParams.get('q') || '';
 
     const createQueryString = useCallback(
-        (params: Record<string, string>) => {
+        (params: Record<string, string | null>) => {
             const newSearchParams = new URLSearchParams(searchParams.toString());
             for (const [key, value] of Object.entries(params)) {
                 if (value === null || value === undefined || (key === 'category' && value === 'all') || (key === 'sort' && value === 'popularity')) {
@@ -129,7 +129,11 @@ export default function ProductsPage() {
     }, [selectedCategory, currentSort]);
 
     const handleFilterChange = (type: 'category' | 'sort', value: string) => {
-        router.push(`/products?${createQueryString({ [type]: value })}`);
+        const params: Record<string, string | null> = { [type]: value };
+        if (type === 'category') {
+            params['q'] = null; // Clear search query when category changes
+        }
+        router.push(`/products?${createQueryString(params)}`);
     };
 
     const handleClearFilters = () => {
@@ -155,17 +159,17 @@ export default function ProductsPage() {
     );
 
     // Dynamic heading logic
-    const categoryInfo = selectedCategory !== 'all' 
+    const categoryInfo = !searchQuery && selectedCategory !== 'all' 
         ? mockCategories.find(c => c.id === selectedCategory) 
         : null;
-    let pageTitle = categoryInfo ? categoryInfo.name : 'All Products';
-    let pageDescription = categoryInfo 
-        ? `Browse our selection of fresh ${categoryInfo.name}.`
-        : 'Browse our wide selection of available products.';
+    let pageTitle = `Showing results for '${searchQuery}'`;
+    let pageDescription = `${filteredProducts.length} products found.`;
 
-    if (searchQuery) {
-        pageTitle = `Search results for "${searchQuery}"`;
-        pageDescription = `${filteredProducts.length} products found.`;
+    if (!searchQuery) {
+        pageTitle = categoryInfo ? categoryInfo.name : 'All Products';
+        pageDescription = categoryInfo 
+            ? `Browse our selection of fresh ${categoryInfo.name}.`
+            : 'Browse our wide selection of available products.';
     }
 
     return (

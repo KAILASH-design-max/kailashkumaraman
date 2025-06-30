@@ -16,7 +16,6 @@ import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
 import { Input } from '@/components/ui/input';
 import { LocationDialog, type Location } from '@/components/shared/LocationDialog';
-import { mockProducts } from '@/lib/mockData'; 
 import { useToast } from "@/hooks/use-toast";
 import { cn } from '@/lib/utils';
 import { auth } from '@/lib/firebase';
@@ -103,25 +102,11 @@ export function CustomerNavbar() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const { currentUser, isLoggedIn, logout: performLogout, isLoading: authIsLoading } = useFirebaseAuth();
   const { getTotalItems, getCartTotal } = useCart();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchPlaceholder, setSearchPlaceholder] = useState('Search "butter"...'); 
+  const searchPlaceholder = "Search for atta, dal, coke...";
 
   const [deliveryTime, setDeliveryTime] = useState<string>('Calculating...');
   const [currentLocation, setCurrentLocation] = useState<Location>({ name: "Darbhanga, Bihar", lat: 26.17, lng: 85.9 });
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
-
-  useEffect(() => {
-    // Placeholder switcher for search input
-    if (mockProducts && mockProducts.length > 0) {
-      const placeholderIntervalId = setInterval(() => {
-        const randomIndex = Math.floor(Math.random() * mockProducts.length);
-        const randomProductName = mockProducts[randomIndex].name;
-        setSearchPlaceholder(`Search "${randomProductName}"...`);
-      }, 4000); 
-
-      return () => clearInterval(placeholderIntervalId); 
-    }
-  }, []);
   
   useEffect(() => {
     // This simulates fetching stores and calculating distance on location change
@@ -159,19 +144,20 @@ export function CustomerNavbar() {
     await performLogout();
     closeSheet();
   };
-
-  const handleSearchSubmit = () => {
-    if (searchTerm.trim()) {
-      router.push(`/products?q=${encodeURIComponent(searchTerm.trim())}`);
-      setSearchTerm(''); 
-      closeSheet();
-    }
-  };
-
-  const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      handleSearchSubmit();
-    }
+  
+  const SearchBarTrigger = ({ isMobile = false }) => {
+    const baseClasses = "relative w-full cursor-pointer";
+    const mobileClasses = "h-10 text-sm pl-9 pr-4 rounded-md border border-input";
+    const desktopClasses = "h-11 pl-10 pr-4 rounded-lg border border-input";
+  
+    return (
+      <div className={baseClasses} onClick={() => router.push('/search')}>
+        <SearchIcon className={cn("absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground", isMobile ? "h-4 w-4" : "h-5 w-5")} />
+        <div className={cn("bg-background flex items-center text-muted-foreground", isMobile ? mobileClasses : desktopClasses)}>
+            {searchPlaceholder}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -262,17 +248,8 @@ export function CustomerNavbar() {
           </div>
 
           <div className="hidden md:flex flex-1 justify-center px-2">
-            <div className="relative w-full max-w-lg">
-              <SearchIcon className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={searchPlaceholder}
-                className="h-11 w-full pl-10 pr-4 rounded-lg border-input focus:border-primary focus:ring-primary"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                aria-label="Search products"
-              />
+            <div className="w-full max-w-lg">
+                <SearchBarTrigger />
             </div>
           </div>
 
@@ -358,18 +335,7 @@ export function CustomerNavbar() {
         
         {/* Mobile Search Bar */}
          <div className="md:hidden px-4 pb-3 pt-2">
-            <div className="relative w-full">
-              <SearchIcon className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder={searchPlaceholder}
-                className="h-10 w-full pl-9 pr-4 rounded-md text-sm border-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={handleSearchKeyDown}
-                aria-label="Search products mobile"
-              />
-            </div>
+            <SearchBarTrigger isMobile={true}/>
           </div>
       </header>
 
