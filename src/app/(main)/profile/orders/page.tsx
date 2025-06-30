@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -158,6 +159,36 @@ const ProductReviewForm = ({
   );
 };
 
+// Helper functions moved outside the component
+const formatDate = (timestamp: Timestamp | undefined) => {
+  if (!timestamp) return 'N/A';
+  return timestamp.toDate().toLocaleDateString('en-US', {
+    year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit'
+  });
+};
+
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'delivered': return 'bg-green-100 text-green-700';
+    case 'shipped':
+    case 'out for delivery':
+      return 'bg-blue-100 text-blue-700';
+    case 'processing':
+    case 'confirmed':
+    case 'placed':
+    case 'return requested': 
+      return 'bg-yellow-100 text-yellow-700';
+    case 'cancelled':
+    case 'failed':
+    case 'return rejected': 
+      return 'bg-red-100 text-red-700';
+    case 'return approved': 
+    case 'refunded': 
+        return 'bg-purple-100 text-purple-700'; 
+    default: return 'bg-gray-100 text-gray-700';
+  }
+};
 
 export default function OrdersPage() {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
@@ -246,36 +277,6 @@ Please use the link provided by Firebase to create this index. If the error pers
     }
   }, [currentUser]);
 
-  const formatDate = (timestamp: Timestamp | undefined) => {
-    if (!timestamp) return 'N/A';
-    return timestamp.toDate().toLocaleDateString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-  };
-  
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'delivered': return 'bg-green-100 text-green-700';
-      case 'shipped':
-      case 'out for delivery':
-        return 'bg-blue-100 text-blue-700';
-      case 'processing':
-      case 'confirmed':
-      case 'placed':
-      case 'return requested': 
-        return 'bg-yellow-100 text-yellow-700';
-      case 'cancelled':
-      case 'failed':
-      case 'return rejected': 
-        return 'bg-red-100 text-red-700';
-      case 'return approved': 
-      case 'refunded': 
-         return 'bg-purple-100 text-purple-700'; 
-      default: return 'bg-gray-100 text-gray-700';
-    }
-  };
-
   const handleReorder = async (orderId: string) => {
     const orderToReorder = orders.find(order => order.id === orderId);
     if (!orderToReorder) {
@@ -350,7 +351,7 @@ Please use the link provided by Firebase to create this index. If the error pers
       setReviewedProductIds(prev => new Set(prev).add(productId));
       setReviewingItemId(null);
   };
-
+  
   if (isLoading) {
     return (
       <div className="container mx-auto py-10 px-4 sm:px-6 lg:px-8 text-center">
@@ -530,8 +531,9 @@ Please use the link provided by Firebase to create this index. If the error pers
                 </div>
               </CardContent>
             </Card>
-          )
-        })}
+            )
+          })
+        )}
       </div>
     </div>
   );
