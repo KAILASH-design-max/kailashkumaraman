@@ -135,7 +135,7 @@ export interface PromoCode {
   minOrderValue?: number;
   expiresAt: string; // ISO string
   status: 'active' | 'inactive' | string;
-  usageLimit?: string;
+  usageLimit?: number;
   description?: string;
   createdAt?: string;
   updatedAt?: string;

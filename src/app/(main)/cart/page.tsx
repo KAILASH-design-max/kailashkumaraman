@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle, Percent, ChevronRight, Home } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from 'next/navigation';
@@ -18,14 +18,20 @@ import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import type { Address } from '@/lib/types';
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import type { Address, PromoCode } from '@/lib/types';
+import { collection, query, where, getDocs, limit, orderBy, Timestamp } from 'firebase/firestore';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 
 export default function CartPage() {
@@ -41,17 +47,33 @@ export default function CartPage() {
   const [isRecipeLoading, setIsRecipeLoading] = useState(false);
   const [recipeError, setRecipeError] = useState<string | null>(null);
 
-  // Static order summary values for display
-  const subtotalStatic = getCartTotal();
+  const [promoCodeInput, setPromoCodeInput] = useState('');
+  const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [isPromoLoading, setIsPromoLoading] = useState(false);
+
+  // Dynamic order summary values
+  const subtotal = getCartTotal();
   const gstRate = 0.18;
   const handlingCharge = 5.00;
   const deliveryFee = 30.00;
-  const promoCode = 'SAVE31';
-  const discountAmount = 10.00;
 
-  const gstAmountStatic = subtotalStatic * gstRate;
-  const totalAmountStatic = subtotalStatic > 0 ? (subtotalStatic + gstAmountStatic + handlingCharge + deliveryFee - discountAmount) : 0;
+  const discountAmount = useMemo(() => {
+    if (!appliedPromo || subtotal === 0) return 0;
+    if (subtotal < (appliedPromo.minOrderValue || 0)) return 0;
 
+    if (appliedPromo.discountType === 'fixed') {
+        return appliedPromo.value;
+    }
+    if (appliedPromo.discountType === 'percentage') {
+        return (subtotal * appliedPromo.value) / 100;
+    }
+    return 0;
+  }, [appliedPromo, subtotal]);
+  
+  const gstAmount = subtotal * gstRate;
+  const totalAmount = subtotal > 0 ? (subtotal + gstAmount + handlingCharge + deliveryFee - discountAmount) : 0;
+  
   useEffect(() => {
     const fetchDefaultAddress = async (userId: string) => {
       setAddressLoading(true);
@@ -75,7 +97,6 @@ export default function CartPage() {
         }
       } catch (error) {
         console.error("Error fetching default address:", error);
-        // Optionally set an error state to show in the UI
       } finally {
         setAddressLoading(false);
       }
@@ -95,6 +116,51 @@ export default function CartPage() {
     return () => unsubscribe();
   }, []);
 
+  const handleApplyPromoCode = async () => {
+    if (!promoCodeInput.trim()) {
+        setPromoError("Please enter a promo code.");
+        return;
+    }
+    setIsPromoLoading(true);
+    setPromoError(null);
+    setAppliedPromo(null);
+
+    try {
+        const promoRef = collection(db, "promoCodes");
+        const q = query(promoRef, where("code", "==", promoCodeInput.trim().toUpperCase()), limit(1));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+            setPromoError("Invalid promo code. Please try again.");
+            setIsPromoLoading(false);
+            return;
+        }
+
+        const promoDoc = querySnapshot.docs[0];
+        const promoData = { id: promoDoc.id, ...promoDoc.data() } as PromoCode;
+
+        if (promoData.status !== 'active') {
+            setPromoError("This promo code is not active.");
+        } else if (new Date(promoData.expiresAt) < new Date()) {
+            setPromoError("This promo code has expired.");
+        } else if (promoData.minOrderValue && subtotal < promoData.minOrderValue) {
+            setPromoError(`This code is valid for orders over ₹${promoData.minOrderValue}.`);
+        } else {
+            setAppliedPromo(promoData);
+            setPromoCodeInput('');
+            toast({
+                title: "Promo Code Applied!",
+                description: promoData.description,
+            });
+        }
+
+    } catch (error) {
+        console.error("Error applying promo code:", error);
+        setPromoError("An error occurred while applying the code.");
+    } finally {
+        setIsPromoLoading(false);
+    }
+  };
 
   const handleGenerateRecipe = async () => {
     if (cartItems.length === 0) {
@@ -117,7 +183,7 @@ export default function CartPage() {
   };
 
   const handleProceedToCheckout = () => {
-    if (authLoading || addressLoading) return; // Do nothing while loading
+    if (authLoading || addressLoading) return;
     
     if (!currentUser) {
       toast({
@@ -132,7 +198,6 @@ export default function CartPage() {
     if (defaultAddress) {
       router.push('/checkout');
     } else {
-       // This case is handled by the disabled button, but as a fallback:
        toast({
          title: "Address Required",
          description: "Please select a delivery address to continue.",
@@ -324,15 +389,33 @@ export default function CartPage() {
             </CardFooter>
           </Card>
           
-          <Card className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
-              <CardContent className="p-4 flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                      <Percent className="h-6 w-6 text-primary" />
-                      <span className="font-medium">Avail Offers / Coupons</span>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="promo-code">
+              <AccordionTrigger className="p-4 bg-card rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-3">
+                  <Percent className="h-6 w-6 text-primary" />
+                  <span className="font-medium">Avail Offers / Coupons</span>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="bg-card rounded-b-lg">
+                <div className="p-4 space-y-4 border-t">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Enter Promo Code"
+                      value={promoCodeInput}
+                      onChange={(e) => setPromoCodeInput(e.target.value)}
+                      disabled={isPromoLoading}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleApplyPromoCode(); }}
+                    />
+                    <Button onClick={handleApplyPromoCode} disabled={isPromoLoading}>
+                      {isPromoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Apply'}
+                    </Button>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
-              </CardContent>
-          </Card>
+                  {promoError && <p className="text-sm text-destructive">{promoError}</p>}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
 
           <Card className="shadow-sm">
               <CardContent className="p-4 flex items-start gap-4">
@@ -392,7 +475,7 @@ export default function CartPage() {
               <div className="space-y-2 text-muted-foreground">
                 <div className="flex justify-between text-foreground">
                   <span>Subtotal</span>
-                  <span>₹{subtotalStatic.toFixed(2)}</span>
+                  <span>₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Delivery Fee</span>
@@ -400,31 +483,35 @@ export default function CartPage() {
                 </div>
                 <div className="flex justify-between">
                   <span>GST (18%)</span>
-                  <span>₹{gstAmountStatic.toFixed(2)}</span>
+                  <span>₹{gstAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Handling Charge</span>
                   <span>₹{handlingCharge.toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between items-center text-green-600 font-medium">
-                  <span className="flex items-center">
-                    <Tag className="mr-2 h-4 w-4" />
-                    Promo Applied ({promoCode})
-                  </span>
-                  <span>-₹{discountAmount.toFixed(2)}</span>
-                </div>
+                {discountAmount > 0 && appliedPromo && (
+                  <div className="flex justify-between items-center text-green-600 font-medium">
+                    <span className="flex items-center">
+                      <Tag className="mr-2 h-4 w-4" />
+                      Promo Applied ({appliedPromo.code})
+                    </span>
+                    <span>-₹{discountAmount.toFixed(2)}</span>
+                  </div>
+                )}
               </div>
               <Separator />
               <div className="flex justify-between text-xl font-bold text-foreground">
                 <span>Total Payable</span>
-                <span>₹{totalAmountStatic.toFixed(2)}</span>
+                <span>₹{totalAmount.toFixed(2)}</span>
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-                <div className="flex items-center justify-center text-green-700 font-semibold text-sm bg-green-50/50 p-3 rounded-md w-full">
-                    <CheckCircle className="mr-2 h-6 w-6" />
-                    You Saved ₹{discountAmount.toFixed(2)} on this order!
-                </div>
+                {discountAmount > 0 && (
+                  <div className="flex items-center justify-center text-green-700 font-semibold text-sm bg-green-50/50 p-3 rounded-md w-full">
+                      <CheckCircle className="mr-2 h-6 w-6" />
+                      You Saved ₹{discountAmount.toFixed(2)} on this order!
+                  </div>
+                )}
                {cartItems.length > 0 ? (
                 isCheckoutActionDisabled ? (
                   <TooltipProvider>
