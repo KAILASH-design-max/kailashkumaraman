@@ -243,8 +243,26 @@ export function CustomerNavbar() {
             </LocationDialog>
           </div>
 
-           <div className="md:hidden flex-1">
-              <Logo icon={ShoppingCartIcon} textSize="text-xl" href="/" className="ml-2" iconSize={24}/>
+          <div className="md:hidden flex-1">
+            <LocationDialog
+                open={isLocationDialogOpen}
+                onOpenChange={setIsLocationDialogOpen}
+                onLocationUpdate={handleLocationUpdate}
+            >
+                <div className="flex items-center justify-center cursor-pointer group p-1 rounded-md transition-colors">
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-foreground whitespace-nowrap">
+                      Delivery in {deliveryTime}
+                    </p>
+                    <div className="flex items-center justify-center">
+                      <p className="text-xs text-muted-foreground truncate max-w-[200px] xs:max-w-[240px]">
+                        {currentLocation.name}
+                      </p>
+                      <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 group-hover:text-primary transition-colors shrink-0" />
+                    </div>
+                  </div>
+                </div>
+            </LocationDialog>
           </div>
 
           <div className="hidden md:flex flex-1 justify-center px-2">
@@ -286,55 +304,10 @@ export function CustomerNavbar() {
             </Button>
           </div>
 
-          <div className="md:hidden ml-auto">
-               <Button
-                  variant="ghost"
-                  size="icon"
-                  asChild
-                  className={cn(
-                    "relative",
-                    cartItemCount === 0 ? 'cart-empty' : 'cart-active'
-                  )}
-                  aria-disabled={cartItemCount === 0}
-                >
-                  <Link href="/cart" aria-label="Shopping Cart">
-                  <ShoppingCartIcon className="h-5 w-5" />
-                  {cartItemCount > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                      {cartItemCount}
-                      </span>
-                  )}
-                  <span className="sr-only">Cart</span>
-                  </Link>
-              </Button>
-          </div>
-        </div>
-
-        {/* Mobile Location Display */}
-        <div className="md:hidden container mx-auto px-4 pt-2 pb-2 text-center border-b border-t">
-            <LocationDialog
-                open={isLocationDialogOpen}
-                onOpenChange={setIsLocationDialogOpen}
-                onLocationUpdate={handleLocationUpdate}
-            >
-                <div className="inline-flex items-center cursor-pointer group p-1 hover:bg-muted rounded-md transition-colors">
-                  <div className="text-left">
-                    <p className="text-xs font-medium text-foreground whitespace-nowrap">
-                      Delivery in {deliveryTime}
-                    </p>
-                    <div className="flex items-center">
-                      <p className="text-[11px] text-muted-foreground truncate max-w-[200px] xs:max-w-[240px]">
-                        {currentLocation.name}
-                      </p>
-                      <ChevronDown className="h-3 w-3 text-muted-foreground ml-1 group-hover:text-primary transition-colors shrink-0" />
-                    </div>
-                  </div>
-                </div>
-            </LocationDialog>
         </div>
         
         {/* Mobile Search Bar */}
-         <div className="md:hidden px-4 pb-3 pt-2">
+         <div className="md:hidden px-4 pb-3 pt-2 border-t">
             <SearchBarTrigger isMobile={true}/>
           </div>
       </header>
