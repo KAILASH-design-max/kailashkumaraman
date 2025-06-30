@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/hooks/useCart';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { MinusCircle, PlusCircle, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -89,7 +90,7 @@ export default function CartPage() {
         <h1 className="text-3xl font-semibold mb-4">Your Cart is Empty</h1>
         <p className="text-muted-foreground mb-8">Looks like you haven't added anything to your cart yet.</p>
         <Button asChild size="lg">
-          <Link href="/">Continue Shopping</Link>
+          <Link href="/products">Continue Shopping</Link>
         </Button>
       </div>
     );
@@ -97,85 +98,93 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto py-8 px-4">
-      <h1 className="text-3xl font-bold mb-8">Your Shopping Cart</h1>
-      <div className="grid lg:grid-cols-3 gap-8">
+      <h1 className="text-3xl font-bold mb-8 text-center md:text-left">Your Shopping Cart</h1>
+      <div className="grid lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
           {cartItems.map((item) => {
             const imageUrl = item.images?.[0] || 'https://placehold.co/112x112.png';
             const imageHint = item.dataAiHint || 'product item';
             return (
-              <Card key={item.id} className="flex flex-col sm:flex-row items-center p-4 gap-4 shadow-md">
-                <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-md overflow-hidden shrink-0">
-                  <Image
-                    src={imageUrl}
-                    alt={item.name}
-                    fill
-                    sizes="(max-width: 640px) 100vw, 25vw"
-                    className="object-cover"
-                    data-ai-hint={imageHint}
-                  />
-                </div>
-                <div className="flex-grow text-center sm:text-left">
-                  <Link href={`/products/${item.id}`} passHref>
-                    <h2 className="text-lg font-semibold hover:text-primary transition-colors">{item.name}</h2>
-                  </Link>
-                  <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)} each</p>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    disabled={item.quantity <= 1}
-                    aria-label="Decrease quantity"
-                  >
-                    <MinusCircle className="h-5 w-5" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={item.quantity}
-                    onChange={(e) => {
-                      const newQuantity = parseInt(e.target.value, 10);
-                      if (!isNaN(newQuantity) && newQuantity >= 1) {
-                        updateQuantity(item.id, newQuantity);
-                      } else if (e.target.value === '') {
-                         // Allow clearing
-                      }
-                    }}
-                    onBlur={(e) => { // Handle empty input on blur
-                      if (e.target.value === '' || parseInt(e.target.value, 10) < 1) {
-                          updateQuantity(item.id, 1);
-                      }
-                    }}
-                    className="w-16 h-10 text-center hide-arrows [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    min="1"
-                  />
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    aria-label="Increase quantity"
-                  >
-                    <PlusCircle className="h-5 w-5" />
-                  </Button>
-                </div>
-                <p className="font-semibold text-lg sm:w-24 text-center sm:text-right">
-                  ₹{(item.price * item.quantity).toFixed(2)}
-                </p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeFromCart(item.id)}
-                  className="text-destructive hover:text-destructive/80"
-                  aria-label="Remove item"
-                >
-                  <Trash2 className="h-5 w-5" />
-                </Button>
+              <Card key={item.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex gap-3 sm:gap-4">
+                      <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-md overflow-hidden shrink-0 border">
+                        <Image
+                          src={imageUrl}
+                          alt={item.name}
+                          fill
+                          sizes="(max-width: 640px) 25vw, 15vw"
+                          className="object-cover"
+                          data-ai-hint={imageHint}
+                        />
+                      </div>
+                      <div className="flex-grow flex flex-col justify-between">
+                        <div>
+                           <Link href={`/products/${item.id}`} passHref>
+                            <h2 className="text-base sm:text-lg font-semibold hover:text-primary transition-colors line-clamp-2">{item.name}</h2>
+                          </Link>
+                          <p className="text-sm text-muted-foreground">₹{item.price.toFixed(2)} each</p>
+                        </div>
+                        <p className="font-semibold text-base sm:text-lg text-primary mt-1">
+                          ₹{(item.price * item.quantity).toFixed(2)}
+                        </p>
+                      </div>
+                       <div className="flex flex-col items-end justify-between">
+                         <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-destructive hover:text-destructive/80 h-8 w-8"
+                          aria-label="Remove item"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1 sm:gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            disabled={item.quantity <= 1}
+                            aria-label="Decrease quantity"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </Button>
+                           <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => {
+                              const newQuantity = parseInt(e.target.value, 10);
+                              if (!isNaN(newQuantity) && newQuantity >= 1) {
+                                updateQuantity(item.id, newQuantity);
+                              }
+                            }}
+                            onBlur={(e) => {
+                              if (e.target.value === '' || parseInt(e.target.value, 10) < 1) {
+                                  updateQuantity(item.id, 1);
+                              }
+                            }}
+                            className="w-10 sm:w-12 h-8 text-center hide-arrows [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            min="1"
+                          />
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            aria-label="Increase quantity"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
               </Card>
             );
           })}
           {cartItems.length > 0 && (
-            <div className="flex justify-end mt-6">
+            <div className="flex justify-end mt-4">
               <Button variant="outline" onClick={clearCart} className="text-destructive border-destructive hover:bg-destructive/10">
                 <Trash2 className="mr-2 h-4 w-4" /> Clear Cart
               </Button>
