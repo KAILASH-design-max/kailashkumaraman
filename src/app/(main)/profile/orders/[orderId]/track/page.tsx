@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { db } from '@/lib/firebase';
 import { doc, getDoc, Timestamp, onSnapshot } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 const ORDER_STATUS_SEQUENCE: OrderStatus[] = ['Placed', 'Confirmed', 'Processing', 'Out for Delivery', 'Delivered'];
 
