@@ -8,14 +8,20 @@ import { ChevronLeft, ListOrdered, Filter, Repeat, RotateCcw, PackageSearch, Sho
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy, Timestamp, type DocumentData, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, Timestamp, type DocumentData, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import type { User as FirebaseUser } from 'firebase/auth';
 import Image from 'next/image';
 import { useCart } from '@/hooks/useCart';
-import { mockProducts } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 
 // Define a more specific type for Firestore order data
 interface FirestoreOrderItem {
@@ -270,7 +276,7 @@ Please use the link provided by Firebase to create this index. If the error pers
     }
   };
 
-  const handleReorder = (orderId: string) => {
+  const handleReorder = async (orderId: string) => {
     const orderToReorder = orders.find(order => order.id === orderId);
     if (!orderToReorder) {
       toast({
@@ -280,43 +286,70 @@ Please use the link provided by Firebase to create this index. If the error pers
       });
       return;
     }
-
+  
     let itemsAddedCount = 0;
-    orderToReorder.items.forEach(item => {
-      const productDetails = mockProducts.find(p => p.id === item.productId);
-      if (productDetails) {
-        addToCart(productDetails, item.quantity);
-        itemsAddedCount++;
-      } else {
-        console.warn(`Product with ID ${item.productId} not found in mockProducts for reorder.`);
+    let unavailableItemsCount = 0;
+  
+    for (const item of orderToReorder.items) {
+      try {
+        const productRef = doc(db, 'products', item.productId);
+        const productSnap = await getDoc(productRef);
+  
+        if (productSnap.exists()) {
+          const productData = productSnap.data();
+          const product: Product = {
+            id: productSnap.id,
+            name: productData.name,
+            description: productData.description,
+            price: productData.price,
+            category: productData.category,
+            images: productData.images,
+            stock: productData.stock,
+            status: productData.status,
+            createdAt: (productData.createdAt as Timestamp)?.toDate().toISOString() ?? new Date().toISOString(),
+            rating: productData.rating,
+            reviewsCount: productData.reviewsCount,
+            lowStockThreshold: productData.lowStockThreshold,
+            weight: productData.weight,
+            origin: productData.origin,
+            popularity: productData.popularity,
+            updatedAt: (productData.updatedAt as Timestamp)?.toDate().toISOString(),
+            dataAiHint: productData.dataAiHint,
+          };
+          
+          if (product.status === 'active' && product.stock > 0) {
+            addToCart(product, item.quantity);
+            itemsAddedCount++;
+          } else {
+            unavailableItemsCount++;
+          }
+        } else {
+          unavailableItemsCount++;
+        }
+      } catch (error) {
+        console.error(`Error fetching product ${item.productId} for reorder:`, error);
+        unavailableItemsCount++;
       }
-    });
-
+    }
+  
     if (itemsAddedCount > 0) {
       toast({
-        title: "Items Reordered",
-        description: `${itemsAddedCount} item(s) from order ${orderId.substring(0,6)}... have been added to your cart.`,
+        title: "Items Added to Cart",
+        description: `${itemsAddedCount} item(s) from your previous order have been added.${unavailableItemsCount > 0 ? ` ${unavailableItemsCount} were unavailable.` : ''}`,
       });
     } else {
-       toast({
+      toast({
         title: "Reorder Information",
-        description: "No items could be added to the cart. Product details might be unavailable.",
+        description: "No items could be added to the cart. Product details might be unavailable or out of stock.",
         variant: "default",
       });
     }
-  };
-
-  const canInitiateReturnForOrder = (orderStatus: string | undefined) => {
-    if (typeof orderStatus === 'string') {
-      return orderStatus.trim().toLowerCase() === 'delivered';
-    }
-    return false;
   };
   
   const handleReviewSubmitted = (productId: string) => {
       setReviewedProductIds(prev => new Set(prev).add(productId));
       setReviewingItemId(null);
-  }
+  };
 
   if (isLoading) {
     return (
@@ -383,7 +416,17 @@ Please use the link provided by Firebase to create this index. If the error pers
             </CardContent>
           </Card>
         ) : (
-          orders.map((order) => (
+          orders.map((order) => {
+            const isDelivered = order.orderStatus.toLowerCase() === 'delivered';
+            let isReturnEligible = false;
+            if (isDelivered && order.orderDate) {
+                const deliveryDate = order.orderDate.toDate();
+                const now = new Date();
+                const diffInDays = (now.getTime() - deliveryDate.getTime()) / (1000 * 60 * 60 * 24);
+                isReturnEligible = diffInDays <= 3;
+            }
+
+            return (
             <Card key={order.id} className="shadow-md">
               <CardHeader>
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
@@ -460,18 +503,35 @@ Please use the link provided by Firebase to create this index. If the error pers
                   <Button variant="outline" size="sm" className="flex-1" onClick={() => handleReorder(order.id)}>
                     <Repeat className="mr-2 h-4 w-4" /> Reorder
                   </Button>
-                  {canInitiateReturnForOrder(order.orderStatus) && (
-                    <Button variant="destructive" size="sm" className="flex-1" asChild>
-                      <Link href={`/profile/orders/${order.id}/initiate-return`}>
-                        <RotateCcw className="mr-2 h-4 w-4" /> Initiate Return
-                      </Link>
-                    </Button>
+                  {isDelivered && (
+                    isReturnEligible ? (
+                      <Button variant="destructive" size="sm" className="flex-1" asChild>
+                        <Link href={`/profile/orders/${order.id}/initiate-return`}>
+                          <RotateCcw className="mr-2 h-4 w-4" /> Initiate Return
+                        </Link>
+                      </Button>
+                    ) : (
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex-1" tabIndex={0}>
+                              <Button variant="destructive" size="sm" className="w-full" disabled>
+                                <RotateCcw className="mr-2 h-4 w-4" /> Initiate Return
+                              </Button>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Return period expired (after 3 days).</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )
                   )}
                 </div>
               </CardContent>
             </Card>
-          ))
-        )}
+          )
+        })}
       </div>
     </div>
   );
