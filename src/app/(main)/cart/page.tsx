@@ -8,16 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle, Percent, ChevronRight } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle, Percent, ChevronRight, Home } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
+import { auth, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import type { Address } from '@/lib/types';
+import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
@@ -25,6 +28,8 @@ export default function CartPage() {
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [defaultAddress, setDefaultAddress] = useState<Address | null>(null);
+  const [addressLoading, setAddressLoading] = useState(true);
 
   const [recipe, setRecipe] = useState<GenerateCartRecipeOutput | null>(null);
   const [isRecipeLoading, setIsRecipeLoading] = useState(false);
@@ -42,10 +47,45 @@ export default function CartPage() {
   const totalAmountStatic = subtotalStatic > 0 ? (subtotalStatic + gstAmountStatic + handlingCharge + deliveryFee - discountAmount) : 0;
 
   useEffect(() => {
+    const fetchDefaultAddress = async (userId: string) => {
+      setAddressLoading(true);
+      try {
+        const addressesRef = collection(db, 'addresses');
+        // First, try to find an address marked as default
+        let q = query(addressesRef, where('userId', '==', userId), where('isDefault', '==', true), limit(1));
+        let querySnapshot = await getDocs(q);
+        
+        if (querySnapshot.empty) {
+          // If no default, just get the most recently created one
+          q = query(addressesRef, where('userId', '==', userId), orderBy('createdAt', 'desc'), limit(1));
+          querySnapshot = await getDocs(q);
+        }
+        
+        if (!querySnapshot.empty) {
+          const doc = querySnapshot.docs[0];
+          setDefaultAddress({ id: doc.id, ...doc.data() } as Address);
+        } else {
+          setDefaultAddress(null);
+        }
+      } catch (error) {
+        console.error("Error fetching default address:", error);
+        // Optionally set an error state to show in the UI
+      } finally {
+        setAddressLoading(false);
+      }
+    };
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
       setAuthLoading(false);
+      if (user) {
+        fetchDefaultAddress(user.uid);
+      } else {
+        setAddressLoading(false);
+        setDefaultAddress(null);
+      }
     });
+
     return () => unsubscribe();
   }, []);
 
@@ -290,7 +330,37 @@ export default function CartPage() {
 
         </div>
 
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 space-y-6">
+          {currentUser && (
+            <Card className="shadow-lg">
+              <Link href="/checkout/shipping-details">
+                <CardContent className="p-4 flex justify-between items-center cursor-pointer hover:bg-muted/50">
+                    <div className="flex items-start gap-4">
+                        <Home className="h-6 w-6 text-primary mt-1 shrink-0" />
+                        <div className="grid gap-0.5 leading-none">
+                            <p className="text-sm font-medium text-muted-foreground">
+                              Deliver to
+                            </p>
+                            {addressLoading ? (
+                              <p className="font-semibold">Loading address...</p>
+                            ) : defaultAddress ? (
+                              <>
+                                <p className="font-semibold">{defaultAddress.name}</p>
+                                <p className="text-xs text-muted-foreground line-clamp-1">
+                                  {defaultAddress.street}, {defaultAddress.city}
+                                </p>
+                              </>
+                            ) : (
+                              <p className="font-semibold text-primary">Select an Address</p>
+                            )}
+                        </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                </CardContent>
+              </Link>
+            </Card>
+          )}
+
           <Card className="shadow-lg sticky top-24">
             <CardHeader>
               <CardTitle className="text-2xl">Bill Details</CardTitle>
