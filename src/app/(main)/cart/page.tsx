@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle, Percent, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,6 +16,8 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function CartPage() {
   const { cartItems, removeFromCart, updateQuantity, getCartTotal, clearCart } = useCart();
@@ -258,13 +260,40 @@ export default function CartPage() {
               </Button>
             </CardFooter>
           </Card>
+          
+          <Card className="shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+              <CardContent className="p-4 flex justify-between items-center">
+                  <div className="flex items-center gap-3">
+                      <Percent className="h-6 w-6 text-primary" />
+                      <span className="font-medium">Avail Offers / Coupons</span>
+                  </div>
+                  <ChevronRight className="h-5 w-5 text-muted-foreground" />
+              </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+              <CardContent className="p-4 flex items-start gap-4">
+                  <Checkbox id="contactless-delivery" className="mt-1" />
+                  <div className="grid gap-1.5 leading-none">
+                      <Label
+                          htmlFor="contactless-delivery"
+                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                          Leave the order at door or gate
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                          Opt for no-contact delivery & our delivery partner will leave it at your door/gate.
+                      </p>
+                  </div>
+              </CardContent>
+          </Card>
 
         </div>
 
         <div className="lg:col-span-1">
           <Card className="shadow-lg sticky top-24">
             <CardHeader>
-              <CardTitle className="text-2xl">Order Summary</CardTitle>
+              <CardTitle className="text-2xl">Bill Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2 text-muted-foreground">
