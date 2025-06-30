@@ -13,7 +13,7 @@ import type { CartItem as CartItemType } from '@/lib/types';
 import { ChevronLeft, ShoppingBag, AlertCircle, Package, MapPin, CreditCard, Loader2, CheckCircle, Phone, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp, Timestamp } from "firebase/firestore";
 
 interface AddressInfo {
   name: string;
@@ -86,6 +86,8 @@ export default function FinalReviewPage() {
     setIsPlacingOrder(true);
     setPageError(null);
 
+    const estimatedDeliveryDate = new Date(Date.now() + 30 * 60 * 1000); // 30 mins from now for simulation
+
     const orderDataToSave = {
         userId: String(currentUser.uid),
         name: String(finalOrderData.address?.name || "N/A"),
@@ -105,9 +107,11 @@ export default function FinalReviewPage() {
             price: Number(item.price) || 0,
             imageUrl: String(item.images?.[0] || 'https://placehold.co/60x60.png')
         })),
-        total: Number(finalOrderData.summary?.totalAmount) || 0,
+        totalAmount: Number(finalOrderData.summary?.totalAmount) || 0,
         orderStatus: 'Placed',
         orderDate: serverTimestamp(),
+        estimatedDeliveryTime: Timestamp.fromDate(estimatedDeliveryDate),
+        deliveryPartnerId: null, // Initially null, to be assigned later
         shippingMethod: String(finalOrderData.method || "standard"),
         paymentMethod: String(finalOrderData.paymentDetails?.method || "unknown"),
         promoCodeApplied: finalOrderData.promoCode?.code ? String(finalOrderData.promoCode.code) : null,
@@ -129,11 +133,11 @@ export default function FinalReviewPage() {
       
       toast({
         title: "Order Placed Successfully!",
-        description: `Thank you for your purchase. Order ID: ${docRef.id.substring(0,6)}...`,
+        description: `Thank you for your purchase. Redirecting to tracking...`,
         variant: "default",
-        duration: 5000,
+        duration: 3000,
       });
-      router.push('/checkout/order-confirmation');
+      router.push(`/profile/orders/${docRef.id}/track`);
     } catch (error) {
         console.error("Error placing order / saving to Firestore: ", error);
         setPageError("There was an issue placing your order. Please try again. If the problem persists, contact support.");

@@ -42,7 +42,7 @@ interface FirestoreOrder extends DocumentData {
   phoneNumber: string;
   address: FirestoreOrderAddress;
   items: FirestoreOrderItem[];
-  total: number;
+  totalAmount: number;
   orderStatus: string;
   orderDate: Timestamp;
   shippingMethod?: string;
@@ -389,7 +389,7 @@ Please use the link provided by Firebase to create this index. If the error pers
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div>
                     <CardTitle className="text-lg">Order ID: {order.id.substring(0,10)}...</CardTitle>
-                    <CardDescription>Date: {formatDate(order.orderDate)} | Total: ₹{order.total.toFixed(2)}</CardDescription>
+                    <CardDescription>Date: {formatDate(order.orderDate)} | Total: ₹{order.totalAmount.toFixed(2)}</CardDescription>
                   </div>
                   <span className={`px-2 py-1 text-xs font-semibold rounded-full self-start sm:self-center ${getStatusColor(order.orderStatus)}`}>
                     {order.orderStatus}

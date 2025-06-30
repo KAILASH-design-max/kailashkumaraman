@@ -86,7 +86,7 @@ export interface Order {
   deliveryAddress: OrderAddress;
   orderDate: string;
   estimatedDeliveryTime?: string;
-  deliveryPartnerId?: string;
+  deliveryPartnerId?: string | null;
   name?: string;
   phoneNumber?: string;
   shippingMethod?: string;
