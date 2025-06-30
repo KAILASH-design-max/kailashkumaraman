@@ -150,8 +150,8 @@ export default function FinalReviewPage() {
   if (!finalOrderData && !pageError && contextCartItems.length > 0) { 
     return (
       <div className="container mx-auto py-12 px-4 text-center">
-        <ShoppingBag className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
-        <p className="text-muted-foreground">Loading order details...</p>
+        <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
+        <p className="text-muted-foreground mt-2">Loading order details...</p>
       </div>
     );
   }
@@ -173,7 +173,7 @@ export default function FinalReviewPage() {
         <AlertCircle className="mx-auto h-24 w-24 text-muted-foreground mb-6" />
         <h1 className="text-3xl font-semibold mb-4">Missing Order Data</h1>
         <p className="text-muted-foreground mb-8">Could not load complete order details. Please start checkout again.</p>
-        <Button onClick={() => router.push('/checkout')}>Start Checkout</Button>
+        <Button onClick={() => router.push('/cart')}>Start Checkout</Button>
       </div>
     );
   }
@@ -194,47 +194,54 @@ export default function FinalReviewPage() {
       <p className="text-muted-foreground text-center mb-8">Please review all details before confirming your order.</p>
 
       <div className="grid lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2 bg-card p-6 sm:p-8 rounded-lg shadow-xl space-y-6">
+        <div className="lg:col-span-2 space-y-6">
             
-            <section>
-                <h3 className="text-xl font-semibold mb-3 flex items-center"><Package className="mr-3 h-6 w-6 text-primary"/>Items in Your Order</h3>
-                <div className="space-y-3">
-                {displayCartItems.map((item: CartItemType) => {
-                    const imageUrl = item.images?.[0] || 'https://placehold.co/60x60.png';
-                    const imageHint = item.dataAiHint || 'review item';
-                    return (
-                    <Card key={item.id} className="flex items-center p-3 gap-3 shadow-sm border">
-                        <div className="relative w-16 h-16 rounded-md overflow-hidden shrink-0">
-                            <Image src={imageUrl} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={imageHint} />
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-xl flex items-center"><Package className="mr-3 h-6 w-6 text-primary"/>Items in Your Order</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    {displayCartItems.map((item: CartItemType) => {
+                        const imageUrl = item.images?.[0] || 'https://placehold.co/60x60.png';
+                        const imageHint = item.dataAiHint || 'review item';
+                        return (
+                        <div key={item.id} className="flex items-center p-3 gap-3 border rounded-lg">
+                            <div className="relative w-16 h-16 rounded-md overflow-hidden shrink-0 border">
+                                <Image src={imageUrl} alt={item.name} fill sizes="64px" className="object-cover" data-ai-hint={imageHint} />
+                            </div>
+                            <div className="flex-grow">
+                                <h4 className="font-medium text-sm sm:text-base">{item.name}</h4>
+                                <p className="text-xs sm:text-sm text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
+                            </div>
+                            <p className="font-semibold text-sm sm:text-base">₹{(item.price * item.quantity).toFixed(2)}</p>
                         </div>
-                        <div className="flex-grow">
-                        <h4 className="font-medium text-sm sm:text-base">{item.name}</h4>
-                        <p className="text-xs sm:text-sm text-muted-foreground">Qty: {item.quantity} x ₹{item.price.toFixed(2)}</p>
-                        </div>
-                        <p className="font-semibold text-sm sm:text-base">₹{(item.price * item.quantity).toFixed(2)}</p>
-                    </Card>
-                    );
-                })}
-                </div>
-            </section>
-            <Separator/>
-            <section>
-                <h3 className="text-xl font-semibold mb-3 flex items-center"><MapPin className="mr-3 h-6 w-6 text-primary"/>Shipping Details</h3>
-                <Card className="p-4 border shadow-sm">
+                        );
+                    })}
+                </CardContent>
+            </Card>
+            
+            <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-xl flex items-center"><MapPin className="mr-3 h-6 w-6 text-primary"/>Shipping Details</CardTitle>
+                </CardHeader>
+                <CardContent>
                     <p><strong>{address?.name || 'N/A'}</strong></p>
                     <p>{address?.street || 'N/A'}</p>
                     <p>{address?.city || 'N/A'}, {address?.postalCode || 'N/A'}, {address?.country || 'N/A'}</p>
                     <p className="flex items-center mt-1"><Phone className="mr-2 h-4 w-4 text-muted-foreground"/> {address?.phoneNumber || 'N/A'}</p>
-                    <p className="mt-2 text-sm text-muted-foreground">Shipping Method: <span className="font-medium text-foreground">{(shippingMethod || 'N/A').charAt(0).toUpperCase() + (shippingMethod || 'N/A').slice(1)}</span></p>
-                </Card>
-            </section>
-            <Separator/>
-             <section>
-                <h3 className="text-xl font-semibold mb-3 flex items-center">
-                    {paymentDetails?.method === 'cod' ? <Coins className="mr-3 h-6 w-6 text-primary"/> : <CreditCard className="mr-3 h-6 w-6 text-primary"/>}
-                    Payment Method
-                </h3>
-                <Card className="p-4 border shadow-sm">
+                    <Separator className="my-3"/>
+                    <p className="text-sm text-muted-foreground">Shipping Method: <span className="font-medium text-foreground">{(shippingMethod || 'N/A').charAt(0).toUpperCase() + (shippingMethod || 'N/A').slice(1)}</span></p>
+                </CardContent>
+            </Card>
+             
+             <Card className="shadow-lg">
+                <CardHeader>
+                    <CardTitle className="text-xl flex items-center">
+                        {paymentDetails?.method === 'cod' ? <Coins className="mr-3 h-6 w-6 text-primary"/> : <CreditCard className="mr-3 h-6 w-6 text-primary"/>}
+                        Payment Method
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
                     {paymentDetails?.method === 'cod' && (
                         <p className="font-medium text-foreground">Cash on Delivery</p>
                     )}
@@ -250,8 +257,8 @@ export default function FinalReviewPage() {
                     {paymentDetails?.method === 'upi' && paymentDetails?.details && (
                         <p>UPI ID: {String(paymentDetails.details.upiId || '')}</p>
                     )}
-                </Card>
-            </section>
+                </CardContent>
+            </Card>
         </div>
 
         <div className="lg:col-span-1">

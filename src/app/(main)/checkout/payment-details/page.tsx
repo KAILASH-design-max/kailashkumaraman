@@ -174,7 +174,7 @@ export default function PaymentDetailsPage() {
 
       <div className="grid lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 bg-card p-6 sm:p-8 rounded-lg shadow-xl space-y-6">
-            <h3 className="text-xl font-semibold flex items-center"><CreditCard className="mr-3 h-6 w-6 text-primary" /> Step 3: Select Payment Method</h3>
+            <h3 className="text-xl font-semibold flex items-center"><CreditCard className="mr-3 h-6 w-6 text-primary" /> Select Payment Method</h3>
             <RadioGroup value={paymentOption} onValueChange={setPaymentOption} className="space-y-3">
               <div>
                 <RadioGroupItem value="saved" id="savedPayment" /><Label htmlFor="savedPayment" className="ml-2 cursor-pointer">Use a saved payment method</Label>
