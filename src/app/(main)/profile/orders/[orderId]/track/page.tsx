@@ -9,13 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { ChevronLeft, MapPin, Package, Clock, Truck, UserCheck, HelpCircle, Phone, AlertTriangle, Info, CheckCircle, Circle, Heart, ShieldCheck, Users, Handshake } from 'lucide-react';
+import { ChevronLeft, MapPin, Package, Clock, Truck, UserCheck, HelpCircle, Phone, AlertTriangle, Info, CheckCircle, Circle, Heart, ShieldCheck, Users, Handshake, CreditCard, Coins, ListChecks } from 'lucide-react';
 import type { Order as OrderType, OrderStatus, OrderItem as OrderItemType, OrderAddress } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { db } from '@/lib/firebase';
+import { db, auth } from '@/lib/firebase';
 import { doc, getDoc, Timestamp, onSnapshot } from 'firebase/firestore';
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 
 const ORDER_STATUS_SEQUENCE: OrderStatus[] = ['Placed', 'Confirmed', 'Processing', 'Out for Delivery', 'Delivered'];
@@ -62,6 +63,7 @@ interface AssignedDeliveryPartner {
   name: string;
   phoneNumber: string;
   vehicleDetails?: string;
+  rating?: number;
 }
 
 export default function TrackOrderPage() {
@@ -75,6 +77,11 @@ export default function TrackOrderPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [selectedTip, setSelectedTip] = useState<number | null>(null);
+  
+  const subtotal = useMemo(() => {
+    if (!order?.items) return 0;
+    return order.items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  }, [order?.items]);
 
   useEffect(() => {
     if (!orderIdParam) {
@@ -83,61 +90,85 @@ export default function TrackOrderPage() {
       return;
     }
 
-    setIsLoading(true);
-
-    const orderRef = doc(db, "orders", orderIdParam);
-    const unsubscribe = onSnapshot(orderRef, async (orderSnap) => {
-      if (orderSnap.exists()) {
-        const data = orderSnap.data();
-        const fetchedOrder: OrderType = {
-          id: orderSnap.id,
-          userId: data.userId,
-          items: data.items as OrderItemType[],
-          totalAmount: data.totalAmount,
-          status: data.orderStatus as OrderStatus,
-          deliveryAddress: data.address as OrderAddress,
-          orderDate: (data.orderDate as Timestamp)?.toDate().toISOString(),
-          estimatedDeliveryTime: (data.estimatedDeliveryTime as Timestamp)?.toDate().toISOString(),
-          deliveryPartnerId: data.deliveryPartnerId || null,
-          paymentMethod: data.paymentMethod,
-        };
-        setOrder(fetchedOrder);
-
-        if (fetchedOrder.deliveryPartnerId) {
-          try {
-            const partnerRef = doc(db, "users", fetchedOrder.deliveryPartnerId);
-            const partnerSnap = await getDoc(partnerRef);
-            if (partnerSnap.exists()) {
-              const partnerData = partnerSnap.data();
-              setAssignedDeliveryPartner({
-                name: partnerData.name || "N/A",
-                phoneNumber: partnerData.phoneNumber || "N/A",
-                vehicleDetails: partnerData.vehicleDetails || undefined,
-              });
-            }
-          } catch (partnerError) {
-            console.error("Error fetching delivery partner:", partnerError);
-          }
-        } else if (fetchedOrder.status.toLowerCase() === 'out for delivery') {
-            setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '+91-1234567890', vehicleDetails: 'Bike - BR01XY1234' });
-        } else {
-            setAssignedDeliveryPartner(null);
-        }
-
-      } else {
-        setPageError(`Order with ID ${orderIdParam} not found.`);
+    const authUnsubscribe = onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        setIsLoading(false);
+        setPageError("You must be logged in to view this page.");
+        router.push(`/login?redirect=/profile/orders/${orderIdParam}/track`);
+        return;
       }
-      setIsLoading(false);
-    }, (error) => {
-      setPageError(`Failed to fetch order details: ${error.message || "Please try again."}`);
-      setIsLoading(false);
+      
+      setIsLoading(true);
+      const orderRef = doc(db, "orders", orderIdParam);
+      const orderUnsubscribe = onSnapshot(orderRef, async (orderSnap) => {
+        if (orderSnap.exists()) {
+          const data = orderSnap.data();
+
+          if (data.userId !== user.uid) {
+            setPageError("You are not authorized to view this order.");
+            setIsLoading(false);
+            return;
+          }
+
+          const fetchedOrder: OrderType = {
+            id: orderSnap.id,
+            userId: data.userId,
+            items: data.items as OrderItemType[],
+            totalAmount: data.totalAmount,
+            status: data.orderStatus as OrderStatus,
+            deliveryAddress: data.address as OrderAddress,
+            orderDate: (data.orderDate as Timestamp)?.toDate().toISOString(),
+            estimatedDeliveryTime: (data.estimatedDeliveryTime as Timestamp)?.toDate().toISOString(),
+            deliveryPartnerId: data.deliveryPartnerId || null,
+            paymentMethod: data.paymentMethod,
+            deliveryCharge: data.deliveryCharge || 0,
+            gstAmount: data.gstAmount || 0,
+            handlingCharge: data.handlingCharge || 0,
+            discountAmount: data.discountAmount || 0,
+            promoCodeApplied: data.promoCodeApplied || null,
+          };
+          setOrder(fetchedOrder);
+
+          if (fetchedOrder.deliveryPartnerId) {
+            try {
+              const partnerRef = doc(db, "users", fetchedOrder.deliveryPartnerId);
+              const partnerSnap = await getDoc(partnerRef);
+              if (partnerSnap.exists()) {
+                const partnerData = partnerSnap.data();
+                setAssignedDeliveryPartner({
+                  name: partnerData.name || "Shekhar",
+                  phoneNumber: partnerData.phoneNumber || "+91-1234567890",
+                  vehicleDetails: partnerData.vehicleDetails || 'Bike - BR01XY1234',
+                  rating: partnerData.rating || 4.8,
+                });
+              }
+            } catch (partnerError) {
+              console.error("Error fetching delivery partner:", partnerError);
+              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '+91-1234567890', vehicleDetails: 'Bike - BR01XY1234', rating: 4.8 });
+            }
+          } else if (fetchedOrder.status.toLowerCase().includes('out for delivery')) {
+              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '+91-1234567890', vehicleDetails: 'Bike - BR01XY1234', rating: 4.8 });
+          } else {
+              setAssignedDeliveryPartner(null);
+          }
+
+        } else {
+          setPageError(`Order with ID ${orderIdParam} not found.`);
+        }
+        setIsLoading(false);
+      }, (error) => {
+        setPageError(`Failed to fetch order details: ${error.message || "Please try again."}`);
+        setIsLoading(false);
+      });
+
+      return () => orderUnsubscribe(); // Cleanup Firestore listener
     });
 
-    return () => unsubscribe();
-  }, [orderIdParam]);
+    return () => authUnsubscribe(); // Cleanup Auth listener
+  }, [orderIdParam, router]);
   
   useEffect(() => {
-    if (!order?.estimatedDeliveryTime || order.status.toLowerCase() === 'delivered') {
+    if (!order?.estimatedDeliveryTime || ['delivered', 'cancelled', 'failed'].includes(order.status.toLowerCase())) {
       setEtaMinutes(0);
       return;
     }
@@ -151,7 +182,7 @@ export default function TrackOrderPage() {
     };
 
     updateEta();
-    const intervalId = setInterval(updateEta, 30000); // Update every 30 seconds
+    const intervalId = setInterval(updateEta, 30000); 
 
     return () => clearInterval(intervalId);
   }, [order]);
@@ -162,12 +193,20 @@ export default function TrackOrderPage() {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto py-10 px-4">
+      <div className="container mx-auto py-10 px-4 space-y-6">
         <Skeleton className="h-8 w-1/4 mb-4" />
-        <Skeleton className="h-96 w-full mb-6" />
+        <Skeleton className="h-24 w-full" />
         <div className="grid md:grid-cols-3 gap-6">
-          <Skeleton className="h-40 md:col-span-2" />
-          <Skeleton className="h-40" />
+          <div className="md:col-span-2 space-y-6">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-48 w-full" />
+          </div>
+          <div className="space-y-6">
+            <Skeleton className="h-40" />
+            <Skeleton className="h-40" />
+            <Skeleton className="h-24" />
+          </div>
         </div>
       </div>
     );
@@ -210,11 +249,42 @@ export default function TrackOrderPage() {
               Arriving in {etaMinutes > 0 ? `${etaMinutes} minutes` : 'moments...'}
             </CardDescription>
           )}
+          <p className="text-xs text-green-100 pt-1">Order ID: #{order.id.substring(0,10)}...</p>
         </CardHeader>
       </Card>
 
       <div className="grid lg:grid-cols-3 gap-8 items-start">
         <div className="lg:col-span-2 space-y-6">
+        
+          <Card className="shadow-lg">
+            <CardHeader>
+                <CardTitle className="flex items-center text-xl"><ListChecks className="mr-2 h-5 w-5 text-accent"/>Order Status</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+                <div className="flex items-center justify-between">
+                    {orderStatusSteps.map((step, index) => (
+                        <div key={step.name} className={cn("flex flex-col items-center", index !== 0 && "flex-1")}>
+                            <div className={cn("flex items-center w-full", index === 0 && "justify-start", index === orderStatusSteps.length - 1 && "justify-end")}>
+                                {index > 0 && (
+                                    <Progress value={step.completed || step.current ? 100 : 0} className="w-full h-1 bg-muted rounded-none" />
+                                )}
+                                <div className={cn("flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-300",
+                                    step.completed ? "bg-primary text-primary-foreground" :
+                                    step.current ? "bg-accent text-accent-foreground animate-pulse" : "bg-muted text-muted-foreground"
+                                )}>
+                                    <step.icon className="h-5 w-5"/>
+                                </div>
+                                {index < orderStatusSteps.length - 1 && (
+                                    <Progress value={orderStatusSteps[index+1].completed || orderStatusSteps[index+1].current ? 100 : 0} className="w-full h-1 bg-muted rounded-none"/>
+                                )}
+                            </div>
+                            <p className="text-xs text-center mt-2 w-20">{step.name}</p>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+          </Card>
+
           <Card className="shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center"><MapPin className="mr-2 h-5 w-5 text-accent" />Delivery Map</CardTitle>
@@ -241,8 +311,6 @@ export default function TrackOrderPage() {
                   </li>
                 ))}
               </ul>
-              <Separator className="my-4" />
-              <div className="text-right"><p className="text-lg font-bold">Total: ₹{order.totalAmount.toFixed(2)}</p></div>
             </CardContent>
           </Card>
         </div>
@@ -256,13 +324,53 @@ export default function TrackOrderPage() {
                     <CardContent className="space-y-3 text-sm">
                         <p>I'm <strong>{assignedDeliveryPartner.name}</strong>, your delivery partner</p>
                         <p className="text-xs text-muted-foreground italic">"I have picked up your order, and I am on the way to your location"</p>
-                        {assignedDeliveryPartner.vehicleDetails && <p className="text-xs text-muted-foreground">Vehicle: {assignedDeliveryPartner.vehicleDetails}</p>}
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>Vehicle: {assignedDeliveryPartner.vehicleDetails}</span>
+                            <span className="flex items-center">⭐ {assignedDeliveryPartner.rating?.toFixed(1)}</span>
+                        </div>
                         <Button variant="outline" size="sm" className="w-full mt-2 text-xs">
-                            <Phone className="mr-1.5 h-3.5 w-3.5"/> Contact Rider
+                            <a href={`tel:${assignedDeliveryPartner.phoneNumber}`} className="flex items-center">
+                                <Phone className="mr-1.5 h-3.5 w-3.5"/> Contact Rider
+                            </a>
                         </Button>
                     </CardContent>
                 </Card>
             )}
+            
+             <Card className="shadow-md">
+                <CardHeader>
+                    <CardTitle className="text-lg">Bill Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal.toFixed(2)}</span></div>
+                    {order.discountAmount > 0 && <div className="flex justify-between text-green-600"><span>Discount ({order.promoCodeApplied})</span><span>-₹{order.discountAmount.toFixed(2)}</span></div>}
+                    <div className="flex justify-between"><span>Delivery Fee</span><span>₹{order.deliveryCharge.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>GST</span><span>₹{order.gstAmount.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Handling Charge</span><span>₹{order.handlingCharge.toFixed(2)}</span></div>
+                    <Separator className="my-2"/>
+                    <div className="flex justify-between font-bold text-lg text-foreground"><span>Total Paid</span><span>₹{order.totalAmount.toFixed(2)}</span></div>
+                </CardContent>
+             </Card>
+
+             <Card className="shadow-md">
+                <CardHeader>
+                    <CardTitle className="text-lg flex items-center">
+                        {order.paymentMethod === 'cod' ? <Coins className="mr-2 h-5 w-5 text-accent"/> : <CreditCard className="mr-2 h-5 w-5 text-accent"/>}
+                        Payment
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    {order.paymentMethod === 'cod' ? (
+                        <Alert>
+                            <AlertTitle className="font-semibold">Cash on Delivery</AlertTitle>
+                            <AlertDescription>Please pay ₹{order.totalAmount.toFixed(2)} upon delivery.</AlertDescription>
+                        </Alert>
+                    ) : (
+                        <p className="font-medium text-sm">Paid via {(order.paymentMethod || 'Card').replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</p>
+                    )}
+                </CardContent>
+            </Card>
+
 
             <Card className="shadow-md">
                 <CardHeader><CardTitle className="text-lg flex items-center"><Heart className="mr-2 h-5 w-5 text-accent"/>Tip Your Rider</CardTitle></CardHeader>
@@ -350,14 +458,6 @@ export default function TrackOrderPage() {
                 </CardContent>
             </Card>
 
-
-            {order.paymentMethod === 'cod' && (
-                <Alert>
-                    <AlertTitle>Payment Reminder</AlertTitle>
-                    <AlertDescription>Please pay ₹{order.totalAmount.toFixed(2)} before or on delivery.</AlertDescription>
-                </Alert>
-            )}
-
             <Card className="shadow-md">
                 <CardHeader><CardTitle className="text-lg flex items-center"><HelpCircle className="mr-2 h-5 w-5 text-accent"/>Need Help?</CardTitle></CardHeader>
                 <CardContent><Button variant="outline" className="w-full" asChild><Link href="/support">Contact Support</Link></Button></CardContent>
@@ -367,3 +467,5 @@ export default function TrackOrderPage() {
     </div>
   );
 }
+
+    
