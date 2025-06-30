@@ -16,9 +16,10 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, Timestamp, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, Timestamp, onSnapshot, updateDoc } from 'firebase/firestore';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const ORDER_STATUS_SEQUENCE: OrderStatus[] = ['Placed', 'Confirmed', 'Processing', 'Out for Delivery', 'Delivered'];
 
@@ -71,6 +72,7 @@ export default function TrackOrderPage() {
   const params = useParams();
   const router = useRouter();
   const orderIdParam = params.orderId as string;
+  const { toast } = useToast();
 
   const [order, setOrder] = useState<OrderType | null>(null);
   const [assignedDeliveryPartner, setAssignedDeliveryPartner] = useState<AssignedDeliveryPartner | null>(null);
@@ -203,6 +205,40 @@ export default function TrackOrderPage() {
 
   const orderStatusSteps = useMemo(() => getOrderStatusSteps(order?.status), [order?.status]);
   const isOrderActive = order && !['delivered', 'cancelled', 'failed'].includes(order.status.toLowerCase());
+  
+  const isPayNowDisabled = useMemo(() => {
+    if (!order?.status) return true;
+    const lowerCaseStatus = order.status.toLowerCase();
+    return ['delivered', 'cancelled', 'failed'].includes(lowerCaseStatus);
+  }, [order?.status]);
+
+  const handlePayNow = async () => {
+    if (!order) return;
+
+    // Simulate payment success
+    toast({
+        title: "✅ Payment successful!",
+        description: "You’ve switched to online payment.",
+        variant: "default"
+    });
+
+    // Simulate updating the order in Firestore
+    const orderRef = doc(db, "orders", order.id);
+    try {
+        await updateDoc(orderRef, {
+            paymentMethod: "Online (Paid)",
+        });
+        // The onSnapshot listener will automatically update the UI.
+    } catch (error) {
+        console.error("Failed to update payment method:", error);
+        toast({
+            title: "Update Failed",
+            description: "Could not update payment method in the database.",
+            variant: "destructive"
+        });
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -369,19 +405,38 @@ export default function TrackOrderPage() {
                 </CardContent>
              </Card>
 
-             <Card className="shadow-md">
+            <Card className="shadow-md">
                 <CardHeader>
                     <CardTitle className="text-lg flex items-center">
-                        {order.paymentMethod === 'cod' ? <Coins className="mr-2 h-5 w-5 text-accent"/> : <CreditCard className="mr-2 h-5 w-5 text-accent"/>}
+                        <CreditCard className="mr-2 h-5 w-5 text-accent"/>
                         Payment
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     {order.paymentMethod === 'cod' ? (
-                        <Alert>
-                            <AlertTitle className="font-semibold">Cash on Delivery</AlertTitle>
-                            <AlertDescription>Please pay ₹{order.totalAmount.toFixed(2)} upon delivery.</AlertDescription>
-                        </Alert>
+                        <div className="space-y-4">
+                            <Alert>
+                                <Coins className="h-4 w-4" />
+                                <AlertTitle className="font-semibold">Cash on Delivery Selected</AlertTitle>
+                                <AlertDescription>Please pay ₹{order.totalAmount.toFixed(2)} upon delivery.</AlertDescription>
+                            </Alert>
+                            <Separator />
+                            <div>
+                                <h4 className="font-semibold text-sm flex items-center mb-2">
+                                    ✨ Want to pay now instead?
+                                </h4>
+                                <Button 
+                                    className="w-full"
+                                    onClick={handlePayNow}
+                                    disabled={isPayNowDisabled}
+                                >
+                                    Pay Now
+                                </Button>
+                                <p className="text-xs text-muted-foreground mt-2 px-1">
+                                    Secure your order with instant online payment. You'll receive a confirmation once the payment is successful.
+                                </p>
+                            </div>
+                        </div>
                     ) : (
                         <p className="font-medium text-sm">Paid via {(order.paymentMethod || 'Card').replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}</p>
                     )}
@@ -484,3 +539,4 @@ export default function TrackOrderPage() {
     </div>
   );
 }
+
