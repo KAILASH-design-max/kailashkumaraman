@@ -10,13 +10,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
-import { ChevronLeft, MapPin, Package, Clock, Truck, UserCheck, HelpCircle, Phone, AlertTriangle, Info, CheckCircle, Circle, Heart, ShieldCheck, Users, Handshake, CreditCard, Coins, ListChecks } from 'lucide-react';
+import { ChevronLeft, MapPin, Package, Clock, Truck, UserCheck, HelpCircle, Phone, AlertTriangle, Info, CheckCircle, Circle, Heart, ShieldCheck, Users, Handshake, CreditCard, Coins, ListChecks, Star, Loader2 } from 'lucide-react';
 import type { Order as OrderType, OrderStatus, OrderItem as OrderItemType, OrderAddress } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, Timestamp, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, Timestamp, onSnapshot, updateDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -80,6 +80,11 @@ export default function TrackOrderPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [pageError, setPageError] = useState<string | null>(null);
   const [selectedTip, setSelectedTip] = useState<number | null>(null);
+
+  const [deliveryRating, setDeliveryRating] = useState(0);
+  const [hoverDeliveryRating, setHoverDeliveryRating] = useState(0);
+  const [isRatingSubmitted, setIsRatingSubmitted] = useState(false);
+  const [isRatingSubmitting, setIsRatingSubmitting] = useState(false);
   
   const subtotal = useMemo(() => {
     if (!order?.items) return 0;
@@ -155,14 +160,14 @@ export default function TrackOrderPage() {
                 });
               } else {
                  console.warn(`Delivery partner with ID ${fetchedOrder.deliveryPartnerId} not found, using fallback.`);
-                 setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '9876543210', vehicleDetails: 'Scooter #DL5SM9999', rating: 4.8 });
+                 setAssignedDeliveryPartner({ name: 'Alpha', phoneNumber: '6205480054', vehicleDetails: 'Bike #BR07AP2381', rating: 4.8 });
               }
             } catch (partnerError) {
               console.error("Error fetching delivery partner:", partnerError);
-              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '9876543210', vehicleDetails: 'Scooter #DL5SM9999', rating: 4.8 });
+              setAssignedDeliveryPartner({ name: 'Alpha', phoneNumber: '6205480054', vehicleDetails: 'Bike #BR07AP2381', rating: 4.8 });
             }
           } else if (fetchedOrder.status.toLowerCase().includes('out for delivery')) {
-              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '9876543210', vehicleDetails: 'Scooter #DL5SM9999', rating: 4.8 });
+              setAssignedDeliveryPartner({ name: 'Alpha', phoneNumber: '6205480054', vehicleDetails: 'Bike #BR07AP2381', rating: 4.8 });
           } else {
               setAssignedDeliveryPartner(null);
           }
@@ -236,6 +241,37 @@ export default function TrackOrderPage() {
             description: "Could not update payment method in the database.",
             variant: "destructive"
         });
+    }
+  };
+
+  const handleRateDelivery = async () => {
+    if (deliveryRating === 0) {
+        toast({ title: "Please select a rating.", variant: "destructive" });
+        return;
+    }
+    if (!order?.deliveryPartnerId || !assignedDeliveryPartner) {
+        toast({ title: "Error", description: "Delivery partner information is missing.", variant: "destructive" });
+        return;
+    }
+
+    setIsRatingSubmitting(true);
+    try {
+        const ratingData = {
+            deliveryPartnerName: assignedDeliveryPartner.name,
+            vehicle: assignedDeliveryPartner.vehicleDetails,
+            rating: deliveryRating,
+            ratedAt: serverTimestamp(),
+        };
+        const ratingsCollectionRef = collection(db, 'users', order.deliveryPartnerId, 'deliveryRatings');
+        await addDoc(ratingsCollectionRef, ratingData);
+        
+        toast({ title: "Rating Submitted!", description: "Thank you for your feedback." });
+        setIsRatingSubmitted(true);
+    } catch (error) {
+        console.error("Error submitting rating:", error);
+        toast({ title: "Submission Failed", description: "Could not submit your rating. Please try again.", variant: "destructive" });
+    } finally {
+        setIsRatingSubmitting(false);
     }
   };
 
@@ -381,11 +417,39 @@ export default function TrackOrderPage() {
                             <span>Vehicle: {assignedDeliveryPartner.vehicleDetails}</span>
                             <span className="flex items-center">⭐ {assignedDeliveryPartner.rating?.toFixed(1)}</span>
                         </div>
-                        <Button variant="outline" size="sm" className="w-full mt-2 text-xs">
-                            <a href={`tel:${assignedDeliveryPartner.phoneNumber}`} className="flex items-center">
-                                <Phone className="mr-1.5 h-3.5 w-3.5"/> Contact Rider
-                            </a>
-                        </Button>
+                        
+                        {order.status.toLowerCase() !== 'delivered' ? (
+                            <Button variant="outline" size="sm" className="w-full mt-2 text-xs">
+                                <a href={`tel:${assignedDeliveryPartner.phoneNumber}`} className="flex items-center">
+                                    <Phone className="mr-1.5 h-3.5 w-3.5"/> Contact Rider
+                                </a>
+                            </Button>
+                        ) : isRatingSubmitted ? (
+                            <div className="text-center pt-2 text-green-600 font-semibold flex items-center justify-center">
+                                <CheckCircle className="h-4 w-4 mr-2" /> Thanks for your feedback!
+                            </div>
+                        ) : (
+                            <div className="pt-2 border-t mt-3">
+                                <h4 className="font-semibold text-center mb-1">Rate Your Delivery Partner</h4>
+                                <p className="text-xs text-muted-foreground text-center mb-2">How was your experience with {assignedDeliveryPartner.name}?</p>
+                                <div className="flex items-center justify-center mb-3">
+                                    {[1, 2, 3, 4, 5].map((star) => (
+                                        <Star
+                                            key={star}
+                                            onClick={() => setDeliveryRating(star)}
+                                            onMouseEnter={() => setHoverDeliveryRating(star)}
+                                            onMouseLeave={() => setHoverDeliveryRating(0)}
+                                            className={`cursor-pointer h-7 w-7 transition-colors ${
+                                            (hoverDeliveryRating || deliveryRating) >= star ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'
+                                            }`}
+                                        />
+                                    ))}
+                                </div>
+                                <Button onClick={handleRateDelivery} disabled={isRatingSubmitting} size="sm" className="w-full">
+                                    {isRatingSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Rating'}
+                                </Button>
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
             )}
@@ -539,4 +603,3 @@ export default function TrackOrderPage() {
     </div>
   );
 }
-
