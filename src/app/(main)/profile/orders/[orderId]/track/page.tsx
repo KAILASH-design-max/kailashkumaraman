@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -16,7 +15,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { db, auth } from '@/lib/firebase';
-import { doc, getDoc, Timestamp, onSnapshot, updateDoc, collection, addDoc, serverTimestamp, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, Timestamp, onSnapshot, updateDoc, collection, addDoc, arrayUnion } from 'firebase/firestore';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -261,7 +260,7 @@ export default function TrackOrderPage() {
         const newRating = {
             orderId: order.id,
             rating: deliveryRating,
-            ratedAt: serverTimestamp(),
+            ratedAt: Timestamp.now(),
         };
 
         await updateDoc(partnerRef, {
