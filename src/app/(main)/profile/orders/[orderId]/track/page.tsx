@@ -137,17 +137,17 @@ export default function TrackOrderPage() {
                 const partnerData = partnerSnap.data();
                 setAssignedDeliveryPartner({
                   name: partnerData.name || "Shekhar",
-                  phoneNumber: partnerData.phoneNumber || "+91-1234567890",
-                  vehicleDetails: partnerData.vehicleDetails || 'Bike - BR01XY1234',
+                  phoneNumber: partnerData.phoneNumber || "9876543210",
+                  vehicleDetails: partnerData.vehicleDetails || 'Scooter #DL5SM9999',
                   rating: partnerData.rating || 4.8,
                 });
               }
             } catch (partnerError) {
               console.error("Error fetching delivery partner:", partnerError);
-              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '+91-1234567890', vehicleDetails: 'Bike - BR01XY1234', rating: 4.8 });
+              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '9876543210', vehicleDetails: 'Scooter #DL5SM9999', rating: 4.8 });
             }
           } else if (fetchedOrder.status.toLowerCase().includes('out for delivery')) {
-              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '+91-1234567890', vehicleDetails: 'Bike - BR01XY1234', rating: 4.8 });
+              setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '9876543210', vehicleDetails: 'Scooter #DL5SM9999', rating: 4.8 });
           } else {
               setAssignedDeliveryPartner(null);
           }
@@ -467,5 +467,3 @@ export default function TrackOrderPage() {
     </div>
   );
 }
-
-    
