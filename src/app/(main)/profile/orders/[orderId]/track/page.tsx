@@ -8,7 +8,8 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
-import { ChevronLeft, MapPin, Package, Clock, Truck, UserCheck, HelpCircle, Phone, AlertTriangle, Info, CheckCircle, Circle, Heart } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { ChevronLeft, MapPin, Package, Clock, Truck, UserCheck, HelpCircle, Phone, AlertTriangle, Info, CheckCircle, Circle, Heart, ShieldCheck, Users, Handshake } from 'lucide-react';
 import type { Order as OrderType, OrderStatus, OrderItem as OrderItemType, OrderAddress } from '@/lib/types';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -286,9 +287,69 @@ export default function TrackOrderPage() {
             <Card className="shadow-md bg-secondary/30">
                 <CardContent className="p-4 space-y-1">
                     <p className="text-sm font-semibold">Your SpeedyShop darkstore is only 0.5 km away.</p>
-                    <Link href="#" className="text-xs text-primary hover:underline">Learn about delivery partner safety →</Link>
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <button className="text-xs text-primary hover:underline cursor-pointer">
+                                Learn about delivery partner safety →
+                            </button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                            <DialogHeader>
+                                <DialogTitle className="flex items-center text-xl">
+                                    <ShieldCheck className="mr-2 h-6 w-6 text-primary" /> Delivery Partner Safety
+                                </DialogTitle>
+                                <DialogDescription>
+                                    At SpeedyShop, your safety — and that of our delivery partners — is our top priority.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <div className="py-4 space-y-4 text-sm">
+                                <div>
+                                    <h3 className="font-semibold flex items-center mb-1"><UserCheck className="mr-2 h-4 w-4 text-accent"/>Verified & Trained Partners</h3>
+                                    <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-1">
+                                        <li>Identity verified</li>
+                                        <li>Trained on safe driving & hygiene practices</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold flex items-center mb-1"><CheckCircle className="mr-2 h-4 w-4 text-accent"/>Hygiene Protocols</h3>
+                                    <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-1">
+                                        <li>Daily health self-checks</li>
+                                        <li>Sanitizer kits & masks for every rider</li>
+                                        <li>Hygiene-first delivery instructions</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold flex items-center mb-1"><Users className="mr-2 h-4 w-4 text-accent"/>Respectful Conduct Policy</h3>
+                                    <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-1">
+                                        <li>Zero tolerance for misbehavior or harassment</li>
+                                        <li>24×7 customer support for any complaints</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold flex items-center mb-1"><HelpCircle className="mr-2 h-4 w-4 text-accent"/>Emergency Support</h3>
+                                    <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-1">
+                                        <li>Quick-response team via in-app chat/call</li>
+                                        <li>Delivery location tracking for safety</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h3 className="font-semibold flex items-center mb-1"><Package className="mr-2 h-4 w-4 text-accent"/>Contactless Delivery (Optional)</h3>
+                                    <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-1">
+                                        <li>Choose “Leave at Doorstep” during checkout</li>
+                                        <li>No-contact, no-cash exchange if prepaid</li>
+                                    </ul>
+                                </div>
+                                <Separator />
+                                <div>
+                                    <h3 className="font-semibold flex items-center mb-1"><Handshake className="mr-2 h-4 w-4 text-accent"/>Let's Deliver Safely Together</h3>
+                                    <p className="text-muted-foreground">We ask you to treat our partners respectfully — they work hard to deliver your order fast & safely.</p>
+                                </div>
+                            </div>
+                        </DialogContent>
+                    </Dialog>
                 </CardContent>
             </Card>
+
 
             {order.paymentMethod === 'cod' && (
                 <Alert>
