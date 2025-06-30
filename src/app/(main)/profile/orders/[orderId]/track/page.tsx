@@ -135,12 +135,24 @@ export default function TrackOrderPage() {
               const partnerSnap = await getDoc(partnerRef);
               if (partnerSnap.exists()) {
                 const partnerData = partnerSnap.data();
+                
+                let vehicleDetailsString = 'Details not available';
+                if (partnerData.vehicleType && partnerData.vehicleRegistrationNumber) {
+                    const type = partnerData.vehicleType.charAt(0).toUpperCase() + partnerData.vehicleType.slice(1);
+                    vehicleDetailsString = `${type} #${partnerData.vehicleRegistrationNumber}`;
+                } else if (partnerData.vehicleDetails) {
+                    vehicleDetailsString = partnerData.vehicleDetails;
+                }
+
                 setAssignedDeliveryPartner({
-                  name: partnerData.name || "Shekhar",
-                  phoneNumber: partnerData.phoneNumber || "9876543210",
-                  vehicleDetails: partnerData.vehicleDetails || 'Scooter #DL5SM9999',
+                  name: partnerData.name || "Delivery Partner",
+                  phoneNumber: partnerData.phoneNumber || "N/A",
+                  vehicleDetails: vehicleDetailsString,
                   rating: partnerData.rating || 4.8,
                 });
+              } else {
+                 console.warn(`Delivery partner with ID ${fetchedOrder.deliveryPartnerId} not found, using fallback.`);
+                 setAssignedDeliveryPartner({ name: 'Shekhar', phoneNumber: '9876543210', vehicleDetails: 'Scooter #DL5SM9999', rating: 4.8 });
               }
             } catch (partnerError) {
               console.error("Error fetching delivery partner:", partnerError);
