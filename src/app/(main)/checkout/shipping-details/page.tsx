@@ -12,18 +12,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardFooter, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useCart } from '@/hooks/useCart';
-import { CheckCircle, Package, MapPin, CreditCard, Edit3, PlusCircle, Trash2, ChevronLeft, Tag, AlertCircle, ChevronDown, ShoppingBag, Phone, Loader2 } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import type { PromoCode, Address } from '@/lib/types';
+import { Package, MapPin, Edit3, PlusCircle, Trash2, ChevronLeft, AlertCircle, ShoppingBag, Phone, Loader2 } from 'lucide-react';
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import type { Address } from '@/lib/types';
 import { db, auth } from '@/lib/firebase';
 import { collection, query, where, getDocs, Timestamp, onSnapshot } from 'firebase/firestore';
 import type { User as FirebaseUser } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 const DELIVERY_CHARGE_THRESHOLD = 299;
 const DELIVERY_CHARGE_STANDARD = 50;
@@ -34,6 +29,7 @@ const HANDLING_CHARGE = 5;
 export default function ShippingDetailsPage() {
   const { cartItems, getCartTotal } = useCart();
   const router = useRouter();
+  const { toast } = useToast();
 
   const [shippingOption, setShippingOption] = useState('saved');
   const [newAddress, setNewAddress] = useState({ name: '', street: '', city: '', postalCode: '', country: 'India', phoneNumber: '' });
@@ -44,13 +40,6 @@ export default function ShippingDetailsPage() {
   const [savedAddresses, setSavedAddresses] = useState<Address[]>([]);
   const [addressesLoading, setAddressesLoading] = useState(true);
   const [selectedAddressId, setSelectedAddressId] = useState('');
-
-  const [promoCodeInput, setPromoCodeInput] = useState('');
-  const [appliedPromoCode, setAppliedPromoCode] = useState<{ code: string; discountAmount: number; description: string } | null>(null);
-  const [promoMessage, setPromoMessage] = useState<{ type: 'success' | 'error' | 'info', text: string } | null>(null);
-
-  const [availablePromoCodes, setAvailablePromoCodes] = useState<PromoCode[]>([]);
-  const [promoFetchError, setPromoFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribeAuth = auth.onAuthStateChanged((user) => {
@@ -64,28 +53,6 @@ export default function ShippingDetailsPage() {
         router.push('/cart');
     }
     
-    async function fetchPromoCodes() {
-      setPromoFetchError(null);
-      try {
-        const promoCodesRef = collection(db, 'promoCodes');
-        const q = query(promoCodesRef, where('status', '==', 'active'));
-        const querySnapshot = await getDocs(q);
-        const now = new Date();
-        const codes: PromoCode[] = [];
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const expiresAtDate = new Date(data.expiresAt as string);
-          if (expiresAtDate > now) {
-              codes.push({ id: doc.id, ...data } as PromoCode);
-          }
-        });
-        setAvailablePromoCodes(codes);
-      } catch (e: any) {
-        setPromoFetchError("Could not load promo codes.");
-      }
-    }
-    fetchPromoCodes();
-
     // Fetch addresses from Firestore
     if (currentUser) {
       setAddressesLoading(true);
@@ -127,7 +94,7 @@ export default function ShippingDetailsPage() {
           setAddressesLoading(false);
       }, (error) => {
           console.error("Error fetching addresses:", error);
-          setPromoMessage({ type: 'error', text: 'Could not fetch saved addresses.' });
+          toast({ type: 'error', text: 'Could not fetch saved addresses.' });
           setAddressesLoading(false);
       });
       return () => unsubscribe();
@@ -136,71 +103,25 @@ export default function ShippingDetailsPage() {
       setSavedAddresses([]);
     }
 
-  }, [cartItems.length, router, currentUser]);
+  }, [cartItems.length, router, currentUser, toast]);
 
   const subtotal = getCartTotal();
 
-  const calculatedDiscount = useMemo(() => {
-    if (!appliedPromoCode) return 0;
-    return appliedPromoCode.discountAmount;
-  }, [appliedPromoCode]);
-  
   const deliveryCharge = useMemo(() => {
     if (shippingMethod === 'pickup' || subtotal <= 0) return 0;
     let baseDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
-    if (appliedPromoCode?.code === 'FREEDEL' && baseDeliveryCharge > 0) {
-        baseDeliveryCharge = Math.max(0, baseDeliveryCharge - appliedPromoCode.discountAmount);
-    }
     if (shippingMethod === 'express') {
       return baseDeliveryCharge + DELIVERY_CHARGE_EXPRESS_EXTRA;
     }
     return baseDeliveryCharge;
-  }, [subtotal, shippingMethod, appliedPromoCode]);
+  }, [subtotal, shippingMethod]);
   
   const gstAmount = useMemo(() => subtotal > 0 ? subtotal * GST_RATE : 0, [subtotal]);
   
   const totalAmount = useMemo(() => {
-    const preliminaryTotal = subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE - calculatedDiscount;
+    const preliminaryTotal = subtotal + gstAmount + deliveryCharge + (subtotal > 0 ? HANDLING_CHARGE : 0);
     return Math.max(0, preliminaryTotal);
-  }, [subtotal, gstAmount, deliveryCharge, HANDLING_CHARGE, calculatedDiscount]);
-
-  const handleApplyPromoCode = () => {
-    if (!promoCodeInput.trim()) {
-      setPromoMessage({ type: 'info', text: 'Please enter a promo code.' });
-      setAppliedPromoCode(null);
-      return;
-    }
-    const codeToApply = availablePromoCodes.find(pc => pc.code.toUpperCase() === promoCodeInput.trim().toUpperCase());
-
-    if (codeToApply) {
-      if (codeToApply.minOrderValue && subtotal < codeToApply.minOrderValue) {
-        setPromoMessage({ type: 'error', text: `Order subtotal must be at least ₹${codeToApply.minOrderValue} to use ${codeToApply.code}.`});
-        setAppliedPromoCode(null);
-        return;
-      }
-
-      let discount = 0;
-      const currentStandardDeliveryCharge = (subtotal < DELIVERY_CHARGE_THRESHOLD && subtotal > 0) ? DELIVERY_CHARGE_STANDARD : 0;
-      if (codeToApply.discountType === 'percentage') {
-        discount = subtotal * (codeToApply.value / 100);
-      } else if (codeToApply.discountType === 'fixed') {
-        discount = (codeToApply.code === 'FREEDEL') ? Math.min(codeToApply.value, currentStandardDeliveryCharge) : codeToApply.value;
-      }
-      
-      discount = Math.min(discount, subtotal + gstAmount + deliveryCharge + HANDLING_CHARGE); 
-
-      if (discount <= 0 && !(codeToApply.code === 'FREEDEL' && currentStandardDeliveryCharge > 0)) {
-         setPromoMessage({ type: 'info', text: `Promo code "${codeToApply.code}" provides no discount.` });
-         setAppliedPromoCode(null);
-      } else {
-        setAppliedPromoCode({ code: codeToApply.code, discountAmount: discount, description: codeToApply.description || 'Discount applied' });
-        setPromoMessage({ type: 'success', text: `Promo "${codeToApply.code}" applied! You saved ₹${discount.toFixed(2)}.` });
-      }
-    } else {
-      setPromoMessage({ type: 'error', text: 'Invalid or expired promo code.' });
-      setAppliedPromoCode(null);
-    }
-  };
+  }, [subtotal, gstAmount, deliveryCharge]);
 
   const isAddressValid = () => {
     if (shippingOption === 'saved') return !!selectedAddressId;
@@ -214,7 +135,7 @@ export default function ShippingDetailsPage() {
 
   const handleProceedToPayment = () => {
     if (!isAddressValid()) {
-        setPromoMessage({ type: 'error', text: 'Please select or enter a valid shipping address.'});
+        toast({ title: 'Error', description: 'Please select or enter a valid shipping address.', variant: 'destructive'});
         return;
     }
     const currentAddress = shippingOption === 'saved' 
@@ -222,15 +143,15 @@ export default function ShippingDetailsPage() {
       : newAddress;
 
     if (!currentAddress) {
-        setPromoMessage({ type: 'error', text: 'Selected address not found.'});
+        toast({ title: 'Error', description: 'Selected address not found.', variant: 'destructive'});
         return;
     }
 
     const shippingInfo = {
         address: currentAddress, 
         method: shippingMethod,
-        promoCode: appliedPromoCode,
-        summary: { subtotal, discount: calculatedDiscount, deliveryCharge, gstAmount, handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0, totalAmount }
+        promoCode: null,
+        summary: { subtotal, discount: 0, deliveryCharge, gstAmount, handlingCharge: subtotal > 0 ? HANDLING_CHARGE : 0, totalAmount }
     };
     if (typeof window !== 'undefined') {
         localStorage.setItem('checkoutShippingInfo', JSON.stringify(shippingInfo));
@@ -319,57 +240,6 @@ export default function ShippingDetailsPage() {
                   <SelectItem value="pickup">In-Store Pickup (Today) - Free</SelectItem>
                 </SelectContent>
               </Select>
-            
-            <Separator />
-             <div className="pt-4 space-y-2">
-                <Label htmlFor="promoCode" className="text-lg font-medium flex items-center">
-                  <Tag className="mr-2 h-5 w-5 text-primary" />Gift Card / Promo Code
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input 
-                    id="promoCode" 
-                    placeholder="Enter code" 
-                    value={promoCodeInput} 
-                    onChange={e => setPromoCodeInput(e.target.value)} 
-                    className="flex-grow"
-                  />
-                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon" className="h-10 w-10 shrink-0">
-                        <ChevronDown className="h-4 w-4" />
-                        <span className="sr-only">Show Promo Codes</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {availablePromoCodes.length > 0 ? (
-                        availablePromoCodes.map((promo) => (
-                          <DropdownMenuItem
-                            key={promo.id}
-                            onClick={() => { setPromoCodeInput(promo.code); setPromoMessage(null); }}
-                          >
-                            {promo.code} - <span className="text-xs text-muted-foreground ml-1">{promo.description || `${promo.value}${promo.discountType === 'percentage' ? '%' : '₹'} off`}</span>
-                          </DropdownMenuItem>
-                        ))
-                      ) : (
-                        <DropdownMenuItem disabled>
-                            {promoFetchError ? 'Error loading codes' : 'No active promo codes'}
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button variant="outline" onClick={handleApplyPromoCode} className="shrink-0">Apply</Button>
-                </div>
-                {promoMessage && (
-                    <Alert variant={promoMessage.type === 'error' ? 'destructive' : 'default'} className={`text-sm mt-2 ${promoMessage.type === 'success' ? 'border-green-500 bg-green-50 text-green-700 [&>svg]:text-green-700' : 'border-blue-500 bg-blue-50 text-blue-700 [&>svg]:text-blue-700'}`}>
-                        {promoMessage.type === 'error' && <AlertCircle className="h-4 w-4" />}
-                        {promoMessage.type === 'success' && <CheckCircle className="h-4 w-4" />}
-                        <AlertDescription>{promoMessage.text}</AlertDescription>
-                    </Alert>
-                )}
-                 {promoFetchError && (
-                    <p className="text-xs text-destructive mt-1">{promoFetchError}</p>
-                 )}
-              </div>
         </div>
 
         <div className="lg:col-span-1">
@@ -380,12 +250,6 @@ export default function ShippingDetailsPage() {
             <CardContent className="space-y-2 text-sm">
                 <div className="flex justify-between"><span>Subtotal:</span><span>₹{subtotal.toFixed(2)}</span></div>
                 
-                {appliedPromoCode && (
-                <div className="flex justify-between text-green-600">
-                    <span>Discount ({appliedPromoCode.code}):</span>
-                    <span>-₹{calculatedDiscount.toFixed(2)}</span>
-                </div>
-                )}
                 {(deliveryCharge || 0) > 0 && <div className="flex justify-between text-muted-foreground"><span>Delivery Charge:</span><span>₹{deliveryCharge.toFixed(2)}</span></div>}
                 {subtotal > 0 && (
                     <>
@@ -413,3 +277,4 @@ export default function ShippingDetailsPage() {
   );
 }
 
+    
