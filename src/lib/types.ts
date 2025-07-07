@@ -87,6 +87,7 @@ export interface Order {
   orderDate: string;
   estimatedDeliveryTime?: string;
   deliveryPartnerId?: string | null;
+  cancelledTimestamp?: string; // Added field for cancellation time
   name?: string;
   phoneNumber?: string;
   shippingMethod?: string;

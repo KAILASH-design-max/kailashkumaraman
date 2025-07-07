@@ -133,6 +133,7 @@ export default function TrackOrderPage() {
             handlingCharge: data.handlingCharge || 0,
             discountAmount: data.discountAmount || 0,
             promoCodeApplied: data.promoCodeApplied || null,
+            cancelledTimestamp: data.cancelledTimestamp || null,
           };
           setOrder(fetchedOrder);
 
@@ -315,6 +316,8 @@ export default function TrackOrderPage() {
       </div>
     );
   }
+  
+  const isCancelled = order.status.toLowerCase() === 'cancelled';
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -326,17 +329,24 @@ export default function TrackOrderPage() {
         </Button>
       </div>
       
-      <Card className="bg-green-600 text-white shadow-lg mb-8">
+      <Card className={cn(
+        "shadow-lg mb-8",
+        isCancelled ? "bg-destructive/80 text-destructive-foreground" : "bg-green-600 text-white"
+      )}>
         <CardHeader>
           <CardTitle className="text-2xl font-bold">
-            {order.status.toLowerCase() === 'delivered' ? 'Order Delivered!' : 'Order is on the way'}
+            {isCancelled ? 'Order Cancelled' : order.status.toLowerCase() === 'delivered' ? 'Order Delivered!' : 'Order is on the way'}
           </CardTitle>
-          {isOrderActive && etaMinutes !== null && (
+          {isCancelled && order.cancelledTimestamp ? (
+            <CardDescription className="text-destructive-foreground/80 text-base">
+              Cancelled on {new Date(order.cancelledTimestamp).toLocaleString()}
+            </CardDescription>
+          ) : isOrderActive && etaMinutes !== null ? (
             <CardDescription className="text-green-200 text-lg">
               Arriving in {etaMinutes > 0 ? `${etaMinutes} minutes` : 'moments...'}
             </CardDescription>
-          )}
-          <p className="text-xs text-green-100 pt-1">Order ID: #{order.id.substring(0,10)}...</p>
+          ) : null}
+          <p className="text-xs text-white/80 pt-1">Order ID: #{order.id.substring(0,10)}...</p>
         </CardHeader>
       </Card>
 
@@ -348,6 +358,15 @@ export default function TrackOrderPage() {
                 <CardTitle className="flex items-center text-xl"><ListChecks className="mr-2 h-5 w-5 text-accent"/>Order Status</CardTitle>
             </CardHeader>
              <CardContent className="pt-4 overflow-x-auto">
+               {isCancelled ? (
+                <div className="flex items-center gap-3 p-4 bg-muted rounded-md">
+                    <AlertTriangle className="h-8 w-8 text-destructive"/>
+                    <div className="text-muted-foreground">
+                        <p className="font-semibold">This order has been cancelled.</p>
+                        <p className="text-sm">The delivery process has been stopped and will not proceed further.</p>
+                    </div>
+                </div>
+               ) : (
                 <div className="flex items-start">
                     {orderStatusSteps.map((step, index) => (
                         <React.Fragment key={step.name}>
@@ -373,6 +392,7 @@ export default function TrackOrderPage() {
                         </React.Fragment>
                     ))}
                 </div>
+               )}
             </CardContent>
           </Card>
 
@@ -420,7 +440,7 @@ export default function TrackOrderPage() {
                             <span className="flex items-center">⭐ {assignedDeliveryPartner.rating?.toFixed(1)}</span>
                         </div>
                         
-                        {order.status.toLowerCase() !== 'delivered' ? (
+                        {order.status.toLowerCase() !== 'delivered' && !isCancelled ? (
                             <Button variant="outline" size="sm" className="w-full mt-2 text-xs">
                                 <a href={`tel:${assignedDeliveryPartner.phoneNumber}`} className="flex items-center">
                                     <Phone className="mr-1.5 h-3.5 w-3.5"/> Contact Rider
@@ -430,7 +450,7 @@ export default function TrackOrderPage() {
                             <div className="text-center pt-2 text-green-600 font-semibold flex items-center justify-center">
                                 <CheckCircle className="h-4 w-4 mr-2" /> Thanks for your feedback!
                             </div>
-                        ) : (
+                        ) : order.status.toLowerCase() === 'delivered' ? (
                             <div className="pt-2 border-t mt-3">
                                 <h4 className="font-semibold text-center mb-1">Rate Your Delivery Partner</h4>
                                 <p className="text-xs text-muted-foreground text-center mb-2">How was your experience with {assignedDeliveryPartner.name}?</p>
@@ -451,7 +471,7 @@ export default function TrackOrderPage() {
                                     {isRatingSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit Rating'}
                                 </Button>
                             </div>
-                        )}
+                        ) : null}
                     </CardContent>
                 </Card>
             )}
