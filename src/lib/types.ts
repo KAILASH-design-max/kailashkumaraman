@@ -158,3 +158,21 @@ export interface PaymentMethod {
   createdAt: string; // ISO string for client
   updatedAt?: string; // ISO string for client
 }
+
+export interface WishlistItem {
+  productId: string;
+  name: string;
+  price: number;
+  imageUrl: string;
+  dataAiHint?: string;
+  addedAt: string; // ISO string
+}
+
+export interface Wishlist {
+  id: string; // Firestore document ID
+  userId: string;
+  name: string;
+  items: WishlistItem[];
+  createdAt: string; // ISO string
+  updatedAt?: string; // ISO string
+}
