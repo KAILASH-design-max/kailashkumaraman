@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle, Percent, ChevronRight, Home } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, ChefHat, Loader2, Sparkles, Tag, CheckCircle, Percent, ChevronRight, Home, User } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { generateCartRecipe, type GenerateCartRecipeOutput } from '@/ai/flows/generate-cart-recipe-flow';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,6 +20,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { Address, PromoCode } from '@/lib/types';
 import { collection, query, where, getDocs, limit, orderBy, Timestamp } from 'firebase/firestore';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
@@ -531,14 +540,36 @@ export default function CartPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-                {discountAmount > 0 && (
-                  <div className="flex items-center justify-center text-green-700 font-semibold text-sm bg-green-50/50 p-3 rounded-md w-full">
-                      <CheckCircle className="mr-2 h-6 w-6" />
-                      You Saved ₹{discountAmount.toFixed(2)} on this order!
-                  </div>
-                )}
-               {cartItems.length > 0 ? (
-                isCheckoutActionDisabled ? (
+              {discountAmount > 0 && (
+                <div className="flex items-center justify-center text-green-700 font-semibold text-sm bg-green-50/50 p-3 rounded-md w-full">
+                    <CheckCircle className="mr-2 h-6 w-6" />
+                    You Saved ₹{discountAmount.toFixed(2)} on this order!
+                </div>
+              )}
+
+              {cartItems.length > 0 ? (
+                !currentUser ? (
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button className="w-full bg-primary/30 border border-primary/50 text-primary-foreground backdrop-blur-sm hover:bg-primary/40" size="lg">
+                        Select Delivery Option
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[425px]">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center"><User className="mr-2 h-5 w-5 text-primary" /> Login Required</DialogTitle>
+                        <DialogDescription>
+                          Please log in to your account to select a delivery address and proceed with your order.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <DialogFooter>
+                        <Button asChild className="w-full mt-4">
+                            <Link href="/login?redirect=/cart">Go to Login Page</Link>
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                ) : isCheckoutActionDisabled ? (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -559,11 +590,11 @@ export default function CartPage() {
                     {checkoutButtonLabel}
                   </Button>
                 )
-               ) : (
-                 <Button className="w-full" size="lg" disabled>
-                    Add Items to Checkout
-                 </Button>
-               )}
+              ) : (
+                <Button className="w-full" size="lg" disabled>
+                  Add Items to Checkout
+                </Button>
+              )}
               <Button variant="outline" className="w-full" asChild>
                 <Link href="/products">Continue Shopping</Link>
               </Button>
