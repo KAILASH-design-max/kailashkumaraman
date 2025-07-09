@@ -54,9 +54,15 @@ export default function ProductsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     
-    const selectedCategory = searchParams.get('category') || 'all';
+    const selectedCategorySlug = searchParams.get('category') || 'all';
     const currentSort = searchParams.get('sort') || 'popularity';
     const searchQuery = searchParams.get('q') || '';
+
+    const categoryId = useMemo(() => {
+        if (selectedCategorySlug === 'all') return 'all';
+        return mockCategories.find(c => c.slug === selectedCategorySlug)?.id || null;
+    }, [selectedCategorySlug]);
+
 
     const createQueryString = useCallback(
         (params: Record<string, string | null>) => {
@@ -75,14 +81,22 @@ export default function ProductsPage() {
 
     useEffect(() => {
         const fetchProducts = async () => {
+            if (selectedCategorySlug !== 'all' && !categoryId) {
+                // Handle case where slug is invalid but not 'all'
+                setIsLoading(false);
+                setProducts([]);
+                setError(`Category "${selectedCategorySlug}" not found.`);
+                return;
+            }
+
             setIsLoading(true);
             setError(null);
             try {
                 const productsCollection = collection(db, 'products');
                 const constraints: QueryConstraint[] = [where('status', '==', 'active')];
 
-                if (selectedCategory && selectedCategory !== 'all') {
-                    constraints.push(where('category', '==', selectedCategory));
+                if (categoryId && categoryId !== 'all') {
+                    constraints.push(where('category', '==', categoryId));
                 }
 
                 switch (currentSort) {
@@ -126,7 +140,7 @@ export default function ProductsPage() {
         };
 
         fetchProducts();
-    }, [selectedCategory, currentSort]);
+    }, [categoryId, currentSort, selectedCategorySlug]);
 
     const handleFilterChange = (type: 'category' | 'sort', value: string) => {
         const params: Record<string, string | null> = { [type]: value };
@@ -159,18 +173,18 @@ export default function ProductsPage() {
     );
 
     // Dynamic heading logic
-    const categoryInfo = !searchQuery && selectedCategory !== 'all' 
-        ? mockCategories.find(c => c.id === selectedCategory) 
-        : null;
-    let pageTitle = `Showing results for '${searchQuery}'`;
-    let pageDescription = `${filteredProducts.length} products found.`;
+    const categoryInfo = mockCategories.find(c => c.slug === selectedCategorySlug);
+    const pageTitle = 'All Products';
+    let pageDescription: string;
 
-    if (!searchQuery) {
-        pageTitle = categoryInfo ? categoryInfo.name : 'All Products';
-        pageDescription = categoryInfo 
-            ? `Browse our selection of fresh ${categoryInfo.name}.`
-            : 'Browse our wide selection of available products.';
+    if (searchQuery) {
+        pageDescription = `Showing ${filteredProducts.length} results for '${searchQuery}'.`;
+    } else if (categoryInfo) {
+        pageDescription = `Browse our selection of fresh ${categoryInfo.name}.`;
+    } else {
+        pageDescription = 'Browse our wide selection of available products.';
     }
+
 
     return (
         <div className="container mx-auto py-8 px-4">
@@ -183,14 +197,14 @@ export default function ProductsPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg border items-end">
                   <div className="lg:col-span-2">
                       <label className="text-sm font-medium text-muted-foreground">Category</label>
-                      <Select value={selectedCategory} onValueChange={(value) => handleFilterChange('category', value)}>
+                      <Select value={selectedCategorySlug} onValueChange={(value) => handleFilterChange('category', value)}>
                           <SelectTrigger className="bg-background">
                               <SelectValue placeholder="Filter by category..." />
                           </SelectTrigger>
                           <SelectContent>
                               <SelectItem value="all">All Categories</SelectItem>
                               {mockCategories.map((cat: Category) => (
-                                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                  <SelectItem key={cat.id} value={cat.slug}>{cat.name}</SelectItem>
                               ))}
                           </SelectContent>
                       </Select>
@@ -209,7 +223,7 @@ export default function ProductsPage() {
                       </Select>
                   </div>
 
-                  {(selectedCategory !== 'all' || currentSort !== 'popularity' || searchQuery) && (
+                  {(selectedCategorySlug !== 'all' || currentSort !== 'popularity' || searchQuery) && (
                        <div className="lg:col-span-4 flex justify-end">
                           <Button variant="ghost" onClick={handleClearFilters} className="w-full sm:w-auto h-10">Clear All Filters</Button>
                       </div>
