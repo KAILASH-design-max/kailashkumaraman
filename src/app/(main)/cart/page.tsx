@@ -341,73 +341,75 @@ export default function CartPage() {
             </div>
           )}
 
-          <Card className="shadow-lg mt-8">
-            <CardHeader className="text-center">
-              <CardTitle className="text-2xl flex items-center justify-center">
-                <Sparkles className="mr-2 h-6 w-6 text-primary" /> Get a Recipe for Your Cart! <Sparkles className="ml-2 h-6 w-6 text-primary" />
-              </CardTitle>
-              <CardDescription>
-                Generate a recipe using the items currently in your cart!
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isRecipeLoading && (
-                <div className="flex items-center justify-center py-6">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-                  <p className="text-muted-foreground">Generating your delicious recipe...</p>
-                </div>
-              )}
-              {recipeError && !isRecipeLoading && (
-                <Alert variant="destructive">
-                  <ChefHat className="h-4 w-4" />
-                  <AlertTitle>Oops!</AlertTitle>
-                  <AlertDescription>{recipeError}</AlertDescription>
-                </Alert>
-              )}
-              {recipe && !isRecipeLoading && (
-                <div className="space-y-4">
-                  {!recipe.isPossible && recipe.notes && (
-                     <Alert variant="default">
-                        <ChefHat className="h-4 w-4" />
-                        <AlertTitle>{recipe.recipeName || "Recipe Suggestion"}</AlertTitle>
-                        <AlertDescription>{recipe.notes}</AlertDescription>
-                    </Alert>
-                  )}
-                  {recipe.isPossible && (
-                    <>
-                      <h3 className="text-xl font-semibold text-primary">{recipe.recipeName}</h3>
-                      <div>
-                        <h4 className="font-medium text-md mb-1">Ingredients:</h4>
-                        <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-0.5">
-                          {recipe.ingredients.map((ing, idx) => <li key={idx}>{ing}</li>)}
-                        </ul>
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-md mb-1">Instructions:</h4>
-                        <p className="text-muted-foreground whitespace-pre-line">{recipe.instructions}</p>
-                      </div>
-                      {recipe.notes && (
+          {currentUser && (
+            <Card className="shadow-lg mt-8">
+              <CardHeader className="text-center">
+                <CardTitle className="text-2xl flex items-center justify-center">
+                  <Sparkles className="mr-2 h-6 w-6 text-primary" /> Get a Recipe for Your Cart! <Sparkles className="ml-2 h-6 w-6 text-primary" />
+                </CardTitle>
+                <CardDescription>
+                  Generate a recipe using the items currently in your cart!
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {isRecipeLoading && (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
+                    <p className="text-muted-foreground">Generating your delicious recipe...</p>
+                  </div>
+                )}
+                {recipeError && !isRecipeLoading && (
+                  <Alert variant="destructive">
+                    <ChefHat className="h-4 w-4" />
+                    <AlertTitle>Oops!</AlertTitle>
+                    <AlertDescription>{recipeError}</AlertDescription>
+                  </Alert>
+                )}
+                {recipe && !isRecipeLoading && (
+                  <div className="space-y-4">
+                    {!recipe.isPossible && recipe.notes && (
+                      <Alert variant="default">
+                          <ChefHat className="h-4 w-4" />
+                          <AlertTitle>{recipe.recipeName || "Recipe Suggestion"}</AlertTitle>
+                          <AlertDescription>{recipe.notes}</AlertDescription>
+                      </Alert>
+                    )}
+                    {recipe.isPossible && (
+                      <>
+                        <h3 className="text-xl font-semibold text-primary">{recipe.recipeName}</h3>
                         <div>
-                          <h4 className="font-medium text-md mb-1">Notes:</h4>
-                          <p className="text-sm text-muted-foreground italic">{recipe.notes}</p>
+                          <h4 className="font-medium text-md mb-1">Ingredients:</h4>
+                          <ul className="list-disc list-inside pl-4 text-muted-foreground space-y-0.5">
+                            {recipe.ingredients.map((ing, idx) => <li key={idx}>{ing}</li>)}
+                          </ul>
                         </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              )}
-            </CardContent>
-            <CardFooter>
-              <Button
-                className="w-full"
-                onClick={handleGenerateRecipe}
-                disabled={isRecipeLoading || cartItems.length === 0}
-              >
-                {isRecipeLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChefHat className="mr-2 h-4 w-4" />}
-                Generate Recipe ✨
-              </Button>
-            </CardFooter>
-          </Card>
+                        <div>
+                          <h4 className="font-medium text-md mb-1">Instructions:</h4>
+                          <p className="text-muted-foreground whitespace-pre-line">{recipe.instructions}</p>
+                        </div>
+                        {recipe.notes && (
+                          <div>
+                            <h4 className="font-medium text-md mb-1">Notes:</h4>
+                            <p className="text-sm text-muted-foreground italic">{recipe.notes}</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  onClick={handleGenerateRecipe}
+                  disabled={isRecipeLoading || cartItems.length === 0}
+                >
+                  {isRecipeLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChefHat className="mr-2 h-4 w-4" />}
+                  Generate Recipe ✨
+                </Button>
+              </CardFooter>
+            </Card>
+          )}
           
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="promo-code">
