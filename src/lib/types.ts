@@ -191,3 +191,17 @@ export interface SecurityData {
   loginActivity: LoginActivity[];
   activeSessions?: string[];
 }
+
+export interface NotificationPreferences {
+  email: boolean;
+  sms: boolean;
+  push: boolean;
+}
+
+export interface NotificationSettings {
+  orderUpdates: NotificationPreferences;
+  priceDropAlerts: NotificationPreferences;
+  promotions: NotificationPreferences;
+  accountActivity: NotificationPreferences;
+  lastUpdated?: Timestamp;
+}
