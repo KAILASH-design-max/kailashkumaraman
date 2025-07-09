@@ -8,7 +8,7 @@ import { ChevronLeft, Heart, Edit3, Trash2, PlusCircle, Share2, ShoppingCart, Lo
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import type { Product, Wishlist } from '@/lib/types';
+import type { Product, Wishlist, WishlistItem } from '@/lib/types';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
@@ -97,6 +97,7 @@ export default function WishlistsPage() {
                     addedAt: (item.addedAt as Timestamp)?.toDate().toISOString() ?? new Date().toISOString()
                 })),
                 createdAt: (data.createdAt as Timestamp)?.toDate().toISOString() ?? new Date().toISOString(),
+                isPublic: data.isPublic || false,
             } as Wishlist;
         });
         setWishlists(fetchedWishlists);
@@ -127,6 +128,7 @@ export default function WishlistsPage() {
       userId: currentUser.uid,
       name: newWishlistName,
       items: [],
+      isPublic: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -146,7 +148,7 @@ export default function WishlistsPage() {
   const handleShareWishlist = (id: string) => {
     const wishlist = wishlists.find(wl => wl.id === id);
     if (wishlist) {
-        const shareUrl = `${window.location.origin}/wishlist/${id}`; 
+        const shareUrl = `${window.location.origin}/wishlist/shared/${id}`; 
         navigator.clipboard.writeText(shareUrl).then(() => {
             toast({ title: "Link Copied!", description: `Share link for "${wishlist.name}" copied to clipboard.` });
         }).catch(err => {
@@ -181,7 +183,7 @@ export default function WishlistsPage() {
         }
 
         const wishlistData = wishlistSnap.data();
-        const itemToRemove = wishlistData.items.find((item: any) => item.productId === productId);
+        const itemToRemove = wishlistData.items.find((item: WishlistItem) => item.productId === productId);
 
         if (itemToRemove) {
           await updateDoc(wishlistRef, {

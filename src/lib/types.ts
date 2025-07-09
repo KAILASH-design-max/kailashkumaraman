@@ -173,6 +173,7 @@ export interface Wishlist {
   userId: string;
   name: string;
   items: WishlistItem[];
+  isPublic?: boolean;
   createdAt: string; // ISO string
   updatedAt?: string; // ISO string
 }
