@@ -56,7 +56,7 @@ export default function SearchPage() {
         const fetchTrending = async () => {
             setIsLoadingTrending(true);
             try {
-                const q = query(collection(db, "products"), where('status', '==', 'active'), orderBy("popularity", "desc"), limit(5));
+                const q = query(collection(db, "products"), where('status', '==', 'active'), orderBy("popularity", "desc"), limit(8));
                 const snapshot = await getDocs(q);
                 const products = snapshot.docs.map(serializeProduct);
                 setTrendingProducts(products);
@@ -201,7 +201,7 @@ export default function SearchPage() {
 
     const renderTrendingSkeletons = () => (
         <div className="flex overflow-x-auto gap-4 pb-4">
-            {Array.from({ length: 5 }).map((_, i) => (
+            {Array.from({ length: 8 }).map((_, i) => (
                 <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0 w-28">
                     <Skeleton className="w-full aspect-square rounded-lg" />
                     <Skeleton className="h-3 w-4/5 rounded" />
