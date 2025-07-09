@@ -239,7 +239,7 @@ export default function CartPage() {
     );
   }
 
-  const isCheckoutActionDisabled = authLoading || addressLoading || !defaultAddress;
+  const isCheckoutActionDisabled = authLoading || addressLoading || (!!currentUser && !defaultAddress);
   const checkoutButtonLabel = defaultAddress ? "Proceed to Checkout" : "Select Delivery Option";
   const checkoutTooltipMessage = addressLoading 
     ? "Fetching your address..." 
