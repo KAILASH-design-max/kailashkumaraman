@@ -174,7 +174,7 @@ export default function ProductsPage() {
 
     // Dynamic heading logic
     const categoryInfo = mockCategories.find(c => c.slug === selectedCategorySlug);
-    const pageTitle = 'All Products';
+    const pageTitle = categoryInfo ? categoryInfo.name : 'All Products';
     let pageDescription: string;
 
     if (searchQuery) {
