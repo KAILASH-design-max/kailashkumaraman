@@ -57,7 +57,7 @@ export default function SearchPage() {
         const fetchTrending = async () => {
             setIsLoadingTrending(true);
             try {
-                const q = query(collection(db, "products"), where('status', '==', 'active'), orderBy("popularity", "desc"), limit(10));
+                const q = query(collection(db, "products"), where('status', '==', 'active'), orderBy("popularity", "desc"), limit(8));
                 const snapshot = await getDocs(q);
                 const products = snapshot.docs.map(serializeProduct);
                 setTrendingProducts(products);
@@ -183,9 +183,14 @@ export default function SearchPage() {
     );
 
     const renderTrendingGrid = () => (
-        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+        <div className="flex overflow-x-auto gap-4 pb-4">
             {trendingProducts.map(product => (
-                <Link key={product.id} href={`/products/${product.id}`} className="group block text-center" onClick={() => addSearchTerm(product.name)}>
+                <Link 
+                    key={product.id} 
+                    href={`/products/${product.id}`} 
+                    className="group block text-center flex-shrink-0 w-28"
+                    onClick={() => addSearchTerm(product.name)}
+                >
                     <div className="relative aspect-square w-full bg-card p-2 rounded-lg border overflow-hidden">
                         <Image src={product.images[0]} alt={product.name} fill sizes="20vw" className="object-contain group-hover:scale-105 transition-transform" data-ai-hint={product.dataAiHint || 'trending product'}/>
                     </div>
@@ -196,9 +201,9 @@ export default function SearchPage() {
     );
 
     const renderTrendingSkeletons = () => (
-        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
-            {Array.from({ length: 10 }).map((_, i) => (
-                <div key={i} className="flex flex-col items-center gap-1.5">
+        <div className="flex overflow-x-auto gap-4 pb-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-1.5 flex-shrink-0 w-28">
                     <Skeleton className="w-full aspect-square rounded-lg" />
                     <Skeleton className="h-3 w-4/5 rounded" />
                 </div>
