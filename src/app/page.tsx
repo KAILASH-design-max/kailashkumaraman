@@ -1,40 +1,70 @@
 
-'use client'; 
-
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockCategories, mockProducts } from '@/lib/mockData';
+import { mockCategories } from '@/lib/mockData';
 import type { Product } from '@/lib/types';
 import { ProductCard } from '@/components/customer/ProductCard'; 
 import { ProductSuggester } from '@/components/customer/ProductSuggester';
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Search as SearchIcon, XCircle } from 'lucide-react';
 
-export default function RootPage() {
-  const recommendedProducts = mockProducts.slice(0, 6); 
-  const allCategories = mockCategories; 
+import { db } from '@/lib/firebase';
+import { collection, getDocs, query, where, orderBy, limit, Timestamp } from 'firebase/firestore';
 
-  // State for homepage search (currently removed from UI, logic remains)
-  const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+// Helper to safely serialize product data from Firestore
+function serializeProduct(doc: any): Product {
+    const data = doc.data();
+    return {
+        id: doc.id,
+        name: data.name || '',
+        description: data.description || '',
+        price: data.price || 0,
+        category: data.category || '',
+        images: data.images || [],
+        rating: data.rating,
+        reviewsCount: data.reviewsCount,
+        stock: data.stock || 0,
+        status: data.status || 'inactive',
+        lowStockThreshold: data.lowStockThreshold,
+        weight: data.weight,
+        origin: data.origin,
+        popularity: data.popularity,
+        createdAt: data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : String(data.createdAt || ''),
+        updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt.toDate().toISOString() : String(data.updatedAt || ''),
+        dataAiHint: data.dataAiHint,
+    };
+}
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setHasSearched(true);
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      return;
-    }
-    const results = mockProducts.filter(product =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.description.toLowerCase().includes(searchTerm.toLowerCase())
+async function fetchRecommendedProducts(): Promise<Product[]> {
+  try {
+    const productsCollection = collection(db, 'products');
+    // Fetch active products, sorted by popularity
+    const q = query(
+      productsCollection,
+      where('status', '==', 'active'),
+      orderBy('popularity', 'desc'),
+      limit(6)
     );
-    setSearchResults(results);
-  };
+    const querySnapshot = await getDocs(q);
+    
+    const products: Product[] = [];
+    querySnapshot.forEach((doc) => {
+      products.push(serializeProduct(doc));
+    });
+    
+    return products;
+  } catch (error) {
+    console.error("Error fetching recommended products:", error);
+    // On error (e.g., missing index), return empty array to prevent page crash.
+    // Check console for index creation link from Firestore.
+    return [];
+  }
+}
+
+
+export default async function RootPage() {
+  const recommendedProducts = await fetchRecommendedProducts();
+  const allCategories = mockCategories; 
 
   return (
     <div className="container mx-auto py-8 px-4">
@@ -104,9 +134,13 @@ export default function RootPage() {
           </Link>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {recommendedProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {recommendedProducts.length > 0 ? (
+            recommendedProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))
+          ) : (
+            <p className="col-span-full text-muted-foreground">Could not load recommended products. Please try again later.</p>
+          )}
         </div>
       </section>
       
