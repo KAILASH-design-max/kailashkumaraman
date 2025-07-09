@@ -174,72 +174,76 @@ export default function ProductsPage() {
 
     return (
         <div className="container mx-auto py-8 px-4">
-            <div className="mb-8 text-center">
+            <header className="mb-8 text-center">
                 <h1 className="text-4xl font-bold mb-2">{pageTitle}</h1>
                 <p className="text-muted-foreground">{pageDescription}</p>
-            </div>
+            </header>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 p-4 bg-muted/50 rounded-lg border items-end">
-                <div className="lg:col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground">Category</label>
-                    <Select value={selectedCategory} onValueChange={(value) => handleFilterChange('category', value)}>
-                        <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Filter by category..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Categories</SelectItem>
-                            {mockCategories.map((cat: Category) => (
-                                <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="lg:col-span-2">
-                    <label className="text-sm font-medium text-muted-foreground">Sort By</label>
-                    <Select value={currentSort} onValueChange={(value) => handleFilterChange('sort', value)}>
-                        <SelectTrigger className="bg-background">
-                            <SelectValue placeholder="Sort products..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {sortOptions.map(opt => (
-                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+            <section className="mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg border items-end">
+                  <div className="lg:col-span-2">
+                      <label className="text-sm font-medium text-muted-foreground">Category</label>
+                      <Select value={selectedCategory} onValueChange={(value) => handleFilterChange('category', value)}>
+                          <SelectTrigger className="bg-background">
+                              <SelectValue placeholder="Filter by category..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Categories</SelectItem>
+                              {mockCategories.map((cat: Category) => (
+                                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="lg:col-span-2">
+                      <label className="text-sm font-medium text-muted-foreground">Sort By</label>
+                      <Select value={currentSort} onValueChange={(value) => handleFilterChange('sort', value)}>
+                          <SelectTrigger className="bg-background">
+                              <SelectValue placeholder="Sort products..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {sortOptions.map(opt => (
+                                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
 
-                {(selectedCategory !== 'all' || currentSort !== 'popularity' || searchQuery) && (
-                     <div className="lg:col-span-4 flex justify-end">
-                        <Button variant="ghost" onClick={handleClearFilters} className="w-full sm:w-auto h-10">Clear All Filters</Button>
-                    </div>
-                )}
-            </div>
+                  {(selectedCategory !== 'all' || currentSort !== 'popularity' || searchQuery) && (
+                       <div className="lg:col-span-4 flex justify-end">
+                          <Button variant="ghost" onClick={handleClearFilters} className="w-full sm:w-auto h-10">Clear All Filters</Button>
+                      </div>
+                  )}
+              </div>
+            </section>
             
-            {isLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {renderSkeletons()}
-                </div>
-            ) : error ? (
-                <Alert variant="destructive" className="max-w-2xl mx-auto">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error Fetching Products</AlertTitle>
-                    <AlertDescription className="whitespace-pre-wrap">{error}</AlertDescription>
-                </Alert>
-            ) : filteredProducts.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {filteredProducts.map((product: Product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-12">
-                    <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                    <h2 className="text-2xl font-semibold mb-4">No Products Found</h2>
-                    <p className="text-muted-foreground">
-                        {searchQuery ? `No products match your search for "${searchQuery}".` : "Try adjusting your filters or check back later."}
-                    </p>
-                </div>
-            )}
+            <section>
+              {isLoading ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      {renderSkeletons()}
+                  </div>
+              ) : error ? (
+                  <Alert variant="destructive" className="max-w-2xl mx-auto">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertTitle>Error Fetching Products</AlertTitle>
+                      <AlertDescription className="whitespace-pre-wrap">{error}</AlertDescription>
+                  </Alert>
+              ) : filteredProducts.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                      {filteredProducts.map((product: Product) => (
+                          <ProductCard key={product.id} product={product} />
+                      ))}
+                  </div>
+              ) : (
+                  <div className="text-center py-12">
+                      <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                      <h2 className="text-2xl font-semibold mb-4">No Products Found</h2>
+                      <p className="text-muted-foreground">
+                          {searchQuery ? `No products match your search for "${searchQuery}".` : "Try adjusting your filters or check back later."}
+                      </p>
+                  </div>
+              )}
+            </section>
         </div>
     );
 }
