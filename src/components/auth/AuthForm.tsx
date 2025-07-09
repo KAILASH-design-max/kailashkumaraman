@@ -18,6 +18,8 @@ import {
   doc,
   setDoc,
   serverTimestamp,
+  getDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -91,7 +93,30 @@ export function AuthForm({ mode }: { mode: 'login' | 'signup' }) {
 
       } else {
         // Login logic
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // Record login activity
+        try {
+            if (typeof window !== 'undefined' && navigator) {
+                const securityDocRef = doc(db, 'SecuritySupport', user.uid);
+                const loginRecord = {
+                    device: navigator.userAgent,
+                    location: "Approx. Location (Simulated)",
+                    timestamp: Timestamp.now() 
+                };
+        
+                const docSnap = await getDoc(securityDocRef);
+                const existingActivity = docSnap.exists() ? docSnap.data().loginActivity || [] : [];
+                const newActivity = [loginRecord, ...existingActivity].slice(0, 5); // Prepend and cap at 5
+        
+                await setDoc(securityDocRef, { loginActivity: newActivity }, { merge: true });
+            }
+        } catch (firestoreError) {
+            console.error("Failed to record login activity:", firestoreError);
+            // Non-critical, so we don't show an error to the user
+        }
+        
         toast({ title: 'Login Successful', description: 'Welcome back!' });
         router.push('/');
       }

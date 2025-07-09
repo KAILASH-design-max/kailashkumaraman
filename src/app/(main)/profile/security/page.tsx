@@ -11,20 +11,9 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { auth, db } from '@/lib/firebase';
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, Timestamp } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, type Timestamp } from 'firebase/firestore';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-
-interface LoginActivity {
-  device: string;
-  location: string;
-  timestamp: Timestamp;
-}
-
-interface SecurityData {
-  twoFactorEnabled: boolean;
-  loginActivity: LoginActivity[];
-  activeSessions?: string[];
-}
+import type { SecurityData, LoginActivity } from '@/lib/types';
 
 export default function SecurityPage() {
   const { toast } = useToast();
@@ -54,7 +43,10 @@ export default function SecurityPage() {
         const data = docSnap.data();
         setSecurityData({
           twoFactorEnabled: data.twoFactorEnabled || false,
-          loginActivity: data.loginActivity || [],
+          loginActivity: (data.loginActivity || []).map((activity: any) => ({
+            ...activity,
+            timestamp: activity.timestamp as Timestamp // Ensure it's treated as a Timestamp
+          })),
           activeSessions: data.activeSessions || []
         });
       } else {
@@ -98,11 +90,13 @@ export default function SecurityPage() {
   };
 
   const handleSignOutAll = () => {
-    // In a real app, this would trigger a server function to revoke tokens.
-    // Here, we just simulate it.
+    // In a real app, this would trigger a secure server function.
+    // This function would use the Firebase Admin SDK to revoke all refresh tokens
+    // for the current user, effectively signing them out of all devices.
     toast({
-      title: "Action Not Implemented",
-      description: "Signing out of all sessions is a feature planned for a future update.",
+      title: "Simulating 'Sign Out Everywhere'",
+      description: "This action is simulated. In a real application, all other sessions would now be invalidated.",
+      duration: 5000,
     });
   };
 
@@ -175,14 +169,14 @@ export default function SecurityPage() {
         <Card className="shadow-lg">
           <CardHeader>
             <CardTitle className="text-xl flex items-center"><Activity className="mr-2 h-5 w-5 text-accent"/>Recent Login Activity</CardTitle>
-            <CardDescription>Review recent sign-ins to your account.</CardDescription>
+            <CardDescription>Review recent sign-ins to your account. This list shows the last 5 activities.</CardDescription>
           </CardHeader>
           <CardContent>
             {securityData?.loginActivity && securityData.loginActivity.length > 0 ? (
               <ul className="space-y-3">
                 {securityData.loginActivity.map((activity, index) => (
                   <li key={index} className="text-sm p-3 border rounded-md bg-secondary/30">
-                    <p><strong>Device:</strong> {activity.device}</p>
+                    <p><strong>Device:</strong> {(activity.device || 'Unknown').substring(0, 100)}</p>
                     <p><strong>Approx. Location:</strong> {activity.location}</p>
                     <p><strong>Time:</strong> {formatDate(activity.timestamp)}</p>
                   </li>

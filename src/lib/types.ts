@@ -1,5 +1,7 @@
 
 
+import type { Timestamp } from 'firebase/firestore';
+
 export interface Product {
   id: string; // Document ID from Firestore
   name: string;
@@ -176,4 +178,16 @@ export interface Wishlist {
   isPublic?: boolean;
   createdAt: string; // ISO string
   updatedAt?: string; // ISO string
+}
+
+export interface LoginActivity {
+  device: string;
+  location: string;
+  timestamp: Timestamp;
+}
+
+export interface SecurityData {
+  twoFactorEnabled: boolean;
+  loginActivity: LoginActivity[];
+  activeSessions?: string[];
 }
