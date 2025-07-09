@@ -11,6 +11,9 @@ import {
   SheetContent,
   SheetTrigger,
   SheetClose,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
 } from "@/components/ui/sheet";
 import { useState, useEffect, type KeyboardEvent } from 'react';
 import { useCart } from '@/hooks/useCart';
@@ -172,6 +175,10 @@ export function CustomerNavbar() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-[300px] sm:w-[400px] flex flex-col">
+              <SheetHeader className="sr-only">
+                <SheetTitle>Menu</SheetTitle>
+                <SheetDescription>Main navigation menu for the SpeedyShop application.</SheetDescription>
+              </SheetHeader>
               <SheetClose asChild>
                   <Logo icon={ShoppingCartIcon} textSize="text-xl" className="mb-4 p-2 border-b"/>
               </SheetClose>
