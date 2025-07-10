@@ -10,7 +10,7 @@ export default function LoginPage() {
       </p>
       <AuthForm mode="login" />
       <div className="mt-4 text-center text-xs text-muted-foreground flex justify-between">
-        <Link href="/auth/forgot-password" className="underline hover:text-primary">
+        <Link href="/forgot-password" className="underline hover:text-primary">
           Forgot Password?
         </Link>
         <Link href="/signup" className="underline hover:text-primary">
