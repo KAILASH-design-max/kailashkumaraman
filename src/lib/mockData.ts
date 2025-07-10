@@ -362,8 +362,7 @@ export const mockProducts: Product[] = [
     rating: 4.9, reviewsCount: 500, stock: 200, status: 'active',
     weight: '70g pack', origin: 'India', createdAt: nowISO, dataAiHint: 'parle g'
   },
-  {
-    id: 'prod60', name: 'Amul Taaza Toned Milk (500ml)',
+  { id: 'prod60', name: 'Amul Taaza Toned Milk (500ml)',
     description: 'Fresh Amul Taaza toned milk, 500ml pack.', price: 29, category: 'cat1',
     images: ['https://placehold.co/600x450/E0E8F0/000000.png'], rating: 4.6, reviewsCount: 80, stock: 50, status: 'active',
     weight: '500ml', origin: 'India', createdAt: nowISO, dataAiHint: 'toned milk'
