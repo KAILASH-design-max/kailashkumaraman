@@ -72,7 +72,13 @@ async function getRelatedProducts(product: Product): Promise<Product[]> {
     }
 }
 
-export default async function ProductDetailPage({ params }: { params: { productId: string } }) {
+interface ProductDetailPageProps {
+  params: {
+    productId: string;
+  };
+}
+
+export default async function ProductDetailPage({ params }: ProductDetailPageProps) {
   const { productId } = params;
   
   if (!productId) {
