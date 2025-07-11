@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Toaster } from "@/components/ui/toaster";
@@ -7,7 +8,8 @@ import { usePathname } from 'next/navigation';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname.startsWith('/auth');
+  const authRoutes = ['/login', '/signup', '/forgot-password'];
+  const isAuthPage = authRoutes.includes(pathname);
   const isSearchPage = pathname === '/search';
 
   return (
