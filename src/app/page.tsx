@@ -72,7 +72,7 @@ export default async function RootPage() {
       <section className="mb-12 flex justify-center">
         <div className="relative w-full aspect-[2/1] md:aspect-[3/1] rounded-xl overflow-hidden shadow-lg transition-transform duration-300 ease-in-out hover:scale-102">
           <Image
-            src="https://sdmntprwestus.oaiusercontent.com/files/00000000-4eb0-6230-a7e6-bd48b2d996c2/raw?se=2025-06-10T14%3A06%3A21Z&sp=r&sv=2024-08-04&sr=b&scid=33b84762-f949-570f-b4fa-6ef131dbef21&skoid=b64a43d9-3512-45c2-98b4-dea55d094240&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-09T22%3A02%3A05Z&ske=2025-06-10T22%3A02%3A05Z&sks=b&skv=2024-08-04&sig=XF/ImMMypL6ZDE5CdRqZpkb7Or1VgZIG4HPaVQN5XZA%3D"
+            src="https://storage.googleapis.com/static-web-assets/AppHosting/speedyshop-banner-1.png"
             alt="Promotional banner for SpeedyShop"
             fill
             sizes="100vw"
@@ -88,7 +88,7 @@ export default async function RootPage() {
       <section className="mb-12 flex justify-center">
         <div className="relative w-full aspect-[2/1] md:aspect-[3/1] rounded-xl overflow-hidden shadow-lg transition-transform duration-300 ease-in-out hover:scale-102">
           <Image
-            src="https://sdmntprwestus.oaiusercontent.com/files/00000000-5250-6230-af1d-94f9012057ed/raw?se=2025-06-10T13%3A58%3A10Z&sp=r&sv=2024-08-04&sr=b&scid=73492e29-0436-5d7d-86fe-d20e71978f65&skoid=b64a43d9-3512-45c2-98b4-dea55d094240&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-06-09T22%3A01%3A57Z&ske=2025-06-10T22%3A01%3A57Z&sks=b&skv=2024-08-04&sig=csQKfYWjNqRGiy%2Bp1XCWcL/uWY6up4OKFGI%2BwiwmLDU%3D"
+            src="https://storage.googleapis.com/static-web-assets/AppHosting/speedyshop-banner-2.png"
             alt="New promotional banner"
             fill
             sizes="100vw"
